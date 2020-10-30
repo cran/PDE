@@ -1,7 +1,7 @@
 Package: PDE
 Type: Package
 Title: Extract Sentences and Tables from PDFs with User Interface
-Version: 1.0.1
+Version: 1.0.2
 Authors@R: person(given = "Erik", family = "Stricker", email = "erik.stricker@gmx.com", 
   role = c("aut", "cre"))
 Author: Erik Stricker [aut, cre]
@@ -14,11 +14,12 @@ License: GPL-3 | file LICENSE
 Encoding: UTF-8
 LazyData: true
 Depends: tcltk2 (>= 1.2.11), R (>= 3.5)
-SystemRequirements: XPDF (https://www.xpdfreader.com/download.html)
+SystemRequirements: XPDF
+        (>=4.0)(https://www.xpdfreader.com/download.html)
 RoxygenNote: 7.1.1
 Suggests: knitr, rmarkdown
 VignetteBuilder: knitr
 NeedsCompilation: no
-Packaged: 2020-10-29 20:39:45 UTC; Erik
+Packaged: 2020-10-30 16:26:12 UTC; Erik
 Repository: CRAN
-Date/Publication: 2020-10-30 09:40:08 UTC
+Date/Publication: 2020-10-31 00:50:11 UTC

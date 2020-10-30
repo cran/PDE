@@ -1,13 +1,13 @@
-658cc76446cc3c2e16a2a376f623eeea *DESCRIPTION
+487546a795bbfc4b3eb70bd528af4a7e *DESCRIPTION
 1ebbd3e34237af26da5dc08a4e440464 *LICENSE
 37040355dcb0240637f517059b2be2cf *NAMESPACE
-94eec25d4064d0796fc59e17557f69b8 *NEWS.md
-ed19188e0405c93bb198c41b856d0797 *R/PDE.R
+518982b6d2380abdf2de2304bc76137a *NEWS.md
+2c32652ed0b2a883cfdb8eacde8eb570 *R/PDE.R
 0627b72256c7498b3c4b68d7204e4fb8 *README.md
 f1f8871c8bd06200d463a8862759a0aa *build/vignette.rds
 8c6152d435dccbc690a6ce846af317b3 *inst/doc/PDE.R
 5bf95636f6bd7f0729791ecec3ad5c4e *inst/doc/PDE.Rmd
-790e4ce437a6fe7eb7619c4866faa1db *inst/doc/PDE.html
+1c54a99b8114d2663dbfc66338b76f90 *inst/doc/PDE.html
 655e3aff15d1181e20c8fd236099cdb5 *inst/examples/MTX_output_linux/excl_by_fw/31261533_x_not.enough.txt.w.filter.words.csv
 db141112d06b69a4577793534f97578b *inst/examples/MTX_output_linux/html.docu/29973177_!_htmltablelines.csv
 39b7ab5d40f26381f500796373f654fb *inst/examples/MTX_output_linux/html.docu/31083238_!_htmltablelines.csv

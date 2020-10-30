@@ -125,7 +125,7 @@ PDE_check_Xpdf_install <- function(sysname=NULL, verbose=TRUE){
                     "5) Win7 or below: add a semicolon and the ")
       msg3 <- paste(" file path (directory only) add the end of the list.",
                     "Win10: Click New and type in the file path (directory only)",
-                    "6) Click OK on all windows to close them.")
+                    "6) Click OK on all windows to close them. ")
     } else if (sysname == "Linux" || sysname == "SunOS") {
       msg1 <- paste(" not detected. Please install the XpdfReader.",
                     "If you do have XpdfReader installed,",
@@ -134,7 +134,7 @@ PDE_check_Xpdf_install <- function(sysname=NULL, verbose=TRUE){
                     "1) Press the Ctrl+Alt+T key to open the terminal",
                     "2) Type the following command: echo 'export PATH=$PATH:/path/to/")
       msg3 <- paste("' >> ~/.profile",
-                    "3) Close the terminal.",
+                    "3) Close the terminal. ",
                     "4) Restart your system to finalize adding to PATH")
     } else if (sysname == "Darwin") {
       msg1 <- paste(" not detected. Please install the XpdfReader.",
@@ -148,46 +148,46 @@ PDE_check_Xpdf_install <- function(sysname=NULL, verbose=TRUE){
       msg3 <- paste(" file path (directory only) at the bottom of the list.",
                     "5) Press control+X.",
                     "6) Confirm override by typing Y.",
-                    "7) Close the terminal.")
+                    "7) Close the terminal. ")
     } else {
       files <- c(files,1,2,3,4)
       msg1 <- "The "
       msg2 <- " not detected. Unknown OS. To receive detailed instructions on how to install the "
-      msg3 <- ", set the sysname variable for the PDE_check_Xpdf_install() command and run it again."
+      msg3 <- ", set the sysname variable for the PDE_check_Xpdf_install() command and run it again. "
     }
     
     if (length(files) == 1){
       out.file <- files
       attributes(out) <- list(msg = paste0(out.file, " file",msg1,out.file, " file is",msg2,out.file,msg3))
-      if (verbose == TRUE) cat(attributes(out)$msg)
+      if (verbose == TRUE) cat(attributes(out)$msg, sep="\n")
     } else if (length(files) == 2){
       out.file <- paste0(files[1], " and ", files[2])
       attributes(out) <- list(msg = paste0(out.file, " files",msg1,out.file, " files are",msg2,out.file,msg3))
-      if (verbose == TRUE) cat(attributes(out)$msg)
+      if (verbose == TRUE) cat(attributes(out)$msg, sep="\n")
     } else if (length(files) == 3){
       out.file <- paste0(files[1], ", ", files[2], " and " , files[3])
       attributes(out) <- list(msg = paste0(out.file, " files",msg1,out.file, " files are",msg2,out.file,msg3))
-      if (verbose == TRUE) cat(attributes(out)$msg)
+      if (verbose == TRUE) cat(attributes(out)$msg, sep="\n")
     } else {
       ## if the system os is unknown
       files = files[!files %in% c(1,2,3,4)]
       if (length(files) == 1){
         out.file <- files
         attributes(out) <- list(msg = paste0(msg1, out.file, " file was",msg2,out.file, " file",msg3))
-        if (verbose == TRUE) cat(attributes(out)$msg)
+        if (verbose == TRUE) cat(attributes(out)$msg, sep="\n")
       } else if (length(files) == 2){
         out.file <- paste0(files[1], " and ", files[2])
         attributes(out) <- list(msg = paste0(msg1, out.file, " files were",msg2,out.file, " files",msg3))
-        if (verbose == TRUE) cat(attributes(out)$msg)
+        if (verbose == TRUE) cat(attributes(out)$msg, sep="\n")
       } else if (length(files) == 3){
         out.file <- paste0(files[1], ", ", files[2], " and " , files[3])
         attributes(out) <- list(msg = paste0(msg1, out.file, " files were",msg2,out.file, " files",msg3))
-        if (verbose == TRUE) cat(attributes(out)$msg)
+        if (verbose == TRUE) cat(attributes(out)$msg, sep="\n")
       }
     }
   } else{
     attributes(out) <- list(msg = "XpdfReader installed.")
-    if (verbose == TRUE) cat(attributes(out)$msg)
+    if (verbose == TRUE) cat(attributes(out)$msg, sep="\n")
   }
   
   return(out)
@@ -214,7 +214,7 @@ PDE_check_Xpdf_install <- function(sysname=NULL, verbose=TRUE){
 #'@export
 PDE_install_XpdfReader4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
    ## check if XpdfReader is installed
-  install.test <- PDE_check_Xpdf_install()
+  install.test <- PDE_check_Xpdf_install(verbose=FALSE)
   
   downloadq <- 0
     
@@ -292,7 +292,7 @@ PDE_install_XpdfReader4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
        if (os == "linux"){
          system(paste0("echo 'export PATH=$PATH:",inst.path,"/bin/xpdf-tools-linux-4.02/bin",bin,"' >> ~/.profile"))
          if (verbose){
-            cat("Please restart your system to finalize the installation.")
+            cat("Please restart your system to finalize the installation.", sep="\n")
          }
        }
        
@@ -825,18 +825,18 @@ PDE_install_XpdfReader4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
       unlink(txtpath, recursive = TRUE)
       if (exists(txtpath)) {
         out_msg <- c(out_msg, paste0("Could not delete:", txtpath))
-        if (verbose) cat(utils::tail(out_msg,1))
+        if (verbose) cat(utils::tail(out_msg,1), sep="\n")
       }
       unlink(keeplayouttxtpath, recursive = TRUE)
       if (exists(keeplayouttxtpath)) {
         out_msg <- c(out_msg, paste0("Could not delete:", keeplayouttxtpath))
-        if (verbose) cat(utils::tail(out_msg,1))
+        if (verbose) cat(utils::tail(out_msg,1), sep="\n")
       }
       unlink(htmlpath, recursive = TRUE)
       if (exists(htmlpath)){ 
         if (exists(keeplayouttxtpath)) {
           out_msg <- c(out_msg, paste0("Could not delete:", htmlpath))
-          if (verbose) cat(utils::tail(out_msg,1))
+          if (verbose) cat(utils::tail(out_msg,1), sep="\n")
         }
       }
     }
@@ -1084,17 +1084,17 @@ PDE_install_XpdfReader4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
   id <- sub("^(.*)\\..*$", "\\1", basename(txtpath))
   print_message <- paste0("Following file is processing: \'",id,".pdf\'")
   out_msg <- c(out_msg, print_message)
-  if (verbose) cat(utils::tail(out_msg,1))
+  if (verbose) cat(utils::tail(out_msg,1), sep="\n")
 
   ## 1) Create txt and html copies of PDF file ---------------------------------------
   ## test of XpdfReader is installed
-  install.test <- PDE_check_Xpdf_install()
+  install.test <- PDE_check_Xpdf_install(verbose=verbose)
   if (install.test == FALSE) {
     stop(attributes(install.test)$msg)
   }
   
   system(paste0("pdftotext", " -layout",
-                "\" \"", pdfpath, "\" \"", keeplayouttxtpath,
+                " \"", pdfpath, "\" \"", keeplayouttxtpath,
                 "\""), wait = TRUE, ignore.stderr = TRUE)
   system(paste0("pdftotext \"", pdfpath,
                 "\" \"", txtpath, "\""), wait = TRUE,
@@ -1115,7 +1115,7 @@ PDE_install_XpdfReader4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
     ## export error and do not remove file change
     print_message <- paste0(id, " is most likely secured and cannot be processed!")
     out_msg <- c(out_msg, print_message)
-    if (verbose) cat(utils::tail(out_msg,1))
+    if (verbose) cat(utils::tail(out_msg,1), sep="\n")
     update_progress_info(print_message)
     dir.create(paste0(out,"/secured"), showWarnings = FALSE)
     write(paste0(pdfpath, " is most likely secured and cannot be processed!"),
@@ -1133,7 +1133,7 @@ PDE_install_XpdfReader4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
       ## export error and do not remove file change
       print_message <- paste0(id, " is most likely secured and cannot be processed!")
       out_msg <- c(out_msg, print_message)
-      if (verbose) cat(utils::tail(out_msg,1))
+      if (verbose) cat(utils::tail(out_msg,1), sep="\n")
       update_progress_info(print_message)
       dir.create(paste0(out,"/secured"), showWarnings = FALSE)
       write(paste0(pdfpath, " is most likely secured and cannot be processed!"),
@@ -1143,7 +1143,7 @@ PDE_install_XpdfReader4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
                identical(txtcontent, "\f") || identical(keeplayouttxtcontent, "\f")  ) {
       print_message <- paste0(id, " most likely contains no text content or is a scanned document!")
       out_msg <- c(out_msg, print_message)
-      if (verbose) cat(utils::tail(out_msg,1))
+      if (verbose) cat(utils::tail(out_msg,1), sep="\n")
       update_progress_info(print_message)
       dir.create(paste0(out,"/nr/"), showWarnings = FALSE)
       write(paste0(pdfpath, " most likely contains no text content or is a scanned document!"),
@@ -1166,7 +1166,7 @@ PDE_install_XpdfReader4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
         if (identical(htmlpagecontent, "")) {
           print_message <- paste0(id, " most likely contains no text content or is a scanned in document!")
           out_msg <- c(out_msg, print_message)
-          if (verbose) cat(utils::tail(out_msg,1))
+          if (verbose) cat(utils::tail(out_msg,1), sep="\n")
           update_progress_info(print_message)
           dir.create(paste0(out,"/nr/"), showWarnings = FALSE)
           write(paste0(pdfpath, " most likely contains no text content or is a scanned in document!"),
@@ -1210,7 +1210,7 @@ PDE_install_XpdfReader4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
       integrity.indicator <- FALSE
       print_message <- paste0(id, ".pdf has no readable content")
       out_msg <- c(out_msg, print_message)
-      if (verbose) cat(utils::tail(out_msg,1))
+      if (verbose) cat(utils::tail(out_msg,1), sep="\n")
       update_progress_info(print_message)
       ## write an empty file
       if (write.txt.doc.file == TRUE) {
@@ -1478,7 +1478,7 @@ PDE_install_XpdfReader4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
         print_message <- paste0(length(word.txtpos.fw),
                                 " filter word(s) were detected in ", id, ".pdf.")
         out_msg <- c(out_msg, print_message)
-        if (verbose) cat(utils::tail(out_msg,1))
+        if (verbose) cat(utils::tail(out_msg,1), sep="\n")
         update_progress_info(print_message)
       } else {
         filterwords.go <- FALSE
@@ -1486,7 +1486,7 @@ PDE_install_XpdfReader4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
                                 length(word.txtpos.fw),
                                 " filter word(s) were detected in ", id, ".pdf.")
         out_msg <- c(out_msg, print_message)
-        if (verbose) cat(utils::tail(out_msg,1))
+        if (verbose) cat(utils::tail(out_msg,1), sep="\n")
         update_progress_info(print_message)
         if (write.txt.doc.file == TRUE) {
           dir.create(paste0(out,"/excl_by_fw"), showWarnings = FALSE)
@@ -1501,7 +1501,7 @@ PDE_install_XpdfReader4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
       }  ## end if filter words were present
     } else {
       out_msg <- c(out_msg, "No filter words chosen for analysis.")
-      if (verbose) cat(utils::tail(out_msg,1))
+      if (verbose) cat(utils::tail(out_msg,1), sep="\n")
       update_progress_info("No filter words chosen for analysis.")
       filterwords.go <- TRUE
     }  ## end if filter words were set
@@ -1617,7 +1617,7 @@ PDE_install_XpdfReader4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
       integrity.indicator == TRUE){
     print_message <- paste0("No text with search words for \'",id,".pdf\' found.")
     out_msg <- c(out_msg, print_message)
-    if (verbose) cat(utils::tail(out_msg,1))
+    if (verbose) cat(utils::tail(out_msg,1), sep="\n")
     update_progress_info(print_message)
     ## write an empty file
     if (write.txt.doc.file == TRUE) {
@@ -1654,7 +1654,7 @@ PDE_install_XpdfReader4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
                                 " This might leader to incomplete table extraction but does not",
                                 " affect search word detection")
         out_msg <- c(out_msg, print_message)
-        if (verbose) cat(utils::tail(out_msg,1))
+        if (verbose) cat(utils::tail(out_msg,1), sep="\n")
         print_message_short <- paste0("Page ", p, " of \'", id, ".html\' was incompletely read",
                                       " (does not affect txt detection though).")
         update_progress_info(print_message_short)
@@ -2764,7 +2764,7 @@ PDE_install_XpdfReader4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
              integrity.indicator == TRUE) {
     print_message <- paste0("\'",id,".pdf\' has no tables that could be detected")
     out_msg <- c(out_msg, print_message)
-    if (verbose) cat(utils::tail(out_msg,1))
+    if (verbose) cat(utils::tail(out_msg,1), sep="\n")
     update_progress_info(print_message)
     ## all lines are txt lines (no table or legend)
     if (!is.null(txttablelines)){
@@ -2877,7 +2877,7 @@ PDE_install_XpdfReader4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
                                                     out.table.ext),
                          " might be too long to be read by some programs. Consider using a shorter output path.")
             out_msg <- c(out_msg, print_message)
-            if (verbose) cat(utils::tail(out_msg,1))
+            if (verbose) cat(utils::tail(out_msg,1), sep="\n")
             update_progress_info(paste0(outputtable.name,
                                         out.table.format,
                                         " file path maybe too long."))
@@ -3004,7 +3004,7 @@ PDE_install_XpdfReader4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
                                                   out.table.ext),
                        " might be too long to be read by some programs. Consider using a shorter output path.")
           out_msg <- c(out_msg, print_message)
-          if (verbose) cat(utils::tail(out_msg,1))
+          if (verbose) cat(utils::tail(out_msg,1), sep="\n")
           update_progress_info(paste0(outputtable.name,
                                       out.table.format,
                                       " file path maybe too long."))
@@ -3034,14 +3034,14 @@ PDE_install_XpdfReader4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
       print_message <- paste0(length(names(processed.tables))," table(s) with search words found in \'",
                               id,".pdf\'.")
       out_msg <- c(out_msg, print_message)
-      if (verbose) cat(utils::tail(out_msg,1))
+      if (verbose) cat(utils::tail(out_msg,1), sep="\n")
       update_progress_info(print_message)
       ## end if search words were found in table
     } else {
       print_message <- paste0("No table with search words for '",
                               id,".pdf\' found.")
       out_msg <- c(out_msg, print_message)
-      if (verbose) cat(utils::tail(out_msg,1))
+      if (verbose) cat(utils::tail(out_msg,1), sep="\n")
       update_progress_info(print_message)
       ## write an empty file
       if (write.tab.doc.file == TRUE) {
@@ -3277,7 +3277,7 @@ PDE_install_XpdfReader4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
       }
       print_message <- paste0(nrow(outputtable)," sentences with search words were found in \'",id,".pdf\'.")
       out_msg <- c(out_msg, print_message)
-      if (verbose) cat(utils::tail(out_msg,1))
+      if (verbose) cat(utils::tail(out_msg,1), sep="\n")
       update_progress_info(print_message)
       dir.create(paste0(out,"/txt+-", context), showWarnings = FALSE)
       utils::write.table(outputtable, file = paste0(out,"/txt+-", context,"/",id,"_txt+-", context,
@@ -3290,7 +3290,7 @@ PDE_install_XpdfReader4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
                integrity.indicator == TRUE) {
       print_message <- paste0("No text with search words in \'",id,".pdf\' found")
       out_msg <- c(out_msg, print_message)
-      if (verbose) cat(utils::tail(out_msg,1))
+      if (verbose) cat(utils::tail(out_msg,1), sep="\n")
       update_progress_info(print_message)
       ## write an empty file
       if (write.txt.doc.file == TRUE) {
@@ -3333,7 +3333,7 @@ PDE_install_XpdfReader4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
   out_msg <- c(out_msg, deletefile(verbose))
   print_message <- paste0("Analysis of \'",id,".pdf\' complete.")
   out_msg <- c(out_msg, print_message)
-  if (verbose) cat(utils::tail(out_msg,1))
+  if (verbose) cat(utils::tail(out_msg,1), sep="\n")
   update_progress_info(print_message)
   
   output_files$out_msg <- out_msg
@@ -4040,7 +4040,7 @@ PDE_analyzer_i <- function(verbose=TRUE) {
   res <- try(tcltk2::tk2label(l1, text = "test", font = os.font.ten.bold), silent = TRUE)
   if (class(res)[1] == "try-error") {
     out_msg <- c(out_msg, "There is an error with the allocation of tcl system fonts.")
-    if (verbose) cat(utils::tail(out_msg,1))
+    if (verbose) cat(utils::tail(out_msg,1), sep="\n")
     os.font <- ""
     os.font.ten.bold <- ""
     os.font.twelve.bold <- ""
@@ -5074,7 +5074,7 @@ PDE_analyzer_i <- function(verbose=TRUE) {
             new_list <- tcltk2::tk2list.get(PDE.globals$l30.progress.textbox)
           }
           out_msg <- c(out_msg, "Analyses are complete.")
-          if (verbose) cat(utils::tail(out_msg,1))
+          if (verbose) cat(utils::tail(out_msg,1), sep="\n")
           
           tcltk::tkconfigure(PDE.globals$l30.progress.textbox,values = c(new_list,"complete"))
           tcltk::tkconfigure(PDE.globals$l30.progress.textbox,textvariable = tcltk::tclVar("complete"))
@@ -5594,21 +5594,23 @@ PDE_analyzer <- function(PDE_parameters_file_path = NA, verbose=TRUE){
   if (length(delete) == 0 || is.na(delete)) delete <- TRUE
 
   ## as control show content of variables --------------------------------------------------
-  cat(c("whattoextr", dQuote(whattoextr)),
-      sep = "\n")
-  cat(c("filter.words:", filter.for, "ignore.case.fw:",
-        ic.fw, "filter.word.times:", filter.word.times,
-        "table.heading.words:", table.heading.for, "ignore.case.th:",
-        ic.th), sep = "\n")
-  cat(c("search.words:", search.for, "ignore.case.sw:",
-        ic.sw, "eval.abbrevs:",
-        eval.abbrevs, "write.table.locations:", wtl, "out.table.format:",
-        dQuote(out.table.format)), sep = "\n")
-  cat(c("dev:", dev, "context:", context, "write.tab.doc.file:",
-        write.tab.doc.file, "write.txt.doc.file:", write.txt.doc.file,
-        "delete", delete, "exp.nondetc.tabs:", exp.nondetc.tabs),
-      sep = "\n")
-
+  if (verbose){
+    cat(c("whattoextr", dQuote(whattoextr)),
+        sep = "\n")
+    cat(c("filter.words:", filter.for, "ignore.case.fw:",
+          ic.fw, "filter.word.times:", filter.word.times,
+          "table.heading.words:", table.heading.for, "ignore.case.th:",
+          ic.th), sep = "\n")
+    cat(c("search.words:", search.for, "ignore.case.sw:",
+          ic.sw, "eval.abbrevs:",
+          eval.abbrevs, "write.table.locations:", wtl, "out.table.format:",
+          dQuote(out.table.format)), sep = "\n")
+    cat(c("dev:", dev, "context:", context, "write.tab.doc.file:",
+          write.tab.doc.file, "write.txt.doc.file:", write.txt.doc.file,
+          "delete", delete, "exp.nondetc.tabs:", exp.nondetc.tabs),
+        sep = "\n")
+  }
+  
   ## load pdf(s) --------------------------------------------------------------------
   ## if it is a directory
   if (dir.exists(pdfs)) {
@@ -5823,7 +5825,7 @@ PDE_reader_i <- function(verbose=TRUE) {
   res <- try(tcltk2::tk2label(l1, text = "test", font = os.font.ten.bold),silent = TRUE)
   if (class(res)[1] == "try-error") {
     out_msg <- c(out_msg, "There is an error with the allocation of tcl system fonts.")
-    if (verbose) cat(utils::tail(out_msg,1))
+    if (verbose) cat(utils::tail(out_msg,1), sep="\n")
     os.font <- ""
     os.font.ten.bold <- ""
     os.font.twelve.bold <- ""
@@ -6917,11 +6919,11 @@ PDE_reader_i <- function(verbose=TRUE) {
                       "\""))
       } else {
         out_msg <- c(out_msg, "Please choose a correct output folder.")
-        if (verbose) cat(utils::tail(out_msg,1))
+        if (verbose) cat(utils::tail(out_msg,1), sep="\n")
       }
     } else {
       out_msg <- c(out_msg, "Please choose a TSV file and the PDF folder.")
-      if (verbose) cat(utils::tail(out_msg,1))
+      if (verbose) cat(utils::tail(out_msg,1), sep="\n")
     }
   }
   l4.extract.table.but <- tcltk2::tk2button(l4, text = "Extract tables",
