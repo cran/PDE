@@ -1,7 +1,7 @@
 Package: PDE
 Type: Package
 Title: Extract Sentences and Tables from PDFs with User Interface
-Version: 1.0.0
+Version: 1.0.1
 Authors@R: person(given = "Erik", family = "Stricker", email = "erik.stricker@gmx.com", 
   role = c("aut", "cre"))
 Author: Erik Stricker [aut, cre]
@@ -19,6 +19,6 @@ RoxygenNote: 7.1.1
 Suggests: knitr, rmarkdown
 VignetteBuilder: knitr
 NeedsCompilation: no
-Packaged: 2020-10-21 02:20:43 UTC; Erik
+Packaged: 2020-10-29 20:39:45 UTC; Erik
 Repository: CRAN
-Date/Publication: 2020-10-29 10:30:02 UTC
+Date/Publication: 2020-10-30 09:40:08 UTC

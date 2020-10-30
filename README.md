@@ -72,9 +72,9 @@ detected.)](#add-xpdfreader-to-system-path-on-mac-pdftotext-pdftohtml-and-pdftop
 detected.)](#add-xpdfreader-to-system-path-on-linux-pdftotext-pdftohtml-and-pdftopng-not-detected.).**
 
 Choose the location where you downloaded latest
-PDE\_\*.\*.\*\*\*\*.tar.gz
+PDE\_\*.\*.\*.tar.gz
 
-    filename <- file.choose()     # Choose the location where you downloaded the latest PDE_*.*.****.tar.gz
+    filename <- file.choose()     # Choose the location where you downloaded the latest PDE_*.*.*.tar.gz
     install.packages(filename,  type="source", repos=NULL)
 
 or through CRAN

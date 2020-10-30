@@ -64,6 +64,11 @@ PDE_path <- function(){
 #'
 #'\code{PDE_check_Xpdf_install} runs a version test for pdftotext, pdftohtml and pdftopng.
 #'
+#'@param sysname String. In case the function returns "Unknown OS" the sysname can be set manually. 
+#' Allowed options are "Windows", "Linux", "SunOS", and "Darwin" for Mac. Default: \code{NULL}.
+#'@param verbose Logical. Indicates whether messages will be printed in the console. Default: \code{TRUE}.
+#'
+#'
 #'@return The function returns a Boolean for the installation status and a message in case 
 #'the commands are not detected.
 #'
@@ -72,50 +77,10 @@ PDE_path <- function(){
 #' PDE_check_Xpdf_install()
 #'
 #'@export
-PDE_check_Xpdf_install <- function(){
+PDE_check_Xpdf_install <- function(sysname=NULL, verbose=TRUE){
   
   out <- TRUE
   files <- NULL
-  
-  if (Sys.info()["sysname"] == "Windows") {
-    msg1 <- paste(" not detected. Please install the XpdfReader.",
-               "If you do have XpdfReader installed,",
-               "add the path where the ")
-    msg2 <- paste(" located in to the system path by following the subsequent steps:",
-                  "1) Press the Windows key + S.",
-                  "2) Search for advanced system settings.",
-                  "3) under the Advanced tab click on Environment variables.",
-                  "4) Select Path and click Edit....",
-                  "5) Win7 or below: add a semicolon and the ")
-    msg3 <- paste(" file path (directory only) add the end of the list.",
-                  "Win10: Click New and type in the file path (directory only)",
-                  "6) Click OK on all windows to close them.")
-  } else if (Sys.info()["sysname"] == "Linux") {
-    msg1 <- paste(" not detected. Please install the XpdfReader.",
-                  "If you do have XpdfReader installed,",
-                  "add the path where the ")
-    msg2 <- paste(" located in to the system path by following the subsequent steps:",
-                  "1) Press the Ctrl+Alt+T key to open the terminal",
-                  "2) Type the following command: echo 'export PATH=$PATH:/path/to/")
-    msg3 <- paste("' >> ~/.profile",
-                  "3) Close the terminal.",
-                  "4) Restart your system to finalize adding to PATH")
-  } else if (Sys.info()["sysname"] == "Darwin") {
-    msg1 <- paste(" not detected. Please install the XpdfReader.",
-                  "If you do have XpdfReader installed,",
-                  "add the path where the ")
-    msg2 <- paste(" located in to the system path by following the subsequent steps:",
-                  "1) Press Command+Space and type Terminal and press enter/return key.",
-                  "2) Type: sudo nano /etc/paths",
-                  "3) Enter your admin password.",
-                  "4) Write/paste (command+V) the ")
-    msg3 <- paste(" file path (directory only) at the bottom of the list.",
-                  "5) Press control+X.",
-                  "6) Confirm override by typing Y.",
-                  "7) Close the terminal.")
-  } else {
-    msg <- "Unknown OS"
-  }
   
   ## run the checks
   pdftotext.install.test <- suppressWarnings(tryCatch(system2("pdftotext", 
@@ -144,18 +109,85 @@ PDE_check_Xpdf_install <- function(){
   }
   
   if (out == FALSE){
+    if (is.null(sysname)) {
+      sysname <- Sys.info()["sysname"]
+    }
+    
+    if (sysname == "Windows") {
+      msg1 <- paste(" not detected. Please install the XpdfReader.",
+                    "If you do have XpdfReader installed,",
+                    "add the path where the ")
+      msg2 <- paste(" located in to the system path by following the subsequent steps:",
+                    "1) Press the Windows key + S.",
+                    "2) Search for advanced system settings.",
+                    "3) under the Advanced tab click on Environment variables.",
+                    "4) Select Path and click Edit....",
+                    "5) Win7 or below: add a semicolon and the ")
+      msg3 <- paste(" file path (directory only) add the end of the list.",
+                    "Win10: Click New and type in the file path (directory only)",
+                    "6) Click OK on all windows to close them.")
+    } else if (sysname == "Linux" || sysname == "SunOS") {
+      msg1 <- paste(" not detected. Please install the XpdfReader.",
+                    "If you do have XpdfReader installed,",
+                    "add the path where the ")
+      msg2 <- paste(" located in to the system path by following the subsequent steps:",
+                    "1) Press the Ctrl+Alt+T key to open the terminal",
+                    "2) Type the following command: echo 'export PATH=$PATH:/path/to/")
+      msg3 <- paste("' >> ~/.profile",
+                    "3) Close the terminal.",
+                    "4) Restart your system to finalize adding to PATH")
+    } else if (sysname == "Darwin") {
+      msg1 <- paste(" not detected. Please install the XpdfReader.",
+                    "If you do have XpdfReader installed,",
+                    "add the path where the ")
+      msg2 <- paste(" located in to the system path by following the subsequent steps:",
+                    "1) Press Command+Space and type Terminal and press enter/return key.",
+                    "2) Type: sudo nano /etc/paths",
+                    "3) Enter your admin password.",
+                    "4) Write/paste (command+V) the ")
+      msg3 <- paste(" file path (directory only) at the bottom of the list.",
+                    "5) Press control+X.",
+                    "6) Confirm override by typing Y.",
+                    "7) Close the terminal.")
+    } else {
+      files <- c(files,1,2,3,4)
+      msg1 <- "The "
+      msg2 <- " not detected. Unknown OS. To receive detailed instructions on how to install the "
+      msg3 <- ", set the sysname variable for the PDE_check_Xpdf_install() command and run it again."
+    }
+    
     if (length(files) == 1){
       out.file <- files
       attributes(out) <- list(msg = paste0(out.file, " file",msg1,out.file, " file is",msg2,out.file,msg3))
+      if (verbose == TRUE) cat(attributes(out)$msg)
     } else if (length(files) == 2){
       out.file <- paste0(files[1], " and ", files[2])
       attributes(out) <- list(msg = paste0(out.file, " files",msg1,out.file, " files are",msg2,out.file,msg3))
+      if (verbose == TRUE) cat(attributes(out)$msg)
     } else if (length(files) == 3){
       out.file <- paste0(files[1], ", ", files[2], " and " , files[3])
       attributes(out) <- list(msg = paste0(out.file, " files",msg1,out.file, " files are",msg2,out.file,msg3))
+      if (verbose == TRUE) cat(attributes(out)$msg)
+    } else {
+      ## if the system os is unknown
+      files = files[!files %in% c(1,2,3,4)]
+      if (length(files) == 1){
+        out.file <- files
+        attributes(out) <- list(msg = paste0(msg1, out.file, " file was",msg2,out.file, " file",msg3))
+        if (verbose == TRUE) cat(attributes(out)$msg)
+      } else if (length(files) == 2){
+        out.file <- paste0(files[1], " and ", files[2])
+        attributes(out) <- list(msg = paste0(msg1, out.file, " files were",msg2,out.file, " files",msg3))
+        if (verbose == TRUE) cat(attributes(out)$msg)
+      } else if (length(files) == 3){
+        out.file <- paste0(files[1], ", ", files[2], " and " , files[3])
+        attributes(out) <- list(msg = paste0(msg1, out.file, " files were",msg2,out.file, " files",msg3))
+        if (verbose == TRUE) cat(attributes(out)$msg)
+      }
     }
   } else{
     attributes(out) <- list(msg = "XpdfReader installed.")
+    if (verbose == TRUE) cat(attributes(out)$msg)
   }
   
   return(out)
@@ -218,7 +250,7 @@ PDE_install_XpdfReader4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
          os <- "win"
          ext <- ".exe"
          mode <- "wb"
-       } else if (sysname == "Linux") {
+       } else if (sysname == "Linux" || sysname == "SunOS") {
          os <- "linux"
          ext <- ".run"
          mode <- "wb"
@@ -3890,7 +3922,7 @@ PDE_analyzer_i <- function(verbose=TRUE) {
     ext <- ".exe"
   } else if (Sys.info()["sysname"] == "Darwin") {
     out.table.format.var <- tcltk::tclVar(".csv (macintosh)")
-  } else if (Sys.info()["sysname"] == "Linux") {
+  } else if (Sys.info()["sysname"] == "Linux" || Sys.info()["sysname"] == "SunOS") {
     out.table.format.var <- tcltk::tclVar(".csv (UTF-8)")
   } else {
     out.table.format.var <- tcltk::tclVar(".csv (WINDOWS-1252)")
@@ -3931,7 +3963,7 @@ PDE_analyzer_i <- function(verbose=TRUE) {
     os.font <- "Helvetica"
     os.font.ten.bold <- "Helvetica 10 bold"
     os.font.twelve.bold <- "Helvetica 12 bold"
-  } else if (Sys.info()["sysname"] == "Linux") {
+  } else if (Sys.info()["sysname"] == "Linux" || Sys.info()["sysname"] == "SunOS") {
     os.font <- grDevices::X11Fonts()$sans
     os.font.ten.bold <- paste0(os.font, " 10 bold")
     os.font.twelve.bold <- paste0(os.font, " 12 bold")
@@ -5736,7 +5768,7 @@ PDE_reader_i <- function(verbose=TRUE) {
     os.font <- "Helvetica"
     os.font.ten.bold <- "Helvetica 10 bold"
     os.font.twelve.bold <- "Helvetica 12 bold"
-  } else if (Sys.info()["sysname"] == "Linux") {
+  } else if (Sys.info()["sysname"] == "Linux" || Sys.info()["sysname"] == "SunOS") {
     os.font <- grDevices::X11Fonts()$sans
     os.font.ten.bold <- paste0(os.font, " 10 bold")
     os.font.twelve.bold <- paste0(os.font, " 12 bold")
