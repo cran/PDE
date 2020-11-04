@@ -8,15 +8,6 @@
     -   [PDE\_analyzer\_i()](#pde_analyzer_i-1)
     -   [PDE\_reader\_i()](#pde_reader_i-1)
 -   [Troubleshoot](#troubleshoot)
-    -   [Add XpdfReader to system path on Windows (pdftotext, pdftohtml
-        and pdftopng not
-        detected.)](#add-xpdfreader-to-system-path-on-windows-pdftotext-pdftohtml-and-pdftopng-not-detected.)
-    -   [Add XpdfReader to system path on Mac (pdftotext, pdftohtml and
-        pdftopng not
-        detected.)](#add-xpdfreader-to-system-path-on-mac-pdftotext-pdftohtml-and-pdftopng-not-detected.)
-    -   [Add XpdfReader to system path on Linux (pdftotext, pdftohtml
-        and pdftopng not
-        detected.)](#add-xpdfreader-to-system-path-on-linux-pdftotext-pdftohtml-and-pdftopng-not-detected.)
     -   [Error when starting interactive user interface on Mac (failed
         to allocate tcl
         font)](#error-when-starting-interactive-user-interface-on-mac-failed-to-allocate-tcl-font)
@@ -43,43 +34,28 @@ Installation
 
 Install the dependent packages
 
-
     install.packages("tcltk2")    # Install the dependent package tcltk2
 
-The package requires the XpfReader software by Glyph & Cog, LLC. Please
-download and install the xpfreader from the following website onto your
-local disk:
+The package requires the Xpdf command line tools by Glyph & Cog, LLC.
+Please download and install the Xpdf command line tools from the
+following website onto your local disk:
 <a href="https://www.xpdfreader.com/download.html" class="uri">https://www.xpdfreader.com/download.html</a>
 (<a href="https://www.xpdfreader.com/download.html" class="uri">https://www.xpdfreader.com/download.html</a>).
 Alternatively, the following command can be used to install the correct
-XpdfReader:
+Xpdf command line tools:
 
-    PDE_install_XpdfReader4.02()    # Download and install the XpdfReader
-    PDE_check_Xpdf_install()        # Check if all required xpdf tools are installed correctly
+    PDE_install_Xpdftools4.02()    # Download and install the Xpdf command line tools
+    PDE_check_Xpdf_install()        # Check if all required XPDF tools are installed correctly
 
-**NOTE: The PDE analyzer requires the xpdf tools pdftotext, pdftohtml,
-and pdftopng. If you have XpdfReader installed, but the PDE analyzer
-still throws an error, locate the pdftotext, pdftohtml, and pdftopng on
-your PC and add the directory to the system path. For detailed
-instructions see: [Troubleshoot](#troubleshoot) - [Add XpdfReader to
-system path on Windows (pdftotext, pdftohtml and pdftopng not
-detected.)](#add-xpdfreader-to-system-path-on-windows-pdftotext-pdftohtml-and-pdftopng-not-detected.),
-[Troubleshoot](#troubleshoot) - [Add XpdfReader to system path on Mac
-(pdftotext, pdftohtml and pdftopng not
-detected.)](#add-xpdfreader-to-system-path-on-mac-pdftotext-pdftohtml-and-pdftopng-not-detected.),
-[Troubleshoot](#troubleshoot) - [Add XpdfReader to system path on Linux
-(pdftotext, pdftohtml and pdftopng not
-detected.)](#add-xpdfreader-to-system-path-on-linux-pdftotext-pdftohtml-and-pdftopng-not-detected.).**
+Install the package through CRAN
 
-Choose the location where you downloaded latest
-PDE\_\*.\*.\*.tar.gz
+    install.packages("PDE", dependencies = TRUE)
+
+or choose the location where you downloaded latest PDE\_\*.\*.\*.tar.gz
+and install it from a local path.
 
     filename <- file.choose()     # Choose the location where you downloaded the latest PDE_*.*.*.tar.gz
     install.packages(filename,  type="source", repos=NULL)
-
-or through CRAN
-
-    install.packages("PDE", dependencies = TRUE)
 
 **NOTE: The PDE package was tested on Microsoft Windows, Mac and Linux
 machines. Major differences include the visual appearance of the
@@ -236,9 +212,9 @@ required files
     PDF to excel file) which can be combined or executed separately.
     Each function can be combined with filters and search words. A file
     with the sentences carrying the search words will have the name
-    format: `[search words]txt+-[context][PDF name]` in the
+    format: `[search words]txt+-[context][PDF file name]` in the
     corresponding subfolder. Tables will be named:
-    `[PDF name][number of table][table heading]`.  
+    `[PDF file name][number of table][table heading]`.  
     Argument for `PDE_extr_data_from_pdfs()`: `whattoextr`
 
 3.  **Open output folder**: All analysis files will be created inside of
@@ -270,7 +246,7 @@ required files
 1.  **Enter table headings**: Standard scientific articles have their
     tables labeled with “TABLE”, “TAB”, “Table” or “table” plus number
     and are detected accordingly. If a table is expected to have a
-    different headings, it should be typed in this field. For multiple
+    different heading, it should be typed in this field. For multiple
     different heading use “;” without extra spaces.  
     Argument for `PDE_extr_data_from_pdfs()`: `table.heading.words`
 
@@ -305,11 +281,11 @@ required files
     exported if selected in the documentation section.  
     Argument for `PDE_extr_data_from_pdfs()`: `filter.word.times`
 
-8.  **Search words?**: The algorithm will either extract only sentences
-    and tables with one of the search words present, or if “tables” only
-    analysis was chosen, can extract all tables detected in the paper
-    (choose this option here). In the later case, the search words field
-    should remain empty.
+8.  **Search words?**: The algorithm can either extract , tables, or
+    sentences and tables with one of the search words present. If the
+    “tables” only analysis was chosen, the algorithm can also extract
+    all tables detected in the paper (choose this option here). In the
+    later case, the search words field should remain empty.
 
 9.  **Search words**: Type in the list of search words separated by “;”
     without spaces in between.  
@@ -350,32 +326,33 @@ required files
     headings of all tables, their relative location in the generated
     HTML and TXT files, as well as information if search words were
     found will be generated. The files will start with “htmltablelines”,
-    “txttablelines”, “keeplayouttablelines” followed by the PDF name and
-    can be found in `html.docu`, `txt.docu`, `keeptxt.docu`
+    “txttablelines”, “keeplayouttablelines” followed by the PDF file
+    name and can be found in `html.docu`, `txt.docu`, `keeptxt.docu`
     subfolders.  
     Argument for `PDE_extr_data_from_pdfs()`: `write.table.locations`
 
 2.  **Export tables with problems**: For “yes”, if a table was detected
-    in a PDF but is an image or cannot be read, the page with the table
-    with be exported as a png. The documentation file will have the name
-    format: `[PDF name]page[page number]w.table-[page number].png`  
+    in a PDF file but is an image or cannot be read, the page with the
+    table with be exported as a portable network graphics (PNG) file.
+    The documentation file will have the name format:
+    `[PDF name]page[page number]w.table-[page number].png`  
     Argument for `PDE_extr_data_from_pdfs()`: `exp.nondetc.tabs`
 
 3.  **Table documentation files?**: For “yes”, if search words are used
     for table detection and no search words were found in the tables of
-    a pdf, a file will be created with the PDF name followed by
+    a PDF file, a file will be created with the PDF name followed by
     “no.table.w.search.words” in the folder with the name
     `no_tab_w_sw`.  
     Argument for `PDE_extr_data_from_pdfs()`: `write.tab.doc.file`
 
 4.  **Sentence documentation file?**: For “yes”, if no search words were
     found in the sentences of a pdf, a file will be created with the PDF
-    name followed by “no.txt.w.search.words” in the `no_txt_w_sw`
-    folder. If the PDF is empty, a file will be created with the PDF
-    name followed by “non-readable” in the `nr` folder. Files that were
-    filtered out using the filterwords will lead to the creation of a
-    file with the PDF name followed by “no.txt.w.filter.words” in the
-    `excl_by_fw` folder.  
+    file name followed by “no.txt.w.search.words” in the `no_txt_w_sw`
+    folder. If the PDF file is empty, a file will be created with the
+    PDF file name followed by “non-readable” in the `nr` folder. Files
+    that were filtered out using the filterwords will lead to the
+    creation of a file with the PDF name followed by
+    “no.txt.w.filter.words” in the `excl_by_fw` folder.  
     Argument for `PDE_extr_data_from_pdfs()`: `write.txt.doc.file`
 
 5.  **Delete intermediate files**: The program generates a txt,
@@ -421,8 +398,8 @@ required files
     The table shown in the center of the application is writable,
     editable and copyable, but changes will not be saved in the original
     file.  
-    **NOTE: Analysis files refer to the files created by the
-    PDE\_analyzer\_i() which contain “txt+-” in their name.**
+    **NOTE: Analysis files refer to the files created by the PDE
+    analyzer which contain “txt+-” in their name.**
 
     -   **Open analysis file**: Loading a single file will be quick and
         open the selected file in the reader. The file will also be
@@ -472,10 +449,10 @@ required files
     The highlighting can be turned off and on and search words are
     indicated in the table by █▶-`[search word]`-◄█.
 
-8.  **Load PDF folder**: The analyzed PDF can be loaded into the reader
-    by loading the PDF folder with the corresponding files. The PDF file
-    name will show to the left of the **Open current pdf** button below
-    the load PDF folder row.
+8.  **Load PDF folder**: The analyzed PDF file can be loaded into the
+    reader by loading the PDF folder with the corresponding files. The
+    PDF file name will show to the left of the **Open current pdf**
+    button below the load PDF folder row.
 
 9.  **Open current pdf**: If a PDF file analyzed is detected in the PDF
     folder, pressing the button will open the PDF file in the system
@@ -484,11 +461,11 @@ required files
 10. **Extract tables**: This button allows the user to extract all
     tables from the current PDF file converting them into an Excel
     compatible format. Extraction parameters such as pixel deviation
-    between columns (see `PDE_analyzer_i()` §3), and functions file
-    location are derived from the TSV file chosen for search word
-    highlighting. The extraction of the tables usually takes a few
-    seconds, and, after extraction, the destination folder (same as
-    analysis file folder) of the extracted tables is opened.  
+    between columns (see `PDE_analyzer_i()` §3) are derived from the TSV
+    file chosen for search word highlighting. The extraction of the
+    tables usually takes a few seconds, and, after extraction, the
+    destination folder (same as analysis file folder) of the extracted
+    tables is opened.  
     **NOTE: The table extraction only works when PDF file and TSV files
     are available.**
 
@@ -589,7 +566,7 @@ required files
     fully visible. This will prevent in some occasions the resizing of
     the window. To prevent this issue, choose “don’t wrap” while
     resizing and activate resizing afterwards, again. In case the table
-    does not fit vertically inside the window, either the scrollbar can
+    does not fit vertically inside the window, either the scroll bar can
     be used to show different rows of the table.
 
 2.  **Sentence number**: If sentences surrounding the sentence with the
@@ -623,7 +600,7 @@ required files
 
 2.  **Flag file**: Using this button can either **Mark analysis file
     only**, **Mark PDF only** or **Mark analysis file & PDF**. The
-    reader will rename the corresponding file adding a "!\_" to the
+    reader will rename the corresponding file adding a “!\_” to the
     beginning of its name.
 
 3.  **X mark file**: Using this button can either **Mark analysis file
@@ -633,8 +610,8 @@ required files
 
 4.  **Unmark file**: Using this button can either **Unmark analysis file
     only**, **Unmark PDF only** or **Unmark analysis file & PDF**. The
-    reader will remove and existing “!*" or "x*” at the beginning of the
-    file name.  
+    reader will remove and existing “!\_” or “x\_” at the beginning of
+    the file name.  
     **NOTE: Flagging and marking changes filenames but can be reversed
     in the program at any time.**
 
@@ -645,93 +622,6 @@ Troubleshoot
 
 This section covers common errors we encountered when testing the
 package including their solution.
-
-### Add XpdfReader to system path on Windows (pdftotext, pdftohtml and pdftopng not detected.)
-
-#### Step of error occurence:
-
-`PDE_analyzer_i()`  
-or  
-`PDE_analyzer()`
-
-#### Error:
-
-    pdftotext, pdftohtml and pdftopng not detected. Please install the XpdfReader.
-
-Even though the XpdfReader is installed.
-
-#### Solution:
-
-1.  Locate the not detected files pdftotext.exe, pdftotext.exe and/or
-    pdftotext.exe on your PC.  
-    OR  
-2.  Download and unpack the xpdf command line tools from
-    <a href="https://www.xpdfreader.com/download.html" class="uri">https://www.xpdfreader.com/download.html</a>.  
-3.  Press the Windows key + S.  
-4.  Search for advanced system settings.  
-5.  under the Advanced tab click on Environment variables.  
-6.  Select Path and click Edit….  
-7.  Win7 or below: add a semicolon and the pdftotext file path
-    (directory only) add the end of the list.  
-    Win10: Click New and type in the file path (directory only).  
-8.  Click OK on all windows to close them.
-
-### Add XpdfReader to system path on Mac (pdftotext, pdftohtml and pdftopng not detected.)
-
-#### Step of error occurence:
-
-`PDE_analyzer_i()`  
-or  
-`PDE_analyzer()`
-
-#### Error:
-
-    pdftotext, pdftohtml and pdftopng not detected. Please install the XpdfReader.
-
-Even though the XpdfReader is installed.
-
-#### Solution:
-
-1.  Locate the not detected files pdftotext.exe, pdftotext.exe and/or
-    pdftotext.exe on your PC.  
-    OR  
-    Download and unpack the xpdf command line tools from
-    <a href="https://www.xpdfreader.com/download.html" class="uri">https://www.xpdfreader.com/download.html</a>.  
-2.  Press Command+Space and type Terminal and press enter/return key.  
-3.  Type: `sudo nano /etc/paths`
-4.  Enter your admin password.
-5.  Write/paste (command+V) the pdftotext file path (directory only) at
-    the bottom of the list.
-6.  Press control+X.
-7.  Confirm override by typing Y.
-8.  Close the terminal.
-
-### Add XpdfReader to system path on Linux (pdftotext, pdftohtml and pdftopng not detected.)
-
-#### Step of error occurence:
-
-`PDE_analyzer_i()`  
-or  
-`PDE_analyzer()`
-
-#### Error:
-
-    pdftotext, pdftohtml and pdftopng not detected. Please install the XpdfReader.
-
-Even though the XpdfReader is installed.
-
-#### Solution:
-
-1.  Locate the not detected files pdftotext.exe, pdftotext.exe and/or
-    pdftotext.exe on your PC.  
-    OR  
-    Download and unpack the xpdf command line tools from
-    <a href="https://www.xpdfreader.com/download.html" class="uri">https://www.xpdfreader.com/download.html</a>.  
-2.  Press the Ctrl+Alt+T key to open the terminal.  
-3.  Type the following command:
-    `echo 'export PATH=$PATH:/path/to/pdftotext' >> ~/.bashrc`  
-4.  Close the terminal.  
-5.  Restart the PC to finalize adding to PATH.
 
 ### Error when starting interactive user interface on Mac (failed to allocate tcl font)
 
@@ -1017,21 +907,21 @@ Start analysis: During the analysis, the progress bar indicates the
 number of files analyzed, while the drop down menu and the R console
 display status updates:
 
-    [1] "Following file is processing: '00000000_x.pdf'"
-    [1] "00000000_x.pdf has no readable content"
-    [1] "Analysis of '00000000_x.pdf' complete."
-    [1] "Following file is processing: '29973177_!.pdf'"
-    [1] "58 filter word(s) were detected in 29973177_!.pdf."
-    [1] "4 table(s) with search words found in '29973177_!.pdf'."
-    [1] "43 sentences with search words were found in '29973177_!.pdf'."
-    [1] "Analysis of '29973177_!.pdf' complete."
-    [1] "Following file is processing: '31261533_x.pdf'"
-    [1] "'31261533_x.pdf' was filtered out due to a lack of the filter words. 9 filter word(s) were detected
-    [1] "Analysis of '31261533_x.pdf' complete."
-    [1] "Following file is processing: '99999999_x.pdf'"
-    [1] "99999999_x is most likely secured and cannot be processed!"
-    [1] "Analysis of '99999999_x.pdf' complete."
-    [1] "Analyses are complete."
+    Following file is processing: '00000000_x.pdf'
+    00000000_x.pdf has no readable content
+    Analysis of '00000000_x.pdf' complete.
+    Following file is processing: '29973177_!.pdf'
+    58 filter word(s) were detected in 29973177_!.pdf.
+    4 table(s) with search words found in '29973177_!.pdf'.
+    43 sentences with search words were found in '29973177_!.pdf'.
+    Analysis of '29973177_!.pdf' complete.
+    Following file is processing: '31261533_x.pdf'
+    '31261533_x.pdf' was filtered out due to a lack of the filter words. 9 filter word(s) were detected
+    Analysis of '31261533_x.pdf' complete.
+    Following file is processing: '99999999_x.pdf'
+    99999999_x is most likely secured and cannot be processed!
+    Analysis of '99999999_x.pdf' complete.
+    Analyses are complete.
 
 As mentioned above, the resulting files should be identical to the files
 found in `examples/MTX_output/.`
@@ -1191,7 +1081,7 @@ replaced
 
 2.  **Flag file**: Using this button can either **Mark analysis file
     only**, **Mark PDF only** or **Mark analysis file & pdf**. The
-    reader will rename the corresponding file adding a "!\_" to the
+    reader will rename the corresponding file adding a “!\_” to the
     beginning of its name. This is how `31083238_!.pdf` was generated.
     **NOTE: Make sure you have selected the file type (analysis file +-
     PDF file) which you want to mark.**

@@ -24,25 +24,26 @@ Install the dependent packages
 install.packages("tcltk2")    # Install the dependent package tcltk2
 ```
 
-The package requires the XpdfReader software by Glyph & Cog, LLC. Please download and install the XpdfReader from the following website onto your local disk: https://www.xpdfreader.com/download.html
-(https://www.xpdfreader.com/download.html). Alternatively, the following command can be used to install the correct XpdfReader:  
+The package requires the Xpdf command line tools by Glyph & Cog, LLC. Please download and install the Xpdf command line tools from the following website onto your local disk: https://www.xpdfreader.com/download.html
+(https://www.xpdfreader.com/download.html). Alternatively, the following command can be used to install the correct Xpdf command line tools:  
 
 ```R
-PDE_install_XpdfReader4.02()    # Download and install the XpdfReader
+PDE_install_Xpdftools4.02()    # Download and install the Xpdf command line tools
 PDE_check_Xpdf_install()        # Check if all required XPDF tools are installed correctly
 ```
-**NOTE: The PDE analyzer requires the XPDF tools pdftotext, pdftohtml, and pdftopng. If you have XpdfReader installed, but the PDE analyzer still throws an error, locate the pdftotext, pdftohtml, and pdftopng on your PC and add the directory to the system path. For detailed instructions see: [Troubleshoot] - [Add XpdfReader to system path on Windows (pdftotext, pdftohtml and pdftopng not detected.)], [Troubleshoot] - [Add XpdfReader to system path on Mac (pdftotext, pdftohtml and pdftopng not detected.)], [Troubleshoot] - [Add XpdfReader to system path on Linux (pdftotext, pdftohtml and pdftopng not detected.)].**
 
-Choose the location where you downloaded latest PDE_\*.\*.****.tar.gz
-```R
-filename <- file.choose()     # Choose the location where you downloaded the latest PDE_*.*.****.tar.gz
-install.packages(filename,  type="source", repos=NULL)
-```
-or through CRAN
-
+Install the package through CRAN
 ```R
 install.packages("PDE", dependencies = TRUE)
 ```  
+
+or choose the location where you downloaded latest PDE_\*.\*.\*.tar.gz and install it from a local
+path.  
+
+```R
+filename <- file.choose()     # Choose the location where you downloaded the latest PDE_*.*.*.tar.gz
+install.packages(filename,  type="source", repos=NULL)
+```
 
 **NOTE: The PDE package was tested on Microsoft Windows, Mac and Linux machines. Major differences include the visual appearance of the interfaces and the directory structures, but all functions are preserved.**
 
@@ -371,11 +372,11 @@ knitr::include_graphics("scrnshots/Screenshot_PDE_reader_user_interface.browse_a
   
 20. **Prev** and **Next**: Using these buttons the user can quickly browse through the different tables in the analysis folder.
 
-21. **Flag file**: Using this button can either **Mark analysis file only**, **Mark PDF only** or **Mark analysis file & PDF**. The reader will rename the corresponding file adding a "!_" to the beginning of its name.
+21. **Flag file**: Using this button can either **Mark analysis file only**, **Mark PDF only** or **Mark analysis file & PDF**. The reader will rename the corresponding file adding a "!\_" to the beginning of its name.
 
-22. **X mark file**: Using this button can either **Mark analysis file only**, **Mark PDF only** or **Mark analysis file & PDF**. The reader will rename the corresponding file adding a "x_" to the beginning of its name.
+22. **X mark file**: Using this button can either **Mark analysis file only**, **Mark PDF only** or **Mark analysis file & PDF**. The reader will rename the corresponding file adding a "x\_" to the beginning of its name.
 
-23. **Unmark file**: Using this button can either **Unmark analysis file only**, **Unmark PDF only** or **Unmark analysis file & PDF**. The reader will remove and existing "!_" or "x_" at the beginning of the file name.  
+23. **Unmark file**: Using this button can either **Unmark analysis file only**, **Unmark PDF only** or **Unmark analysis file & PDF**. The reader will remove and existing "!\_" or "x\_" at the beginning of the file name.  
 **NOTE: Flagging and marking changes filenames but can be reversed in the program at any time.**
 
 ------------
@@ -383,78 +384,6 @@ knitr::include_graphics("scrnshots/Screenshot_PDE_reader_user_interface.browse_a
 ## Troubleshoot
 
 This section covers common errors we encountered when testing the package including their solution.
-
-### Add XpdfReader to system path on Windows (pdftotext, pdftohtml and pdftopng not detected.)
-
-#### Step of error occurence:  
-`PDE_analyzer_i()`  
-or  
-`PDE_analyzer()`  
-
-#### Error:  
-```
-pdftotext, pdftohtml and pdftopng not detected. Please install the XpdfReader.
-```  
-Even though the XpdfReader is installed.
-
-#### Solution:  
-1) Locate the not detected files pdftotext.exe, pdftotext.exe and/or pdftotext.exe on your PC.  
-OR  
-1) Download and unpack the XPDF command line tools from https://www.xpdfreader.com/download.html.  
-2) Press the Windows key + S.  
-3) Search for advanced system settings.  
-4) under the Advanced tab click on Environment variables.  
-5) Select Path and click Edit....                  
-6) Win7 or below: add a semicolon and the pdftotext file path (directory only) add the end of the list.  
-Win10: Click New and type in the file path (directory only).  
-7) Click OK on all windows to close them.  
-
-### Add XpdfReader to system path on Mac (pdftotext, pdftohtml and pdftopng not detected.)
-
-#### Step of error occurence:  
-`PDE_analyzer_i()`  
-or  
-`PDE_analyzer()`  
-
-#### Error:  
-```
-pdftotext, pdftohtml and pdftopng not detected. Please install the XpdfReader.
-```
-Even though the XpdfReader is installed.
-
-#### Solution:  
-1) Locate the not detected files pdftotext.exe, pdftotext.exe and/or pdftotext.exe on your PC.  
-OR  
-Download and unpack the XPDF command line tools from https://www.xpdfreader.com/download.html.  
-2) Press Command+Space and type Terminal and press enter/return key.   
-3) Type: `sudo nano /etc/paths`
-4) Enter your admin password.
-5) Write/paste (command+V) the pdftotext file path (directory only) at the bottom of the list.
-6) Press control+X.
-7) Confirm override by typing Y.
-8) Close the terminal.
-
-### Add XpdfReader to system path on Linux (pdftotext, pdftohtml and pdftopng not detected.)
-
-#### Step of error occurence:  
-`PDE_analyzer_i()`  
-or  
-`PDE_analyzer()`  
-
-#### Error:  
-```
-pdftotext, pdftohtml and pdftopng not detected. Please install the XpdfReader.
-```
-Even though the XpdfReader is installed. 
-
-#### Solution:  
-1) Locate the not detected files pdftotext.exe, pdftotext.exe and/or pdftotext.exe on your PC.  
-OR  
-Download and unpack the XPDF command line tools from https://www.xpdfreader.com/download.html.  
-2) Press the Ctrl+Alt+T key to open the terminal.  
-3) Type the following command: `echo 'export PATH=$PATH:/path/to/pdftotext' >> ~/.bashrc`  
-4) Close the terminal.  
-5) Restart the PC to finalize adding to PATH.  
 
 ### Error when starting interactive user interface on Mac (failed to allocate tcl font)
 
@@ -703,7 +632,7 @@ knitr::include_graphics("scrnshots/Screenshot_PDE_reader_user_interface_MTX.png"
 `PDE_reader_i()` user interface
 </center></br> 
   
-1. To open the PDE_reader_i() run:
+1. To open the PDE\_reader\_i() run:
 ```R
 library("PDE")
 PDE_reader_i()
@@ -815,12 +744,12 @@ knitr::include_graphics("scrnshots/Screenshot_PDE_reader_user_interface_MTX_brow
   
 15. **Prev** and **Next**: Using these buttons the user can quickly browse through the different tables in the analysis folder.
 
-16. **Flag file**: Using this button can either **Mark analysis file only**, **Mark PDF only** or **Mark analysis file & pdf**. The reader will rename the corresponding file adding a "!_" to the beginning of its name. This is how `31083238_!.pdf` was generated.
+16. **Flag file**: Using this button can either **Mark analysis file only**, **Mark PDF only** or **Mark analysis file & pdf**. The reader will rename the corresponding file adding a "!\_" to the beginning of its name. This is how `31083238_!.pdf` was generated.
 **NOTE: Make sure you have selected the file type (analysis file +- PDF file) which you want to mark.**  
 
-17. **X mark file**: Using this button can either **Mark analysis file only**, **Mark PDF only** or **Mark analysis file & pdf**. The reader will rename the corresponding file adding a "x_" to the beginning of its name. You can try this option for the files like `31083238_!.pdf`.
+17. **X mark file**: Using this button can either **Mark analysis file only**, **Mark PDF only** or **Mark analysis file & pdf**. The reader will rename the corresponding file adding a "x\_" to the beginning of its name. You can try this option for the files like `31083238_!.pdf`.
 
-18. **Unmark file**: Using this button can either **Unmark analysis file only**, **Unmark PDF only** or **Unmark analysis file & pdf**. The reader will remove and existing "!\_" or "x_" at the beginning of the file name. You can take off the mark from `31083238_!.pdf`. 
+18. **Unmark file**: Using this button can either **Unmark analysis file only**, **Unmark PDF only** or **Unmark analysis file & pdf**. The reader will remove and existing "!\_" or "x\_" at the beginning of the file name. You can take off the mark from `31083238_!.pdf`. 
 **NOTE: Flagging and marking changes filenames but can be reversed in the program at any time.**
 
 You are at the end of this small example tutorial and should be a pro in literature search now!

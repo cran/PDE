@@ -11,7 +11,7 @@
 
 <meta name="author" content="Erik Stricker" />
 
-<meta name="date" content="2020-10-30" />
+<meta name="date" content="2020-11-04" />
 
 <title>PDF Data Extractor (PDE)</title>
 
@@ -365,7 +365,7 @@ summary {
 
 <h1 class="title toc-ignore">PDF Data Extractor (PDE)</h1>
 <h4 class="author">Erik Stricker</h4>
-<h4 class="date">2020-10-30</h4>
+<h4 class="date">2020-11-04</h4>
 
 </div>
 
@@ -383,9 +383,6 @@ summary {
 <li><a href="#pde_reader_i-1">PDE_reader_i()</a></li>
 </ul></li>
 <li><a href="#troubleshoot">Troubleshoot</a><ul>
-<li><a href="#add-xpdfreader-to-system-path-on-windows-pdftotext-pdftohtml-and-pdftopng-not-detected.">Add XpdfReader to system path on Windows (pdftotext, pdftohtml and pdftopng not detected.)</a></li>
-<li><a href="#add-xpdfreader-to-system-path-on-mac-pdftotext-pdftohtml-and-pdftopng-not-detected.">Add XpdfReader to system path on Mac (pdftotext, pdftohtml and pdftopng not detected.)</a></li>
-<li><a href="#add-xpdfreader-to-system-path-on-linux-pdftotext-pdftohtml-and-pdftopng-not-detected.">Add XpdfReader to system path on Linux (pdftotext, pdftohtml and pdftopng not detected.)</a></li>
 <li><a href="#error-when-starting-interactive-user-interface-on-mac-failed-to-allocate-tcl-font">Error when starting interactive user interface on Mac (failed to allocate tcl font)</a></li>
 </ul></li>
 <li><a href="#example">Example</a><ul>
@@ -405,15 +402,14 @@ summary {
 <h2>Installation</h2>
 <p>Install the dependent packages</p>
 <pre class="r"><code>install.packages(&quot;tcltk2&quot;)    # Install the dependent package tcltk2</code></pre>
-<p>The package requires the XpdfReader software by Glyph &amp; Cog, LLC. Please download and install the XpdfReader from the following website onto your local disk: <a href="https://www.xpdfreader.com/download.html" class="uri">https://www.xpdfreader.com/download.html</a> (<a href="https://www.xpdfreader.com/download.html" class="uri">https://www.xpdfreader.com/download.html</a>). Alternatively, the following command can be used to install the correct XpdfReader:</p>
-<pre class="r"><code>PDE_install_XpdfReader4.02()    # Download and install the XpdfReader
+<p>The package requires the Xpdf command line tools by Glyph &amp; Cog, LLC. Please download and install the Xpdf command line tools from the following website onto your local disk: <a href="https://www.xpdfreader.com/download.html" class="uri">https://www.xpdfreader.com/download.html</a> (<a href="https://www.xpdfreader.com/download.html" class="uri">https://www.xpdfreader.com/download.html</a>). Alternatively, the following command can be used to install the correct Xpdf command line tools:</p>
+<pre class="r"><code>PDE_install_Xpdftools4.02()    # Download and install the Xpdf command line tools
 PDE_check_Xpdf_install()        # Check if all required XPDF tools are installed correctly</code></pre>
-<p><strong>NOTE: The PDE analyzer requires the XPDF tools pdftotext, pdftohtml, and pdftopng. If you have XpdfReader installed, but the PDE analyzer still throws an error, locate the pdftotext, pdftohtml, and pdftopng on your PC and add the directory to the system path. For detailed instructions see: <a href="#troubleshoot">Troubleshoot</a> - <a href="#add-xpdfreader-to-system-path-on-windows-pdftotext-pdftohtml-and-pdftopng-not-detected.">Add XpdfReader to system path on Windows (pdftotext, pdftohtml and pdftopng not detected.)</a>, <a href="#troubleshoot">Troubleshoot</a> - <a href="#add-xpdfreader-to-system-path-on-mac-pdftotext-pdftohtml-and-pdftopng-not-detected.">Add XpdfReader to system path on Mac (pdftotext, pdftohtml and pdftopng not detected.)</a>, <a href="#troubleshoot">Troubleshoot</a> - <a href="#add-xpdfreader-to-system-path-on-linux-pdftotext-pdftohtml-and-pdftopng-not-detected.">Add XpdfReader to system path on Linux (pdftotext, pdftohtml and pdftopng not detected.)</a>.</strong></p>
-<p>Choose the location where you downloaded latest PDE_*.*.****.tar.gz</p>
-<pre class="r"><code>filename &lt;- file.choose()     # Choose the location where you downloaded the latest PDE_*.*.****.tar.gz
-install.packages(filename,  type=&quot;source&quot;, repos=NULL)</code></pre>
-<p>or through CRAN</p>
+<p>Install the package through CRAN</p>
 <pre class="r"><code>install.packages(&quot;PDE&quot;, dependencies = TRUE)</code></pre>
+<p>or choose the location where you downloaded latest PDE_*.*.*.tar.gz and install it from a local path.</p>
+<pre class="r"><code>filename &lt;- file.choose()     # Choose the location where you downloaded the latest PDE_*.*.*.tar.gz
+install.packages(filename,  type=&quot;source&quot;, repos=NULL)</code></pre>
 <p><strong>NOTE: The PDE package was tested on Microsoft Windows, Mac and Linux machines. Major differences include the visual appearance of the interfaces and the directory structures, but all functions are preserved.</strong></p>
 <hr />
 </div>
@@ -708,9 +704,9 @@ PDE_reader_i()</code></pre>
 <p></br></p>
 <ol start="20" style="list-style-type: decimal">
 <li><p><strong>Prev</strong> and <strong>Next</strong>: Using these buttons the user can quickly browse through the different tables in the analysis folder.</p></li>
-<li><p><strong>Flag file</strong>: Using this button can either <strong>Mark analysis file only</strong>, <strong>Mark PDF only</strong> or <strong>Mark analysis file &amp; PDF</strong>. The reader will rename the corresponding file adding a &quot;!_&quot; to the beginning of its name.</p></li>
+<li><p><strong>Flag file</strong>: Using this button can either <strong>Mark analysis file only</strong>, <strong>Mark PDF only</strong> or <strong>Mark analysis file &amp; PDF</strong>. The reader will rename the corresponding file adding a “!_” to the beginning of its name.</p></li>
 <li><p><strong>X mark file</strong>: Using this button can either <strong>Mark analysis file only</strong>, <strong>Mark PDF only</strong> or <strong>Mark analysis file &amp; PDF</strong>. The reader will rename the corresponding file adding a “x_” to the beginning of its name.</p></li>
-<li><p><strong>Unmark file</strong>: Using this button can either <strong>Unmark analysis file only</strong>, <strong>Unmark PDF only</strong> or <strong>Unmark analysis file &amp; PDF</strong>. The reader will remove and existing “!<em>&quot; or &quot;x</em>” at the beginning of the file name.<br />
+<li><p><strong>Unmark file</strong>: Using this button can either <strong>Unmark analysis file only</strong>, <strong>Unmark PDF only</strong> or <strong>Unmark analysis file &amp; PDF</strong>. The reader will remove and existing “!_” or “x_” at the beginning of the file name.<br />
 <strong>NOTE: Flagging and marking changes filenames but can be reversed in the program at any time.</strong></p></li>
 </ol>
 <hr />
@@ -719,117 +715,20 @@ PDE_reader_i()</code></pre>
 <div id="troubleshoot" class="section level2">
 <h2>Troubleshoot</h2>
 <p>This section covers common errors we encountered when testing the package including their solution.</p>
-<div id="add-xpdfreader-to-system-path-on-windows-pdftotext-pdftohtml-and-pdftopng-not-detected." class="section level3">
-<h3>Add XpdfReader to system path on Windows (pdftotext, pdftohtml and pdftopng not detected.)</h3>
-<div id="step-of-error-occurence" class="section level4">
-<h4>Step of error occurence:</h4>
-<p><code>PDE_analyzer_i()</code><br />
-or<br />
-<code>PDE_analyzer()</code></p>
-</div>
-<div id="error" class="section level4">
-<h4>Error:</h4>
-<pre><code>pdftotext, pdftohtml and pdftopng not detected. Please install the XpdfReader.</code></pre>
-<p>Even though the XpdfReader is installed.</p>
-</div>
-<div id="solution" class="section level4">
-<h4>Solution:</h4>
-<ol style="list-style-type: decimal">
-<li>Locate the not detected files pdftotext.exe, pdftotext.exe and/or pdftotext.exe on your PC.<br />
-OR<br />
-</li>
-<li>Download and unpack the XPDF command line tools from <a href="https://www.xpdfreader.com/download.html" class="uri">https://www.xpdfreader.com/download.html</a>.<br />
-</li>
-<li>Press the Windows key + S.<br />
-</li>
-<li>Search for advanced system settings.<br />
-</li>
-<li>under the Advanced tab click on Environment variables.<br />
-</li>
-<li>Select Path and click Edit….<br />
-</li>
-<li>Win7 or below: add a semicolon and the pdftotext file path (directory only) add the end of the list.<br />
-Win10: Click New and type in the file path (directory only).<br />
-</li>
-<li>Click OK on all windows to close them.</li>
-</ol>
-</div>
-</div>
-<div id="add-xpdfreader-to-system-path-on-mac-pdftotext-pdftohtml-and-pdftopng-not-detected." class="section level3">
-<h3>Add XpdfReader to system path on Mac (pdftotext, pdftohtml and pdftopng not detected.)</h3>
-<div id="step-of-error-occurence-1" class="section level4">
-<h4>Step of error occurence:</h4>
-<p><code>PDE_analyzer_i()</code><br />
-or<br />
-<code>PDE_analyzer()</code></p>
-</div>
-<div id="error-1" class="section level4">
-<h4>Error:</h4>
-<pre><code>pdftotext, pdftohtml and pdftopng not detected. Please install the XpdfReader.</code></pre>
-<p>Even though the XpdfReader is installed.</p>
-</div>
-<div id="solution-1" class="section level4">
-<h4>Solution:</h4>
-<ol style="list-style-type: decimal">
-<li>Locate the not detected files pdftotext.exe, pdftotext.exe and/or pdftotext.exe on your PC.<br />
-OR<br />
-Download and unpack the XPDF command line tools from <a href="https://www.xpdfreader.com/download.html" class="uri">https://www.xpdfreader.com/download.html</a>.<br />
-</li>
-<li>Press Command+Space and type Terminal and press enter/return key.<br />
-</li>
-<li>Type: <code>sudo nano /etc/paths</code></li>
-<li>Enter your admin password.</li>
-<li>Write/paste (command+V) the pdftotext file path (directory only) at the bottom of the list.</li>
-<li>Press control+X.</li>
-<li>Confirm override by typing Y.</li>
-<li>Close the terminal.</li>
-</ol>
-</div>
-</div>
-<div id="add-xpdfreader-to-system-path-on-linux-pdftotext-pdftohtml-and-pdftopng-not-detected." class="section level3">
-<h3>Add XpdfReader to system path on Linux (pdftotext, pdftohtml and pdftopng not detected.)</h3>
-<div id="step-of-error-occurence-2" class="section level4">
-<h4>Step of error occurence:</h4>
-<p><code>PDE_analyzer_i()</code><br />
-or<br />
-<code>PDE_analyzer()</code></p>
-</div>
-<div id="error-2" class="section level4">
-<h4>Error:</h4>
-<pre><code>pdftotext, pdftohtml and pdftopng not detected. Please install the XpdfReader.</code></pre>
-<p>Even though the XpdfReader is installed.</p>
-</div>
-<div id="solution-2" class="section level4">
-<h4>Solution:</h4>
-<ol style="list-style-type: decimal">
-<li>Locate the not detected files pdftotext.exe, pdftotext.exe and/or pdftotext.exe on your PC.<br />
-OR<br />
-Download and unpack the XPDF command line tools from <a href="https://www.xpdfreader.com/download.html" class="uri">https://www.xpdfreader.com/download.html</a>.<br />
-</li>
-<li>Press the Ctrl+Alt+T key to open the terminal.<br />
-</li>
-<li>Type the following command: <code>echo &#39;export PATH=$PATH:/path/to/pdftotext&#39; &gt;&gt; ~/.bashrc</code><br />
-</li>
-<li>Close the terminal.<br />
-</li>
-<li>Restart the PC to finalize adding to PATH.</li>
-</ol>
-</div>
-</div>
 <div id="error-when-starting-interactive-user-interface-on-mac-failed-to-allocate-tcl-font" class="section level3">
 <h3>Error when starting interactive user interface on Mac (failed to allocate tcl font)</h3>
-<div id="step-of-error-occurence-3" class="section level4">
+<div id="step-of-error-occurence" class="section level4">
 <h4>Step of error occurence:</h4>
 <p><code>PDE_analyzer_i()</code><br />
 or<br />
 <code>PDE_reader_i()</code></p>
 </div>
-<div id="error-3" class="section level4">
+<div id="error" class="section level4">
 <h4>Error:</h4>
 <pre><code>Error in structure(.External(.C_dotTclObjv, objv), class = &quot;tclObj&quot;) :
 [tcl] failed to allocate font due to internal system font engine problem.</code></pre>
 </div>
-<div id="solution-3" class="section level4">
+<div id="solution" class="section level4">
 <h4>Solution:</h4>
 <ol style="list-style-type: decimal">
 <li>Press the Ctrl+Alt+T key to open the terminal.<br />
@@ -1106,7 +1005,7 @@ PDE_reader_i()</code></pre>
 <p></br></p>
 <ol start="15" style="list-style-type: decimal">
 <li><p><strong>Prev</strong> and <strong>Next</strong>: Using these buttons the user can quickly browse through the different tables in the analysis folder.</p></li>
-<li><p><strong>Flag file</strong>: Using this button can either <strong>Mark analysis file only</strong>, <strong>Mark PDF only</strong> or <strong>Mark analysis file &amp; pdf</strong>. The reader will rename the corresponding file adding a &quot;!_&quot; to the beginning of its name. This is how <code>31083238_!.pdf</code> was generated. <strong>NOTE: Make sure you have selected the file type (analysis file +- PDF file) which you want to mark.</strong></p></li>
+<li><p><strong>Flag file</strong>: Using this button can either <strong>Mark analysis file only</strong>, <strong>Mark PDF only</strong> or <strong>Mark analysis file &amp; pdf</strong>. The reader will rename the corresponding file adding a “!_” to the beginning of its name. This is how <code>31083238_!.pdf</code> was generated. <strong>NOTE: Make sure you have selected the file type (analysis file +- PDF file) which you want to mark.</strong></p></li>
 <li><p><strong>X mark file</strong>: Using this button can either <strong>Mark analysis file only</strong>, <strong>Mark PDF only</strong> or <strong>Mark analysis file &amp; pdf</strong>. The reader will rename the corresponding file adding a “x_” to the beginning of its name. You can try this option for the files like <code>31083238_!.pdf</code>.</p></li>
 <li><p><strong>Unmark file</strong>: Using this button can either <strong>Unmark analysis file only</strong>, <strong>Unmark PDF only</strong> or <strong>Unmark analysis file &amp; pdf</strong>. The reader will remove and existing “!_” or “x_” at the beginning of the file name. You can take off the mark from <code>31083238_!.pdf</code>. <strong>NOTE: Flagging and marking changes filenames but can be reversed in the program at any time.</strong></p></li>
 </ol>

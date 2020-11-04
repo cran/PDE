@@ -22,7 +22,7 @@
 #' @section PDE functions: \code{\link{PDE_analyzer}}, \code{\link{PDE_analyzer_i}},
 #'   \code{\link{PDE_extr_data_from_pdfs}}, \code{\link{PDE_pdfs2table}}, 
 #'   \code{\link{PDE_pdfs2table_searchandfilter}},\code{\link{PDE_pdfs2txt_searchandfilter}}, 
-#'   \code{\link{PDE_reader_i}}, \code{\link{PDE_path}}, \code{\link{PDE_install_XpdfReader4.02}},
+#'   \code{\link{PDE_reader_i}}, \code{\link{PDE_path}}, \code{\link{PDE_install_Xpdftools4.02}},
 #'   \code{\link{PDE_check_Xpdf_install}}
 #'
 #' @docType package
@@ -30,7 +30,7 @@
 NULL
 #> NULL
 
-## 1.0.0
+## 1.1.0
 
 ## declare global variables
 PDE.globals <- new.env()
@@ -39,6 +39,23 @@ PDE.globals$l30.progress.textbox <- list()
 PDE.globals$mark.list <- list()
 PDE.globals$tables.masterlist <- list()
 PDE.globals$ttanalyzer <- list()
+
+#' Deprecated functions in package \sQuote{PDE}
+#' 
+#' @description  These functions are provided for compatibility with older versions
+#' of \sQuote{PDE} only, and will be defunct at the next release.
+#'
+#' @details  The following functions are deprecated and will be made defunct; use
+#' the replacement indicated below:
+#'   \itemize{
+#'     
+#'     \item{PDE_install_XpdfReader4.02: \code{\link{PDE_install_Xpdftools4.02}}}
+#'     
+#'   }
+#'
+#' @name PDE-deprecated
+NULL
+#> NULL
 
 #'Export the installation path the PDE (PDF Data Extractor) package
 #'
@@ -60,17 +77,17 @@ PDE_path <- function(){
   return(out_path)
 }
 
-#'Check if the XpdfReader is installed an in the system path
+#'Check if the Xpdftools are installed an in the system path
 #'
 #'\code{PDE_check_Xpdf_install} runs a version test for pdftotext, pdftohtml and pdftopng.
 #'
 #'@param sysname String. In case the function returns "Unknown OS" the sysname can be set manually. 
-#' Allowed options are "Windows", "Linux", "SunOS", and "Darwin" for Mac. Default: \code{NULL}.
+#' Allowed options are "Windows", "Linux",  "SunOS" for Solaris, and "Darwin" for Mac. Default: \code{NULL}.
 #'@param verbose Logical. Indicates whether messages will be printed in the console. Default: \code{TRUE}.
 #'
 #'
 #'@return The function returns a Boolean for the installation status and a message in case 
-#'the commands are not detected.
+#' the commands are not detected.
 #'
 #'@examples
 #'
@@ -79,115 +96,363 @@ PDE_path <- function(){
 #'@export
 PDE_check_Xpdf_install <- function(sysname=NULL, verbose=TRUE){
   
-  out <- TRUE
-  files <- NULL
+  ## receive pdftotext, pdftohtml and pdftopng information from config file if it exists
   
-  ## run the checks
-  pdftotext.install.test <- suppressWarnings(tryCatch(system2("pdftotext", 
-                                                             args = "-v",
-                                                             stdout=TRUE, stderr=TRUE, wait = TRUE)[1], 
-                                                     error=function(err) NULL))
-  pdftohtml.install.test <- suppressWarnings(tryCatch(system2("pdftohtml", 
-                                                             args = "-v",
-                                                             stdout=TRUE, stderr=TRUE, wait = TRUE)[1], 
-                                                     error=function(err) NULL))
-  pdftopng.install.test <- suppressWarnings(tryCatch(system2("pdftopng", 
-                                                             args = "-v",
-                                                             stdout=TRUE, stderr=TRUE, wait = TRUE)[1], 
-                                                     error=function(err) NULL))
-  if (length(pdftotext.install.test) == 0) {
-    files <- c(files,"pdftotext")
-    out=FALSE 
-  }
-  if (length(pdftohtml.install.test) == 0) {
-    files <- c(files,"pdftohtml")
-    out=FALSE 
-  }
-  if (length(pdftopng.install.test) == 0) {
-    files <- c(files,"pdftopng")
-    out=FALSE 
-  }
+  xpdf_config_location <- paste0(PDE_path(),"/bin/XPDF_DIR.config")
+  dir.create(dirname(xpdf_config_location), recursive = TRUE, showWarnings = FALSE)
   
-  if (out == FALSE){
+  pdftotext_location <- NULL
+  pdftohtml_location <- NULL
+  pdftopng_location <- NULL
+  
+  if (file.exists(xpdf_config_location)){
+    pdftotext_location <- grep("pdftotext",readLines(xpdf_config_location), value = TRUE)
+    if (length(file.exists(pdftotext_location)) == 0) pdftotext_location <- NULL
+    
+    pdftohtml_location <- grep("pdftohtml",readLines(xpdf_config_location), value = TRUE)
+    if (length(file.exists(pdftohtml_location)) == 0) pdftohtml_location <- NULL
+    
+    pdftopng_location <- grep("pdftopng",readLines(xpdf_config_location), value = TRUE)
+    if (length(file.exists(pdftopng_location)) == 0) pdftopng_location <- NULL
+  } 
+  
+  # if either the config file does not exist or the xpdf tool files do not exist
+  if (!file.exists(xpdf_config_location) ||
+      is.null(pdftotext_location) || 
+      is.null(pdftohtml_location) || 
+      is.null(pdftopng_location)) {
+    
     if (is.null(sysname)) {
       sysname <- Sys.info()["sysname"]
     }
     
-    if (sysname == "Windows") {
-      msg1 <- paste(" not detected. Please install the XpdfReader.",
-                    "If you do have XpdfReader installed,",
-                    "add the path where the ")
-      msg2 <- paste(" located in to the system path by following the subsequent steps:",
-                    "1) Press the Windows key + S.",
-                    "2) Search for advanced system settings.",
-                    "3) under the Advanced tab click on Environment variables.",
-                    "4) Select Path and click Edit....",
-                    "5) Win7 or below: add a semicolon and the ")
-      msg3 <- paste(" file path (directory only) add the end of the list.",
-                    "Win10: Click New and type in the file path (directory only)",
-                    "6) Click OK on all windows to close them. ")
-    } else if (sysname == "Linux" || sysname == "SunOS") {
-      msg1 <- paste(" not detected. Please install the XpdfReader.",
-                    "If you do have XpdfReader installed,",
-                    "add the path where the ")
-      msg2 <- paste(" located in to the system path by following the subsequent steps:",
-                    "1) Press the Ctrl+Alt+T key to open the terminal",
-                    "2) Type the following command: echo 'export PATH=$PATH:/path/to/")
-      msg3 <- paste("' >> ~/.profile",
-                    "3) Close the terminal. ",
-                    "4) Restart your system to finalize adding to PATH")
-    } else if (sysname == "Darwin") {
-      msg1 <- paste(" not detected. Please install the XpdfReader.",
-                    "If you do have XpdfReader installed,",
-                    "add the path where the ")
-      msg2 <- paste(" located in to the system path by following the subsequent steps:",
-                    "1) Press Command+Space and type Terminal and press enter/return key.",
-                    "2) Type: sudo nano /etc/paths",
-                    "3) Enter your admin password.",
-                    "4) Write/paste (command+V) the ")
-      msg3 <- paste(" file path (directory only) at the bottom of the list.",
-                    "5) Press control+X.",
-                    "6) Confirm override by typing Y.",
-                    "7) Close the terminal. ")
-    } else {
-      files <- c(files,1,2,3,4)
-      msg1 <- "The "
-      msg2 <- " not detected. Unknown OS. To receive detailed instructions on how to install the "
-      msg3 <- ", set the sysname variable for the PDE_check_Xpdf_install() command and run it again. "
-    }
-    
-    if (length(files) == 1){
-      out.file <- files
-      attributes(out) <- list(msg = paste0(out.file, " file",msg1,out.file, " file is",msg2,out.file,msg3))
-      if (verbose == TRUE) cat(attributes(out)$msg, sep="\n")
-    } else if (length(files) == 2){
-      out.file <- paste0(files[1], " and ", files[2])
-      attributes(out) <- list(msg = paste0(out.file, " files",msg1,out.file, " files are",msg2,out.file,msg3))
-      if (verbose == TRUE) cat(attributes(out)$msg, sep="\n")
-    } else if (length(files) == 3){
-      out.file <- paste0(files[1], ", ", files[2], " and " , files[3])
-      attributes(out) <- list(msg = paste0(out.file, " files",msg1,out.file, " files are",msg2,out.file,msg3))
-      if (verbose == TRUE) cat(attributes(out)$msg, sep="\n")
-    } else {
-      ## if the system os is unknown
-      files = files[!files %in% c(1,2,3,4)]
-      if (length(files) == 1){
-        out.file <- files
-        attributes(out) <- list(msg = paste0(msg1, out.file, " file was",msg2,out.file, " file",msg3))
-        if (verbose == TRUE) cat(attributes(out)$msg, sep="\n")
-      } else if (length(files) == 2){
-        out.file <- paste0(files[1], " and ", files[2])
-        attributes(out) <- list(msg = paste0(msg1, out.file, " files were",msg2,out.file, " files",msg3))
-        if (verbose == TRUE) cat(attributes(out)$msg, sep="\n")
-      } else if (length(files) == 3){
-        out.file <- paste0(files[1], ", ", files[2], " and " , files[3])
-        attributes(out) <- list(msg = paste0(msg1, out.file, " files were",msg2,out.file, " files",msg3))
-        if (verbose == TRUE) cat(attributes(out)$msg, sep="\n")
+    show_file_path_linux <- function(filename){
+      whereis_output <- system(paste0("whereis -b ",filename), intern = TRUE)
+      only_dirs <- sub("^ ","",sub(paste0("^",filename,":"),"",whereis_output))
+      if (only_dirs == ""){
+        return(NULL)
+      } else {
+        return(strsplit(gsub(" /",";/",only_dirs),split = ";")[[1]])
       }
     }
-  } else{
-    attributes(out) <- list(msg = "XpdfReader installed.")
-    if (verbose == TRUE) cat(attributes(out)$msg, sep="\n")
+    
+    if (sysname == "Windows") {
+      pdftotext_location <- suppressWarnings(system("C:\\WINDOWS\\system32\\cmd.exe /c where pdftotext", intern = TRUE))
+      if ("INFO: Could not find files for the given pattern(s)." %in% pdftotext_location) pdftotext_location <- NULL
+      
+      pdftohtml_location <- suppressWarnings(system("C:\\WINDOWS\\system32\\cmd.exe /c where pdftohtml", intern = TRUE))
+      if ("INFO: Could not find files for the given pattern(s)." %in% pdftohtml_location) pdftohtml_location <- NULL
+      
+      pdftopng_location <- suppressWarnings(system("C:\\WINDOWS\\system32\\cmd.exe /c where pdftopng", intern = TRUE))
+      if ("INFO: Could not find files for the given pattern(s)." %in% pdftopng_location) pdftopng_location <- NULL
+    } else if (sysname == "Linux" || sysname == "SunOS") {
+      pdftotext_location <- show_file_path_linux("pdftotext")
+      
+      pdftohtml_location <- show_file_path_linux("pdftohtml")
+      
+      pdftopng_location <- show_file_path_linux("pdftopng")
+      
+    } else if (sysname == "Darwin") {
+      pdftotext_location <- suppressWarnings(system("which -a pdftotext", intern = TRUE))
+      
+      pdftohtml_location <- suppressWarnings(system("which -a pdftohtml", intern = TRUE))
+      
+      pdftopng_location <- suppressWarnings(system("which -a pdftopng", intern = TRUE))
+    } else{
+      stop("Unknown OS. Please set sysname option.")
+    }
+  }
+    
+  out <- TRUE
+  files <- NULL
+  
+  if (length(pdftotext_location) == 0) {
+    files <- c(files,"pdftotext")
+    out=FALSE 
+  }
+  if (length(pdftohtml_location) == 0) {
+    files <- c(files,"pdftohtml")
+    out=FALSE 
+  }
+  if (length(pdftopng_location) == 0) {
+    files <- c(files,"pdftopng")
+    out=FALSE 
+  }
+  
+  ## if the command line tools where all detected
+  if (out == TRUE) {
+    ## test pdftotext version
+    pdftotext_path <- NULL
+    pdfpath <- paste0(PDE_path(),"/examples/Methotrexate/29973177_!.pdf")
+    keeplayouttxtpath <- paste0(dirname(pdfpath),"/test_txt/test_keeplayout.txt")
+    for (i in 1:length(pdftotext_location)){
+      dir.create(dirname(keeplayouttxtpath))
+      status <- suppressWarnings(system(paste0("\"", pdftotext_location[i], "\" \"", "-layout",
+                                                  "\" \"", pdfpath, "\" \"", keeplayouttxtpath,
+                                                  "\""), 
+                                        wait = TRUE, ignore.stderr = TRUE, intern = TRUE))
+      if (file.exists(keeplayouttxtpath)) {
+        unlink(dirname(keeplayouttxtpath), recursive = TRUE)
+        pdftotext_path <- pdftotext_location[i]
+        break
+      }
+      unlink(dirname(keeplayouttxtpath), recursive = TRUE)
+    }
+    
+    ## test pdftohtml version
+    pdftohtml_path <- NULL
+    pdfpath <- paste0(PDE_path(),"/examples/Methotrexate/29973177_!.pdf")
+    htmlpath <- paste0(dirname(pdfpath),"/test_html/test.html")
+    for (i in 1:length(pdftohtml_location)){
+      dir.create(dirname(htmlpath))
+      status <- system(paste0("\"",pdftohtml_location[i],"\" \"", pdfpath,
+                  "\" \"", htmlpath, "\""), wait = TRUE,
+           ignore.stderr = TRUE, intern = TRUE)
+      if (dir.exists(htmlpath) && file.exists(paste0(htmlpath, "/index.html"))) {
+        unlink(dirname(htmlpath), recursive = TRUE)
+        pdftohtml_path <- pdftohtml_location[i]
+        break
+      }
+      unlink(dirname(htmlpath), recursive = TRUE)
+    }
+    
+    ## test pdftopng
+    pdftopng_path <- NULL
+    pdfpath <- paste0(PDE_path(),"/examples/Methotrexate/29973177_!.pdf")
+    pngpath <- paste0(dirname(pdfpath),"/test_png/test.png")
+    for (i in 1:length(pdftopng_location)){
+      dir.create(dirname(pngpath))
+      status <- suppressWarnings(system(paste0("\"",pdftopng_location[i],"\" \"",
+                    "-f", "\" \"", 1, "\" \"", "-l",
+                    "\" \"", 1, "\" \"", pdfpath, "\" \"",
+                    pngpath,"\""),
+                    wait = TRUE, ignore.stderr = TRUE, intern = TRUE))
+      if (file.exists(sub("test.png$","test.png-000001.png",pngpath))) {
+        unlink(dirname(pngpath), recursive = TRUE)
+        pdftopng_path <- pdftopng_location[i]
+        break
+      }
+      unlink(dirname(pngpath), recursive = TRUE)
+    }
+    
+    if (length(pdftotext_path) > 0 && 
+        length(pdftohtml_path) > 0 && 
+        length(pdftopng_path) > 0) {
+      write(paste(pdftotext_path,pdftohtml_path,pdftopng_path, sep = "\n"),
+            file = xpdf_config_location)
+      attributes(out) <- list(msg = "Correct version of Xpdf command line tools is installed.")
+      if (verbose == TRUE) cat(attributes(out)$msg, sep="\n")
+    } else {
+      if (length(pdftotext_path) == 0) {
+        files <- c(files,"pdftotext")
+        out=FALSE 
+      }
+      if (length(pdftohtml_path) == 0) {
+        files <- c(files,"pdftohtml")
+        out=FALSE 
+      }
+      if (length(pdftopng_path) == 0) {
+        files <- c(files,"pdftopng")
+        out=FALSE 
+      }
+      
+      msg1 <- paste(" installed. Please install the Xpdf command line tools",
+                    "using PDE_install_Xpdftools4.02()")
+      
+      if (length(files) == 1) {
+        out.file <- files
+        attributes(out) <- list(msg = paste0("The wrong version of the ",
+                                             out.file, " file is",msg1))
+        if (verbose == TRUE) cat(attributes(out)$msg, sep="\n")
+      } else if (length(files) == 2) {
+        out.file <- paste0(files[1], " and ", files[2])
+        attributes(out) <- list(msg = paste0("The wrong version of the ", 
+                                             out.file, " files are",msg1))
+        if (verbose == TRUE) cat(attributes(out)$msg, sep="\n")
+      } else if (length(files) == 3) {
+        out.file <- paste0(files[1], ", ", files[2], " and " , files[3])
+        attributes(out) <- list(msg = paste0("The wrong version of the ",
+                                             out.file, " files are",msg1))
+        if (verbose == TRUE) cat(attributes(out)$msg, sep="\n")
+      } 
+      
+    }
+    
+  ## if one or more command line tools where not detected    
+  } else {
+    msg1 <- paste(" not detected. Please install the Xpdf command line tools again",
+                 "using PDE_install_Xpdftools4.02()")
+    
+    if (length(files) == 1) {
+      out.file <- files
+      attributes(out) <- list(msg = paste0(out.file, " file",msg1))
+      if (verbose == TRUE) cat(attributes(out)$msg, sep="\n")
+    } else if (length(files) == 2) {
+      out.file <- paste0(files[1], " and ", files[2])
+      attributes(out) <- list(msg = paste0(out.file, " files",msg1))
+      if (verbose == TRUE) cat(attributes(out)$msg, sep="\n")
+    } else if (length(files) == 3) {
+      out.file <- paste0(files[1], ", ", files[2], " and " , files[3])
+      attributes(out) <- list(msg = paste0(out.file, " files",msg1))
+      if (verbose == TRUE) cat(attributes(out)$msg, sep="\n")
+    } 
+  } 
+  
+  return(out)
+}
+
+#'Install the Xpdf command line tools 4.02
+#'
+#'\code{PDE_install_Xpdftools4.02} downloads and installs the XPDF command line tools 4.02.
+#'
+#'@param sysname String. In case the function returns "Unknown OS" the sysname can be set manually. 
+#' Allowed options are "Windows", "Linux", "SunOS" for Solaris, and "Darwin" for Mac. Default: \code{NULL}.
+#'@param bin String. In case the function returns "Unknown OS" the bin of the operational system
+#' can be set manually. Allowed options are "64", and "32". Default: \code{NULL}.
+#'@param verbose Logical. Indicates whether messages will be printed in the console. Default: \code{TRUE}.
+#'
+#'
+#'@return The function returns a Boolean for the installation status and a message in case 
+#' the commands are not installed.
+#'
+#'@examples
+#' \dontrun{
+#' 
+#' PDE_install_Xpdftools4.02()
+#' 
+#' }
+#'
+#'
+#'@export
+PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
+  ## check if Xpdftools are installed
+  install.test <- PDE_check_Xpdf_install(verbose=FALSE)
+  downloadq <- FALSE
+  installq <- FALSE
+  out_msg <- NULL
+  out <- NULL
+  
+  xpdf_config_location <- paste0(PDE_path(),"/bin/XPDF_DIR.config")
+  dir.create(dirname(xpdf_config_location), recursive = TRUE, showWarnings = FALSE)
+  
+  ## set xpdf library location
+  xpdf_bin_path <- paste0(PDE_path(),"/bin")
+  if (is.null(sysname)) sysname <- Sys.info()["sysname"]
+  
+  download.test <- FALSE
+  if (sysname == "Windows") {
+    if (dir.exists(paste0(xpdf_bin_path,"/xpdf-tools-win-4.02"))) download.test <- TRUE
+  } else if (sysname == "Linux" || sysname == "SunOS") {
+    if (dir.exists(paste0(xpdf_bin_path,"/xpdf-tools-linux-4.02"))) download.test <- TRUE
+  } else if (sysname == "Darwin") {
+    if (dir.exists(paste0(xpdf_bin_path,"/xpdf-tools-mac-4.02"))) download.test <- TRUE
+  } else {
+    stop("Unknown OS. Please set sysname option.")
+  }
+  
+  if (is.null(bin)){
+    if (grepl("32",Sys.info()[["machine"]])) {
+      bin <- "32"
+    } else if (grepl("64",Sys.info()[["machine"]])) {
+      bin <- "64"
+    } else {
+      stop("Unknown OS. Please set sysname option.")
+    }
+  }
+  
+  if (bin != "64" && bin != "32"){
+    stop("Unknown OS. Please set bin option.")
+  }
+  
+  ## determine operating system and download correct xpdf
+  if (download.test == FALSE){
+    ## determine operating system and download correct Xpdf command line tools
+    downloadq <- utils::menu(c("Y", "N"), title="Do you want to download and install xpdf version 4.02? (y/n)") == 1
+    installq <- downloadq
+  } else {
+    downloadq <- utils::menu(c("Y", "N"), title=paste("Xpdf command line tools 4.02 are already downloaded.",
+                                                      "Do you want to download the Xpdf command line tools version 4.02 again? (y/n)")) == 1
+    if (install.test == TRUE){
+      installq <- utils::menu(c("Y", "N"), title=paste("Working versions of Xpdf command line tools are already installed.",
+                                                       "Do you want to still (re)install",
+                                                       "the Xpdf command line tools version 4.02? (y/n)")) == 1
+    } else {
+      installq <- utils::menu(c("Y", "N"), title=paste("Do you want to also install",
+                                                       "the Xpdf command line tools version 4.02? (y/n)")) == 1
+    }
+  }
+  
+  if (downloadq == TRUE){
+    
+    if (sysname == "Windows") {
+      utils::download.file("https://dl.xpdfreader.com/xpdf-tools-win-4.02.zip", 
+                           destfile = paste0(xpdf_bin_path,"/xpdf-tools-win-4.02.zip"),
+                           mode = "wb")
+      utils::unzip(paste0(xpdf_bin_path,"/xpdf-tools-win-4.02.zip"),exdir = xpdf_bin_path)
+      remove.status <- suppressWarnings(file.remove(paste0(xpdf_bin_path,"/xpdf-tools-win-4.02.zip")))
+      download.test <- TRUE
+    } else if (sysname == "Linux" || sysname == "SunOS") {
+      utils::download.file("https://dl.xpdfreader.com/xpdf-tools-linux-4.02.tar.gz", 
+                           destfile = paste0(xpdf_bin_path,"/xpdf-tools-linux-4.02.tar.gz"),
+                           mode = "wb")
+      utils::untar(paste0(xpdf_bin_path,"/xpdf-tools-linux-4.02.tar.gz"),exdir = xpdf_bin_path)
+      remove.status <- suppressWarnings(file.remove(paste0(xpdf_bin_path,"/xpdf-tools-linux-4.02.tar.gz")))
+      download.test <- TRUE
+    } else if (sysname == "Darwin") {
+      utils::download.file("https://dl.xpdfreader.com/xpdf-tools-mac-4.02.tar.gz", 
+                           destfile = paste0(xpdf_bin_path,"/xpdf-tools-mac-4.02.tar.gz"))
+      utils::untar(paste0(xpdf_bin_path,"/xpdf-tools-mac-4.02.tar.gz"),exdir = xpdf_bin_path)
+      remove.status <- suppressWarnings(file.remove(paste0(xpdf_bin_path,"/xpdf-tools-mac-4.02.tar.gz")))
+      download.test <- TRUE
+    } else {
+      stop("Unknown OS. Please set sysname option.")
+    }
+  }
+  
+  if (download.test == TRUE){
+    if (sysname == "Windows") {
+      filepath <- normalizePath(paste0(xpdf_bin_path,"/xpdf-tools-win-4.02/bin",bin))
+      ext <- ".exe"
+    } else if (sysname == "Linux" || sysname == "SunOS") {
+      filepath <- normalizePath(paste0(xpdf_bin_path,"/xpdf-tools-linux-4.02/bin",bin))
+      ext <- ""
+    } else if (sysname == "Darwin") {
+      filepath <- normalizePath(paste0(xpdf_bin_path,"/xpdf-tools-mac-4.02/bin",bin))
+      ext <- ""
+    } else {
+      stop("Unknown OS. Please set sysname option.")
+    }
+    out_msg <- c(out_msg,paste0("Location of Xpdf command line tools 4.02: ",filepath))
+    if (verbose) cat(utils::tail(out_msg,1), sep="\n")
+    attributes(out) <- list(msg = out_msg,path=filepath)
+    
+    ## "Installation"
+    if (installq == TRUE){
+      
+      pdftotext_path <- normalizePath(paste0(filepath,"/pdftotext",ext))
+      
+      pdftohtml_path <- normalizePath(paste0(filepath,"/pdftohtml",ext))
+      
+      pdftopng_path <- normalizePath(paste0(filepath,"/pdftopng",ext))
+      
+      write(paste(pdftotext_path,pdftohtml_path,pdftopng_path, sep = "\n"),
+            file = xpdf_config_location)
+      
+      out_msg <- c(out_msg,"The Xpdf command line tools 4.02 were successfully installed.")
+      if (verbose) cat(utils::tail(out_msg,1), sep="\n")
+      attributes(out) <- list(msg = out_msg,path=filepath)
+      out <- TRUE
+    } else {
+      out_msg <- c(out_msg,"The Xpdf command line tools 4.02 were not installed.")
+      if (verbose) cat(utils::tail(out_msg,1), sep="\n")
+      attributes(out) <- list(msg = out_msg,path=filepath)
+      out <- FALSE
+    }
+  } else {
+    out_msg <- c(out_msg,"The Xpdf command line tools 4.02 were not downloaded.")
+    attributes(out) <- list(msg = out_msg,path="")
+    if (verbose) cat(utils::tail(out_msg,1), sep="\n")
+    out <- FALSE
   }
   
   return(out)
@@ -195,7 +460,7 @@ PDE_check_Xpdf_install <- function(sysname=NULL, verbose=TRUE){
 
 #'Install the XpdfReader 4.02
 #'
-#'\code{PDE_download_XpdfReader4.02} downloads and opens the download folder of the XpdfReader.
+#'\code{PDE_download_XpdfReader4.02} is deprecated. Please run PDE_install_Xpdftools4.02() instead.
 #'
 #'@param sysname String. In case the function returns "Unknown OS" the sysname can be set manually. 
 #' Allowed options are "Windows", "Linux", and "Darwin" for Mac. Default: \code{NULL}.
@@ -210,96 +475,97 @@ PDE_check_Xpdf_install <- function(sysname=NULL, verbose=TRUE){
 #' 
 #' }
 #'
-#'
 #'@export
 PDE_install_XpdfReader4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
-   ## check if XpdfReader is installed
+  .Deprecated("PDE_install_Xpdftools4.02", package= "PDE",old = "PDE_install_XpdfReader4.02")
+  
+  ## check if XpdfReader is installed
   install.test <- PDE_check_Xpdf_install(verbose=FALSE)
   
   downloadq <- 0
-    
-    if (install.test == FALSE){
-     ## determine operating system and download correct XpdfReader
-     downloadq <- utils::menu(c("Y", "N"), title="Do you want to download and install the XpdfReader version 4.02? (y/n)") == 1
-    } else {
-     downloadq <- utils::menu(c("Y", "N"), title=paste("XpdfReader is already installed.",
-                                                "Do you want to download and reinstall the XpdfReader version 4.02? (y/n)")) == 1
+  
+  if (install.test == FALSE){
+    ## determine operating system and download correct XpdfReader
+    downloadq <- utils::menu(c("Y", "N"), title="Do you want to download and install the XpdfReader version 4.02? (y/n)") == 1
+  } else {
+    downloadq <- utils::menu(c("Y", "N"), title=paste("XpdfReader is already installed.",
+                                                      "Do you want to download and reinstall the XpdfReader version 4.02? (y/n)")) == 1
+  }
+  if (downloadq == 1){
+    if (is.null(bin)){
+      if (grepl("32",Sys.info()[["machine"]])) {
+        bin <- "32"
+      } else if (grepl("64",Sys.info()[["machine"]])) {
+        bin <- "64"
+      } else {
+        stop("Unknown OS. Please set sysname option.")
+      }
     }
-    if (downloadq == 1){
-       if (is.null(bin)){
-         if (grepl("32",Sys.info()[["machine"]])) {
-           bin <- "32"
-         } else if (grepl("64",Sys.info()[["machine"]])) {
-           bin <- "64"
-         } else {
-           stop("Unknown OS")
-         }
-       }
-       
-       if (bin != "64" && bin != "32"){
-         stop("Unknown OS")
-       }
-       
-       os <- ""
-       ext <- ""
-       mode <- "w"
-       
-       if (is.null(sysname)) sysname <- Sys.info()["sysname"]
-       
-       if (sysname == "Windows") {
-         os <- "win"
-         ext <- ".exe"
-         mode <- "wb"
-       } else if (sysname == "Linux" || sysname == "SunOS") {
-         os <- "linux"
-         ext <- ".run"
-         mode <- "wb"
-       } else if (sysname == "Darwin") {
-         os <- "mac"
-         ext <- ""
-         mode <- ""
-       } else {
-           stop("Unknown OS")
-       }
-      
-       if (PDE_path() == "") {
-         inst.path <- getwd()
-       } else{
-         inst.path <- PDE_path()
-       }
-       if (os == "win"){
-          dir.create(paste0(inst.path,"/bin/"), showWarnings = FALSE)
-          utils::download.file(paste0("https://dl.xpdfreader.com/XpdfReader-",os,bin,"-4.02",ext), 
-                            paste0(inst.path,"/bin/XpdfReader-",os,bin,"-4.02",ext), mode = mode)
-       }
-       if (os == "linux"){
-         linux.download.text <- try(utils::download.file("https://dl.xpdfreader.com/xpdf-tools-linux-4.02.tar.gz", 
-                              paste0(inst.path,"/bin/xpdf-tools-linux-4.02.tar.gz")), silent = TRUE)
-         if (class(linux.download.text) == "try-error"){
-          system(paste0("wget --no-check-certificate https://dl.xpdfreader.com/xpdf-tools-linux-4.02.tar.gz",
-                       " -P ", inst.path,"/bin"), wait = TRUE)
-         }  
-         utils::untar(paste0(inst.path,"/bin/xpdf-tools-linux-4.02.tar.gz"),exdir = paste0(inst.path,"/bin"))     
-        }
-       
-       
-     
-       ## install the XpdfReader
-       if (os == "win"){
-         shell.exec(paste0(inst.path,"/bin/XpdfReader-",os,bin,"-4.02",ext))
-       }
-       
-       if (os == "linux"){
-         system(paste0("echo 'export PATH=$PATH:",inst.path,"/bin/xpdf-tools-linux-4.02/bin",bin,"' >> ~/.profile"))
-         if (verbose){
-            cat("Please restart your system to finalize the installation.", sep="\n")
-         }
-       }
-       
-       if (os == "mac" ){
-         system("brew install xpdf")
-       }
-     }
+    
+    if (bin != "64" && bin != "32"){
+      stop("Unknown OS. Please set sysname option.")
+    }
+    
+    os <- ""
+    ext <- ""
+    mode <- "w"
+    
+    if (is.null(sysname)) sysname <- Sys.info()["sysname"]
+    
+    if (sysname == "Windows") {
+      os <- "win"
+      ext <- ".exe"
+      mode <- "wb"
+    } else if (sysname == "Linux" || sysname == "SunOS") {
+      os <- "linux"
+      ext <- ".run"
+      mode <- "wb"
+    } else if (sysname == "Darwin") {
+      os <- "mac"
+      ext <- ""
+      mode <- ""
+    } else {
+      stop("Unknown OS. Please set sysname option.")
+    }
+    
+    if (PDE_path() == "") {
+      inst.path <- getwd()
+    } else{
+      inst.path <- PDE_path()
+    }
+    if (os == "win"){
+      dir.create(paste0(inst.path,"/bin/"), showWarnings = FALSE)
+      utils::download.file(paste0("https://dl.xpdfreader.com/XpdfReader-",os,bin,"-4.02",ext), 
+                           destfile = paste0(inst.path,"/bin/XpdfReader-",os,bin,"-4.02",ext), mode = mode)
+    }
+    if (os == "linux"){
+      linux.download.test <- try(utils::download.file("https://dl.xpdfreader.com/xpdf-tools-linux-4.02.tar.gz", 
+                                                      destfile = paste0(inst.path,"/bin/xpdf-tools-linux-4.02.tar.gz")), silent = TRUE)
+      if (class(linux.download.test) == "try-error"){
+        system(paste0("wget --no-check-certificate https://dl.xpdfreader.com/xpdf-tools-linux-4.02.tar.gz",
+                      " -P ", inst.path,"/bin"), wait = TRUE)
+      }  
+      utils::untar(paste0(inst.path,"/bin/xpdf-tools-linux-4.02.tar.gz"),exdir = paste0(inst.path,"/bin"))     
+    }
+    
+    
+    
+    ## install the XpdfReader
+    if (os == "win"){
+      shell.exec(paste0(inst.path,"/bin/XpdfReader-",os,bin,"-4.02",ext))
+    }
+    
+    if (os == "linux"){
+      system(paste0("echo 'export PATH=$PATH:",inst.path,"/bin/xpdf-tools-linux-4.02/bin",bin,"' >> ~/.profile"))
+      if (verbose){
+        cat("Please restart your system to finalize the installation.", sep="\n")
+      }
+    }
+    
+    if (os == "mac" ){
+      system("brew install xpdf")
+    }
+  }
 }
 
 #'Extracting data from a PDF (Protable Document Format) file
@@ -579,7 +845,7 @@ PDE_install_XpdfReader4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
     if (length(exp.pages) > 0) {
       dir.create(paste0(outputpath,"/tables"), showWarnings = FALSE)
       for (page in pages) {
-          system(paste0("pdftopng \"",
+          system(paste0("\"",pdftopng_location,"\" \"",
                       "-f", "\" \"", page, "\" \"", "-l",
                       "\" \"", page, "\" \"", pdfpath, "\" \"",
                       outputpath, "/tables/", substr(basename(pdfpath),
@@ -1087,21 +1353,45 @@ PDE_install_XpdfReader4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
   if (verbose) cat(utils::tail(out_msg,1), sep="\n")
 
   ## 1) Create txt and html copies of PDF file ---------------------------------------
-  ## test of XpdfReader is installed
-  install.test <- PDE_check_Xpdf_install(verbose=verbose)
+  ## test of Xpdftools are installed
+  xpdf_config_location <- paste0(PDE_path(),"/bin/XPDF_DIR.config")
+  if (file.exists(xpdf_config_location)){
+    pdftotext_location <- grep("pdftotext",readLines(xpdf_config_location), value = TRUE)
+    
+    pdftohtml_location <- grep("pdftohtml",readLines(xpdf_config_location), value = TRUE)
+    
+    pdftopng_location <- grep("pdftopng",readLines(xpdf_config_location), value = TRUE)
+    
+    if (length(file.exists(pdftotext_location)) == 0 ||
+        length(file.exists(pdftohtml_location)) == 0 ||
+        length(file.exists(pdftopng_location)) == 0){
+      install.test <- PDE_check_Xpdf_install(verbose=verbose)
+    } else {
+      install.test <- TRUE
+    }
+      
+  } else {
+    install.test <- PDE_check_Xpdf_install(verbose=verbose)
+  }
   if (install.test == FALSE) {
     stop(attributes(install.test)$msg)
+  } else {
+    pdftotext_location <- grep("pdftotext",readLines(xpdf_config_location), value = TRUE)
+    
+    pdftohtml_location <- grep("pdftohtml",readLines(xpdf_config_location), value = TRUE)
+    
+    pdftopng_location <- grep("pdftopng",readLines(xpdf_config_location), value = TRUE)
   }
   
-  system(paste0("pdftotext", " -layout",
+  system(paste0("\"",pdftotext_location,"\" -layout",
                 " \"", pdfpath, "\" \"", keeplayouttxtpath,
                 "\""), wait = TRUE, ignore.stderr = TRUE)
-  system(paste0("pdftotext \"", pdfpath,
+  system(paste0("\"",pdftotext_location,"\" \"", pdfpath,
                 "\" \"", txtpath, "\""), wait = TRUE,
          ignore.stderr = TRUE)
   htmlpath <- gsub(".pdf[^.pdf]*$", ".html", pdfpath)
   ## convert PDF to HTML
-  system(paste0("pdftohtml \"", pdfpath,
+  system(paste0("\"",pdftohtml_location,"\" \"", pdfpath,
                 "\" \"", htmlpath, "\""), wait = TRUE,
          ignore.stderr = TRUE)
   
@@ -1140,7 +1430,7 @@ PDE_install_XpdfReader4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
             file = paste0(out,"/secured/",id, "_is_secured.txt"))
       integrity.indicator <- FALSE
     } else if (identical(txtcontent, "") || identical(keeplayouttxtcontent, "") ||
-               identical(txtcontent, "\f") || identical(keeplayouttxtcontent, "\f")  ) {
+               identical(gsub("\f","",txtcontent), "") || identical(gsub("\f","",keeplayouttxtcontent), "")  ) {
       print_message <- paste0(id, " most likely contains no text content or is a scanned document!")
       out_msg <- c(out_msg, print_message)
       if (verbose) cat(utils::tail(out_msg,1), sep="\n")
@@ -3974,6 +4264,11 @@ PDE_analyzer_i <- function(verbose=TRUE) {
   }
 
   ## components of the form -------------------------------------
+  tcltk.test <- try(test <- tcltk::tktoplevel(bg = "#05F2DB"), silent = TRUE)
+  tcltk.test2 <- try(tcltk::tkdestroy(test), silent = TRUE)
+  if (class(tcltk.test) == "try-error"){
+    stop("Package tcltk is not working properly. If you are on a Mac try installing the latest version of xquartz.")
+  }
   PDE.globals$ttanalyzer <- tcltk::tktoplevel(bg = "#05F2DB")
   tcltk::tkwm.geometry(PDE.globals$ttanalyzer, "+0+0")
   tcltk::tkwm.title(PDE.globals$ttanalyzer, "PDE analyzer - Choose your variables")
@@ -5781,6 +6076,11 @@ PDE_reader_i <- function(verbose=TRUE) {
   }
 
   ## components of the form ----------------------------------------------------
+  tcltk.test <- try(test <- tcltk::tktoplevel(bg = "#05F2DB"), silent = TRUE)
+  tcltk.test2 <- try(tcltk::tkdestroy(test), silent = TRUE)
+  if (class(tcltk.test) == "try-error"){
+    stop("Package tcltk is not working properly. If you are on a Mac try installing the latest version of xquartz.")
+  }
   ttreader <- tcltk::tktoplevel(bg = "#05F2DB")
   tcltk::tkwm.geometry(ttreader, "+0+0")
   tcltk::tkwm.title(ttreader, "PDE reader")

@@ -16,7 +16,7 @@ can be set manually. Allowed options are "64", and "32". Default: \code{NULL}.}
 \item{verbose}{Logical. Indicates whether messages will be printed in the console. Default: \code{TRUE}.}
 }
 \description{
-\code{PDE_download_XpdfReader4.02} downloads and opens the download folder of the XpdfReader.
+\code{PDE_download_XpdfReader4.02} is deprecated. Please run PDE_install_Xpdftools4.02() instead.
 }
 \examples{
 \dontrun{
@@ -24,6 +24,5 @@ can be set manually. Allowed options are "64", and "32". Default: \code{NULL}.}
 PDE_install_XpdfReader4.02()
 
 }
-
 
 }

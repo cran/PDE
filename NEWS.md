@@ -1,8 +1,16 @@
+# PDE 1.1.0
+* Deprecated function PDE_install_XpdfReader4.02() for new function PDE_install_Xpdftools4.02()
+* PDE_install_Xpdftools4.02() installs the Xpdf command line tools instead of the XpdfReader
+* Updated PDE_check_Xpdf_install()
+* Added notification to install latest version of xquartz if tcltk does not work right
+* Dissolve requirement of changing global PATH variable incorporation of /bin/XPDF_DIR.config
+* Fixed issue with the recognition of non-readable files
+
 # PDE 1.0.2
 
-*Fixed the install message for PDE_install_XpdfReader4.02().
-*Fixed problem with generation of keeplayout.txt files.
-*Added linebeaks to Console outputs.
+* Fixed the install message for PDE_install_XpdfReader4.02().
+* Fixed problem with generation of keeplayout.txt files.
+* Added linebeaks to Console outputs.
 
 # PDE 1.0.1
 
