@@ -30,7 +30,7 @@
 NULL
 #> NULL
 
-## 1.1.0
+## 1.1.1
 
 ## declare global variables
 PDE.globals <- new.env()
@@ -136,6 +136,16 @@ PDE_check_Xpdf_install <- function(sysname=NULL, verbose=TRUE){
       }
     }
     
+    show_file_path_solaris <- function(filename){
+      whereis_output <- system(paste0("whereis ",filename), intern = TRUE)
+      only_dirs <- sub("^ ","",sub(paste0("^",filename,":"),"",whereis_output))
+      if (only_dirs == ""){
+        return(NULL)
+      } else {
+        return(strsplit(gsub(" /",";/",only_dirs),split = ";")[[1]])
+      }
+    }
+    
     if (sysname == "Windows") {
       pdftotext_location <- suppressWarnings(system("C:\\WINDOWS\\system32\\cmd.exe /c where pdftotext", intern = TRUE))
       if ("INFO: Could not find files for the given pattern(s)." %in% pdftotext_location) pdftotext_location <- NULL
@@ -145,12 +155,19 @@ PDE_check_Xpdf_install <- function(sysname=NULL, verbose=TRUE){
       
       pdftopng_location <- suppressWarnings(system("C:\\WINDOWS\\system32\\cmd.exe /c where pdftopng", intern = TRUE))
       if ("INFO: Could not find files for the given pattern(s)." %in% pdftopng_location) pdftopng_location <- NULL
-    } else if (sysname == "Linux" || sysname == "SunOS") {
+    } else if (sysname == "Linux") {
       pdftotext_location <- show_file_path_linux("pdftotext")
       
       pdftohtml_location <- show_file_path_linux("pdftohtml")
       
       pdftopng_location <- show_file_path_linux("pdftopng")
+      
+    } else if (sysname == "SunOS") {
+      pdftotext_location <- show_file_path_solaris("pdftotext")
+      
+      pdftohtml_location <- show_file_path_solaris("pdftohtml")
+      
+      pdftopng_location <- show_file_path_solaris("pdftopng")
       
     } else if (sysname == "Darwin") {
       pdftotext_location <- suppressWarnings(system("which -a pdftotext", intern = TRUE))

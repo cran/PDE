@@ -1,3 +1,6 @@
+# PDE 1.1.1
+* Changed whereis command for Solaris OS for PDE_check_Xpdf_install() function
+
 # PDE 1.1.0
 * Deprecated function PDE_install_XpdfReader4.02() for new function PDE_install_Xpdftools4.02()
 * PDE_install_Xpdftools4.02() installs the Xpdf command line tools instead of the XpdfReader
