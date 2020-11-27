@@ -30,7 +30,7 @@
 NULL
 #> NULL
 
-## 1.1.1
+## 1.1.2
 
 ## declare global variables
 PDE.globals <- new.env()
@@ -137,12 +137,19 @@ PDE_check_Xpdf_install <- function(sysname=NULL, verbose=TRUE){
     }
     
     show_file_path_solaris <- function(filename){
-      whereis_output <- system(paste0("whereis ",filename), intern = TRUE)
-      only_dirs <- sub("^ ","",sub(paste0("^",filename,":"),"",whereis_output))
-      if (only_dirs == ""){
-        return(NULL)
+      whereis_test <- suppressWarnings(tryCatch(system(paste0("/usr/ucb/whereis ",filename),
+                                                       , intern = TRUE)[1], 
+                                                          error=function(err) NULL))
+      if (length(whereis_test) != 0) {
+        whereis_output <- system(paste0("/usr/ucb/whereis ",filename), intern = TRUE)
+        only_dirs <- sub("^ ","",sub(paste0("^",filename,":"),"",whereis_output))
+        if (only_dirs == ""){
+          return(NULL)
+        } else {
+          return(strsplit(gsub(" /",";/",only_dirs),split = ";")[[1]])
+        }
       } else {
-        return(strsplit(gsub(" /",";/",only_dirs),split = ";")[[1]])
+        return(NULL)
       }
     }
     
@@ -170,6 +177,7 @@ PDE_check_Xpdf_install <- function(sysname=NULL, verbose=TRUE){
       pdftopng_location <- show_file_path_solaris("pdftopng")
       
     } else if (sysname == "Darwin") {
+      
       pdftotext_location <- suppressWarnings(system("which -a pdftotext", intern = TRUE))
       
       pdftohtml_location <- suppressWarnings(system("which -a pdftohtml", intern = TRUE))
@@ -4207,7 +4215,7 @@ PDE_pdfs2txt_searchandfilter = function(pdfs, out = ".", filter.words = "",
 #' A detailed description of the elements in the user interface 
 #' can be found in the markdown file (README_PDE.md).
 #'
-#' @import tcltk2
+#' @import tcltk tcltk2
 #' 
 #' @examples 
 #' 
@@ -4281,1410 +4289,1415 @@ PDE_analyzer_i <- function(verbose=TRUE) {
   }
 
   ## components of the form -------------------------------------
+  ## tcltk test specifically relevant for Mac
   tcltk.test <- try(test <- tcltk::tktoplevel(bg = "#05F2DB"), silent = TRUE)
   tcltk.test2 <- try(tcltk::tkdestroy(test), silent = TRUE)
   if (class(tcltk.test) == "try-error"){
-    stop("Package tcltk is not working properly. If you are on a Mac try installing the latest version of xquartz.")
-  }
-  PDE.globals$ttanalyzer <- tcltk::tktoplevel(bg = "#05F2DB")
-  tcltk::tkwm.geometry(PDE.globals$ttanalyzer, "+0+0")
-  tcltk::tkwm.title(PDE.globals$ttanalyzer, "PDE analyzer - Choose your variables")
-
-  ## style ------------------------------------------------------
-  themes <- try(tcltk2::tk2theme.list(), silent = TRUE)
-  if (!inherits(themes, "try-error")) {
-    if ("vista" %in% themes) {
-      # This must be aquaTk on a Mac
-      try(tcltk2::tk2theme("vista"), silent = TRUE)
-    } else if ("clam" %in% themes) {
-      try(tcltk2::tk2theme("clam"), silent = TRUE)
-    } else if ("aquaTk" %in% themes) {
-      # This must be Vista or Win 7
-      try(tcltk2::tk2theme("aquaTk"), silent = TRUE)
-    }
-  }
-
-  ## min size so that no buttons disappear vertically
-  tcltk::tkwm.minsize(PDE.globals$ttanalyzer, 800, 0)
-
-
-  ## frames --------------------------------------------
-  ## right frame
-  r <- tcltk::tkframe(PDE.globals$ttanalyzer, bg = "#05F2DB")
-  ## line 1 with buttons
-  l1 <- tcltk::tkframe(PDE.globals$ttanalyzer, bg = "#05F2DB")
-  ## line in_output (line6-10) with buttons
-  in_output <- tcltk::tkframe(PDE.globals$ttanalyzer, borderwidth = 1, relief = "solid")
-  l6 <- tcltk::tkframe(in_output, bg = "#05F2C7")  ## caption
-  l7 <- tcltk::tkframe(in_output, bg = "#05F2C7")  ## pdfs
-  l8 <- tcltk::tkframe(in_output, bg = "#05F2C7")  ## whattoextr
-  l9 <- tcltk::tkframe(in_output, bg = "#05F2C7")  ## outputfolder
-  l10 <- tcltk::tkframe(in_output, bg = "#05F2C7")  ## out.table.format
-  ## line paras (line11-23) with buttons
-  paras <- tcltk::tkframe(PDE.globals$ttanalyzer, borderwidth = 1, relief = "solid",
-                          bg = "#05F2DB")
-  l11 <- tcltk::tkframe(paras, bg = "#05F2DB")  ## caption
-  l12 <- tcltk::tkframe(paras, bg = "#05F2DB")  ## table.heading.words
-  l13 <- tcltk::tkframe(paras, bg = "#05F2DB")  ## ignore.case.th
-  l14 <- tcltk::tkframe(paras, bg = "#05F2DB")  ## dev.caption
-  l15 <- tcltk::tkframe(paras, bg = "#05F2DB")  ## filter words?
-  l16 <- tcltk::tkframe(paras, bg = "#05F2DB")  ## filter.words
-  l17 <- tcltk::tkframe(paras, bg = "#05F2DB")  ## ignore.case.fw
-  l18 <- tcltk::tkframe(paras, bg = "#05F2DB")  ## filter.word.times.caption
-  l19 <- tcltk::tkframe(paras, bg = "#05F2DB")  ## extract all tables?
-  l20 <- tcltk::tkframe(paras, bg = "#05F2DB")  ## search.words
-  l21 <- tcltk::tkframe(paras, bg = "#05F2DB")  ## ignore.case.sw
-  l22 <- tcltk::tkframe(paras, bg = "#05F2DB")  ## context.caption
-  l23 <- tcltk::tkframe(paras, bg = "#05F2DB")  ## eval.abbrevs.caption
-  ## line docus (line24-28) with buttons
-  docus <- tcltk::tkframe(PDE.globals$ttanalyzer, borderwidth = 1, relief = "solid",
-                          bg = "#05F2C7")
-  l24 <- tcltk::tkframe(docus, bg = "#05F2C7")  ## caption
-  l25 <- tcltk::tkframe(docus, bg = "#05F2C7")  ## write table values
-  l26 <- tcltk::tkframe(docus, bg = "#05F2C7")  ## exp.nondetc.tabs
-  l27 <- tcltk::tkframe(docus, bg = "#05F2C7")  ## write.tab.doc.file
-  l28 <- tcltk::tkframe(docus, bg = "#05F2C7")  ## write.txt.doc.file
-  l29 <- tcltk::tkframe(docus, bg = "#05F2C7")  ## delete
-  e <- tcltk::tkframe(PDE.globals$ttanalyzer, bg = "#05F2DB")
-  l30 <- tcltk::tkframe(e, bg = "#05F2DB")  ## progress bar
-  
-  ## test os.font ------------------------------------------------------------------------
-  res <- try(tcltk2::tk2label(l1, text = "test", font = os.font.ten.bold), silent = TRUE)
-  if (class(res)[1] == "try-error") {
-    out_msg <- c(out_msg, "There is an error with the allocation of tcl system fonts.")
+    out_msg <- c(out_msg, paste("Package tcltk is not working properly.",
+               "If you are on a Mac try installing the latest version of xquartz to use tcltk correctly."))
     if (verbose) cat(utils::tail(out_msg,1), sep="\n")
-    os.font <- ""
-    os.font.ten.bold <- ""
-    os.font.twelve.bold <- ""
-  }
-
-  ## slider --------------------------------------------------------
-
-  ## A function that changes the label
-  ## paras l14.dev slider
-  l14.onChange <- function(...) {
-    l14.value <- as.integer(tcltk::tclvalue(dev.var))
-    l14.entry <- sprintf("%s", l14.value)
-    tcltk::tclvalue(dev.var) <- l14.entry
-  }
-  ## Add the slider
-  l14.dev.slider <- tcltk2::tk2scale(l14, from = 0, to = 200,
-                                     variable = dev.var, orient = "horizontal",
-                                     length = 100, command = l14.onChange)
-
-  ## l18.filter.word.times slider A function that
-  ## changes the label
-  l18.onChange <- function(...) {
-    l18.value <- as.integer(tcltk::tclvalue(filter.word.times.var))
-    l18.entry <- sprintf("%s", l18.value)
-    tcltk::tclvalue(filter.word.times.var) <- l18.entry
-  }
-  ## Add the slider
-  l18.filter.word.times.slider <- tcltk2::tk2scale(l18,
-                                                   from = 0, to = 500, variable = filter.word.times.var,
-                                                   orient = "horizontal", length = 100, command = l18.onChange)
-
-  ## l22.context slider A function that changes the
-  ## label
-  l22.onChange <- function(...) {
-    l22.value <- as.integer(tcltk::tclvalue(context.var))
-    l22.entry <- sprintf("%s", l22.value)
-    tcltk::tclvalue(context.var) <- l22.entry
-  }
-  ## Add the slider
-  l22.context.slider <- tcltk2::tk2scale(l22, from = 0,
-                                         to = 100, variable = context.var, orient = "horizontal",
-                                         length = 100, command = l22.onChange)
-
-
-  ## labels -----------------------------------------------------------
-
-  ## line in_output (line6-10) with buttons
-  l6.caption.label <- tcltk2::tk2label(l6, text = "Input/output",
-                                       font = os.font.ten.bold, background = "#05F2C7")
-  l7.pdfs.label <- tcltk2::tk2label(l7, text = "Choose the PDF(s)/folder:",
-                                    background = "#05F2C7")
-  l8.whattoextr.label <- tcltk2::tk2label(l8, text = "Choose what to extract from the PDF files:",
-                                          background = "#05F2C7")
-  l8.whattoextr.sentences.label <- tcltk2::tk2label(l8, text = "sentences",
-                                                    background = "#05F2C7")
-  l8.whattoextr.tables.label <- tcltk2::tk2label(l8, text = "tables",
-                                                 background = "#05F2C7")
-  l8.whattoextr.both.label <- tcltk2::tk2label(l8, text = "both",
-                                               background = "#05F2C7")
-  l9.outputfolder.label <- tcltk2::tk2label(l9, text = "Choose the output folder:",
-                                            background = "#05F2C7")
-  l10.out.table.format.label <- tcltk2::tk2label(l10, text = "Choose the output format:",
-                                                 background = "#05F2C7")
-
-  ## line paras (line11-23) with buttons
-  l11.caption.label <- tcltk2::tk2label(l11, text = "Parameters",
-                                        font = os.font.ten.bold, background = "#05F2DB")
-  l12.table.heading.words.label <- tcltk2::tk2label(l12,
-                                      text = "Enter all table headings other than \"table\" (separated by ; without extra spaces):",
-                                      background = "#05F2DB")
-  l13.ignore.case.th.label <- tcltk2::tk2label(l13, text = "Are the table headings case sensitive (capitalization important)?",
-                                               background = "#05F2DB")
-  l13.ignore.case.th.yes.label <- tcltk2::tk2label(l13,
-                                                   text = "yes", background = "#05F2DB")
-  l13.ignore.case.th.no.label <- tcltk2::tk2label(l13,
-                                                  text = "no", background = "#05F2DB")
-  l14.dev.label <- tcltk2::tk2label(l14, text = "Enter the pixel deviation where different table columns are considered same:",
-                                    background = "#05F2DB")
-  l15.filter.words.yes.label <- tcltk2::tk2label(l15, text = "yes",
-                                                 background = "#05F2DB")
-  l15.filter.words.no.label <- tcltk2::tk2label(l15, text = "no",
-                                                background = "#05F2DB")
-  l15.filter.words.yesno.label <- tcltk2::tk2label(l15, text = "Filtering of PDF files according to the presence of filter words?",
-                                                   background = "#05F2DB")
-  l16.filter.words.label <- tcltk2::tk2label(l16, text = "Filter words (separated by ; without extra spaces):",
-                                             background = "#05F2DB")
-  l17.ignore.case.fw.label <- tcltk2::tk2label(l17, text = "Are the filter words case sensitive (capitalization important)?",
-                                               background = "#05F2DB")
-  l17.ignore.case.fw.yes.label <- tcltk2::tk2label(l17, text = "yes",
-                                                   background = "#05F2DB")
-  l17.ignore.case.fw.no.label <- tcltk2::tk2label(l17, text = "no",
-                                                  background = "#05F2DB")
-  l18.filter.word.times.label <- tcltk2::tk2label(l18,
-                                                  text = "Min. number of words from filter word list required to be detected in the PDF file:",
-                                                  background = "#05F2DB")
-  l19.extract.all.tables.label <- tcltk2::tk2label(l19, text = "Extract all tables or only ones with search words?",
-                                                   background = "#05F2DB")
-  l19.extract.all.tables.all.label <- tcltk2::tk2label(l19,
-                                                       text = "all", background = "#05F2DB")
-  l19.extract.all.tables.searchwords.label <- tcltk2::tk2label(l19,
-                                                               text = "search words only", background = "#05F2DB")
-  l20.search.words.label <- tcltk2::tk2label(l20, text = "Search words (separated by ; without extra spaces):",
-                                             background = "#05F2DB")
-  l21.ignore.case.sw.yes.label <- tcltk2::tk2label(l21, text = "yes",
-                                                   background = "#05F2DB")
-  l21.ignore.case.sw.no.label <- tcltk2::tk2label(l21, text = "no",
-                                                  background = "#05F2DB")
-  l21.ignore.case.sw.label <- tcltk2::tk2label(l21, text = "Are the search words case sensitive (capitalization important)?",
-                                               background = "#05F2DB")
-  l22.context.label <- tcltk2::tk2label(l22, text = "Number of sentences extracted before and after the sentence with the search word:",
-                                        background = "#05F2DB")
-  l23.eval.abbrevs.label <- tcltk2::tk2label(l23, text = "Should abbreviations of the search word be replaced by the search word during the analysis?",
-                                             background = "#05F2DB")
-  l23.eval.abbrevs.yes.label <- tcltk2::tk2label(l23, text = "yes",
-                                                 background = "#05F2DB")
-  l23.eval.abbrevs.no.label <- tcltk2::tk2label(l23, text = "no",
-                                                background = "#05F2DB")
-  # (line24-28) with buttons
-  l24.caption.label <- tcltk2::tk2label(l24, text = "Documentation/Debugging",
-                                        font = os.font.ten.bold, background = "#05F2C7")
-  l25.write.table.locations.label <- tcltk2::tk2label(l25, text = "Should the table values (coordinates within the files) be written in an output file?",
-                                                   background = "#05F2C7")
-  l25.write.table.locations.yes.label <- tcltk2::tk2label(l25,
-                                                       text = "yes", background = "#05F2C7")
-  l25.write.table.locations.no.label <- tcltk2::tk2label(l25,
-                                                      text = "no", background = "#05F2C7")
-  l26.exp.nondetc.tabs.label <- tcltk2::tk2label(l26, text = "Should the tables with problems exported as pngs?",
-                                                 background = "#05F2C7")
-  l26.exp.nondetc.tabs.yes.label <- tcltk2::tk2label(l26,
-                                                     text = "yes", background = "#05F2C7")
-  l26.exp.nondetc.tabs.no.label <- tcltk2::tk2label(l26,
-                                                    text = "no", background = "#05F2C7")
-  l27.write.tab.doc.file.label <- tcltk2::tk2label(l27, text = "Should a table documentation file be created (file that reports if there was no table found)?",
-                                                   background = "#05F2C7")
-  l27.write.tab.doc.file.yes.label <- tcltk2::tk2label(l27,
-                                                       text = "yes", background = "#05F2C7")
-  l27.write.tab.doc.file.no.label <- tcltk2::tk2label(l27,
-                                                      text = "no", background = "#05F2C7")
-  l28.write.txt.doc.file.label <- tcltk2::tk2label(l28, text = "Should a sentence documentation file be created (file that reports if there was no sentence found)?",
-                                                   background = "#05F2C7")
-  l28.write.txt.doc.file.yes.label <- tcltk2::tk2label(l28,
-                                                       text = "yes", background = "#05F2C7")
-  l28.write.txt.doc.file.no.label <- tcltk2::tk2label(l28,
-                                                      text = "no", background = "#05F2C7")
-  l29.delete.label <- tcltk2::tk2label(l29, text = "Should the intermediate files be deleted?",
-                                       background = "#05F2C7")
-  l29.delete.yes.label <- tcltk2::tk2label(l29, text = "yes",
-                                           background = "#05F2C7")
-  l29.delete.no.label <- tcltk2::tk2label(l29, text = "no",
-                                          background = "#05F2C7")
-  ## line (line29) with buttons
-  PDE.globals$l30.progress.textbox <- tcltk2::tk2combobox(l30, values = c("",""), textvariable = "", justify = "center")
-
-  ## entry boxes -----------------------------------------------
-
-  ## in_output
-  l7.pdfs.entry <- tcltk2::tk2entry(l7, textvariable = pdfs.var,
-                                    width = 10)
-  l9.outputfolder.entry <- tcltk2::tk2entry(l9, textvariable = outputfolder.var,
-                                            width = 10)
-  ## paras
-  l12.table.heading.words.entry <- tcltk2::tk2entry(l12,
-                                                    textvariable = table.heading.words.var, width = 10)
-  l14.dev.entry <- tcltk2::tk2entry(l14, textvariable = dev.var,
-                                    width = 4)
-  l16.filter.words.entry <- tcltk2::tk2entry(l16, textvariable = filter.words.var,
-                                             width = 10)
-  l18.filter.word.times.entry <- tcltk2::tk2entry(l18,
-                                                  textvariable = filter.word.times.var, width = 4)
-  l20.search.words.entry <- tcltk2::tk2entry(l20, textvariable = search.words.var,
-                                             width = 10)
-  l22.context.entry <- tcltk2::tk2entry(l22, textvariable = context.var,
-                                        width = 4)
-  ## docus
-
-  ## radio buttons --------------------------------------------
-
-  l13.ignore.case.th.yes.rb <- tcltk::tkradiobutton(l13,
-                                                    variable = ignore.case.th.var, value = "FALSE",
-                                                    background = "#05F2DB")
-  l13.ignore.case.th.no.rb <- tcltk::tkradiobutton(l13,
-                                                   variable = ignore.case.th.var, value = "TRUE",
-                                                   background = "#05F2DB")
-  l17.ignore.case.fw.yes.rb <- tcltk::tkradiobutton(l17,
-                                                    variable = ignore.case.fw.var, value = "FALSE",
-                                                    background = "#05F2DB")
-  l17.ignore.case.fw.no.rb <- tcltk::tkradiobutton(l17,
-                                                   variable = ignore.case.fw.var, value = "TRUE",
-                                                   background = "#05F2DB")
-
-  l15.onyes.click <- function() {
-    tcltk::tkconfigure(l16.filter.words.label, state = "normal")
-    tcltk::tkconfigure(l16.filter.words.entry, state = "normal")
-    tcltk::tkconfigure(l17.ignore.case.fw.label, state = "normal")
-    tcltk::tkconfigure(l17.ignore.case.fw.yes.rb, state = "normal")
-    tcltk::tkconfigure(l17.ignore.case.fw.yes.label, state = "normal")
-    tcltk::tkconfigure(l17.ignore.case.fw.no.label, state = "normal")
-    tcltk::tkconfigure(l17.ignore.case.fw.no.rb, state = "normal")
-    tcltk::tkconfigure(l18.filter.word.times.label,
-                       state = "normal")
-    tcltk::tkconfigure(l18.filter.word.times.entry,
-                       state = "normal")
-    tcltk::tkconfigure(l18.filter.word.times.slider,
-                       to = "500")
-    tcltk::tclvalue(filter.word.times.var) = "20"
-  }
-  l15.onno.click <- function() {
-    tcltk::tkconfigure(l16.filter.words.label, state = "disabled")
-    tcltk::tkconfigure(l16.filter.words.entry, state = "disabled")
-    tcltk::tkconfigure(l17.ignore.case.fw.label, state = "disabled")
-    tcltk::tkconfigure(l17.ignore.case.fw.yes.rb, state = "disabled")
-    tcltk::tkconfigure(l17.ignore.case.fw.no.rb, state = "disabled")
-    tcltk::tkconfigure(l17.ignore.case.fw.yes.label, state = "disabled")
-    tcltk::tkconfigure(l17.ignore.case.fw.no.label, state = "disabled")
-    tcltk::tkconfigure(l18.filter.word.times.label,
-                       state = "disabled")
-    tcltk::tkconfigure(l18.filter.word.times.entry,
-                       state = "disabled")
-    tcltk::tclvalue(filter.word.times.var) <- "0"
-    tcltk::tkconfigure(l18.filter.word.times.slider,
-                       to = "0")
-    ## delete all filterwords
-    tcltk::tclvalue(filter.words.var) <- ""
-  }
-  l15.filter.words.yes.rb <- tcltk::tkradiobutton(l15, variable = l15.filter.words.rbValue,
-                                                  value = "yes", command = l15.onyes.click, background = "#05F2DB")
-  l15.filter.words.no.rb <- tcltk::tkradiobutton(l15, variable = l15.filter.words.rbValue,
-                                                 value = "no", command = l15.onno.click, background = "#05F2DB")
-
-  l21.ignore.case.sw.yes.rb <- tcltk::tkradiobutton(l21,
-                                                    variable = ignore.case.sw.var, value = "FALSE",
-                                                    background = "#05F2DB")
-  l21.ignore.case.sw.no.rb <- tcltk::tkradiobutton(l21,
-                                                   variable = ignore.case.sw.var, value = "TRUE",
-                                                   background = "#05F2DB")
-
-
-  l19.onall.click <- function() {
-    tcltk::tkconfigure(l20.search.words.label, state = "disabled")
-    tcltk::tkconfigure(l20.search.words.entry, state = "disabled")
-    tcltk::tkconfigure(l21.ignore.case.sw.label, state = "disabled")
-    tcltk::tkconfigure(l21.ignore.case.sw.yes.label, state = "disabled")
-    tcltk::tkconfigure(l21.ignore.case.sw.no.label, state = "disabled")
-    tcltk::tkconfigure(l21.ignore.case.sw.yes.rb, state = "disabled")
-    tcltk::tkconfigure(l21.ignore.case.sw.no.rb, state = "disabled")
-    tcltk::tkconfigure(l23.eval.abbrevs.yes.rb, state = "disabled")
-    tcltk::tkconfigure(l23.eval.abbrevs.no.rb, state = "disabled")
-    tcltk::tkconfigure(l23.eval.abbrevs.yes.label, state = "disabled")
-    tcltk::tkconfigure(l23.eval.abbrevs.no.label, state = "disabled")
-    ## delete all filterwords
-    tcltk::tclvalue(search.words.var) <- ""
-  }
-  l19.onsearchwords.click <- function() {
-    tcltk::tkconfigure(l20.search.words.label, state = "normal")
-    tcltk::tkconfigure(l20.search.words.entry, state = "normal")
-    tcltk::tkconfigure(l21.ignore.case.sw.label, state = "normal")
-    tcltk::tkconfigure(l21.ignore.case.sw.yes.label, state = "normal")
-    tcltk::tkconfigure(l21.ignore.case.sw.no.label, state = "normal")
-    tcltk::tkconfigure(l21.ignore.case.sw.yes.rb, state = "normal")
-    tcltk::tkconfigure(l21.ignore.case.sw.no.rb, state = "normal")
-    tcltk::tkconfigure(l23.eval.abbrevs.yes.rb, state = "normal")
-    tcltk::tkconfigure(l23.eval.abbrevs.no.rb, state = "normal")
-    tcltk::tkconfigure(l23.eval.abbrevs.yes.label, state = "normal")
-    tcltk::tkconfigure(l23.eval.abbrevs.no.label, state = "normal")
-  }
-  l19.extract.all.tables.all.rb <- tcltk::tkradiobutton(l19,
-                                                        variable = l19.rbValue, value = "all", command = l19.onall.click,
-                                                        background = "#05F2DB")
-  l19.extract.all.tables.searchwords.rb <- tcltk::tkradiobutton(l19,
-                                                                variable = l19.rbValue, value = "searchwords",
-                                                                command = l19.onsearchwords.click, background = "#05F2DB")
-
-  l23.eval.abbrevs.yes.rb <- tcltk::tkradiobutton(l23,
-                                                  variable = eval.abbrevs.var, value = "TRUE",
-                                                  background = "#05F2DB")
-  l23.eval.abbrevs.no.rb <- tcltk::tkradiobutton(l23,
-                                                 variable = eval.abbrevs.var, value = "FALSE",
-                                                 background = "#05F2DB")
-
-  l25.write.table.locations.yes.rb <- tcltk::tkradiobutton(l25,
-                                                        variable = write.table.locations.var, value = "TRUE",
-                                                        background = "#05F2C7")
-  l25.write.table.locations.no.rb <- tcltk::tkradiobutton(l25,
-                                                       variable = write.table.locations.var, value = "FALSE",
-                                                       background = "#05F2C7")
-
-  l26.exp.nondetc.tabs.yes.rb <- tcltk::tkradiobutton(l26,
-                                                      variable = exp.nondetc.tabs.var, value = "TRUE",
-                                                      background = "#05F2C7")
-  l26.exp.nondetc.tabs.no.rb <- tcltk::tkradiobutton(l26,
-                                                     variable = exp.nondetc.tabs.var, value = "FALSE",
-                                                     background = "#05F2C7")
-
-  l27.write.tab.doc.file.yes.rb <- tcltk::tkradiobutton(l27,
-                                                        variable = write.tab.doc.file.var, value = "TRUE",
-                                                        background = "#05F2C7")
-  l27.write.tab.doc.file.no.rb <- tcltk::tkradiobutton(l27,
-                                                       variable = write.tab.doc.file.var, value = "FALSE",
-                                                       background = "#05F2C7")
-
-  l28.write.txt.doc.file.yes.rb <- tcltk::tkradiobutton(l28,
-                                                        variable = write.txt.doc.file.var, value = "TRUE",
-                                                        background = "#05F2C7")
-  l28.write.txt.doc.file.no.rb <- tcltk::tkradiobutton(l28,
-                                                       variable = write.txt.doc.file.var, value = "FALSE",
-                                                       background = "#05F2C7")
-
-  l29.delete.yes.rb <- tcltk::tkradiobutton(l29, variable = delete.var,
-                                            value = "TRUE", background = "#05F2C7")
-  l29.delete.no.rb <- tcltk::tkradiobutton(l29, variable = delete.var,
-                                           value = "FALSE", background = "#05F2C7")
-
-  l8.ontxt.click <- function() {
-    tcltk::tkconfigure(l12.table.heading.words.label, state = "disabled")
-    tcltk::tkconfigure(l12.table.heading.words.entry, state = "disabled")
-    tcltk::tkconfigure(l13.ignore.case.th.label, state = "disabled")
-    tcltk::tkconfigure(l13.ignore.case.th.yes.rb, state = "disabled")
-    tcltk::tkconfigure(l13.ignore.case.th.no.rb, state = "disabled")
-    tcltk::tkconfigure(l13.ignore.case.th.yes.label, state = "disabled")
-    tcltk::tkconfigure(l13.ignore.case.th.no.label, state = "disabled")
-    tcltk::tkconfigure(l14.dev.label, state = "disabled")
-    tcltk::tkconfigure(l14.dev.entry, state = "disabled")
-    tcltk::tclvalue(dev.var) <- "0"
-    tcltk::tkconfigure(l14.dev.slider, to = "0")
-    tcltk::tkconfigure(l19.extract.all.tables.label, state = "disabled")
-    tcltk::tkconfigure(l19.extract.all.tables.all.rb, state = "disabled")
-    tcltk::tkconfigure(l19.extract.all.tables.all.label, state = "disabled")
-    tcltk::tkconfigure(l19.extract.all.tables.searchwords.label, state = "disabled")
-    tcltk::tkconfigure(l19.extract.all.tables.searchwords.rb, state = "disabled")
-    tcltk::tclvalue(l19.rbValue) <- "searchwords"
-    tcltk::tkconfigure(l25.write.table.locations.label, state = "disabled")
-    tcltk::tkconfigure(l25.write.table.locations.yes.rb, state = "disabled")
-    tcltk::tkconfigure(l25.write.table.locations.no.rb, state = "disabled")
-    tcltk::tkconfigure(l25.write.table.locations.yes.label, state = "disabled")
-    tcltk::tkconfigure(l25.write.table.locations.no.label, state = "disabled")
-    tcltk::tkconfigure(l26.exp.nondetc.tabs.label, state = "disabled")
-    tcltk::tkconfigure(l26.exp.nondetc.tabs.yes.rb, state = "disabled")
-    tcltk::tkconfigure(l26.exp.nondetc.tabs.no.rb, state = "disabled")
-    tcltk::tkconfigure(l26.exp.nondetc.tabs.yes.label, state = "disabled")
-    tcltk::tkconfigure(l26.exp.nondetc.tabs.no.label, state = "disabled")
-    tcltk::tkconfigure(l27.write.tab.doc.file.label, state = "disabled")
-    tcltk::tkconfigure(l27.write.tab.doc.file.yes.rb, state = "disabled")
-    tcltk::tkconfigure(l27.write.tab.doc.file.no.rb, state = "disabled")
-    tcltk::tkconfigure(l27.write.tab.doc.file.yes.label, state = "disabled")
-    tcltk::tkconfigure(l27.write.tab.doc.file.no.label, state = "disabled")
-    tcltk::tkconfigure(l20.search.words.label, state="normal")
-    tcltk::tkconfigure(l22.context.label, state = "normal")
-    tcltk::tkconfigure(l22.context.entry, state = "normal")
-    tcltk::tkconfigure(l22.context.slider, to = "100")
-    tcltk::tkconfigure(l28.write.txt.doc.file.label, state = "normal")
-    tcltk::tkconfigure(l28.write.txt.doc.file.yes.rb, state = "normal")
-    tcltk::tkconfigure(l28.write.txt.doc.file.no.rb, state = "normal")
-    tcltk::tkconfigure(l28.write.txt.doc.file.yes.label, state = "normal")
-    tcltk::tkconfigure(l28.write.txt.doc.file.no.label, state = "normal")
-  }
-  l8.ontab.click <- function() {
-    tcltk::tkconfigure(l12.table.heading.words.label, state = "normal")
-    tcltk::tkconfigure(l12.table.heading.words.entry, state = "normal")
-    tcltk::tkconfigure(l13.ignore.case.th.label, state = "normal")
-    tcltk::tkconfigure(l13.ignore.case.th.yes.rb, state = "normal")
-    tcltk::tkconfigure(l13.ignore.case.th.no.rb, state = "normal")
-    tcltk::tkconfigure(l13.ignore.case.th.yes.label, state = "normal")
-    tcltk::tkconfigure(l13.ignore.case.th.no.label, state = "normal")
-    tcltk::tkconfigure(l14.dev.label, state = "normal")
-    tcltk::tkconfigure(l14.dev.entry, state = "normal")
-    tcltk::tkconfigure(l14.dev.slider, to = "200")
-    tcltk::tkconfigure(l19.extract.all.tables.label, state = "normal")
-    tcltk::tkconfigure(l19.extract.all.tables.all.rb, state = "normal")
-    tcltk::tkconfigure(l19.extract.all.tables.all.label, state = "normal")
-    tcltk::tkconfigure(l19.extract.all.tables.searchwords.label, state = "normal")
-    tcltk::tkconfigure(l19.extract.all.tables.searchwords.rb, state = "normal")
-    tcltk::tkconfigure(l25.write.table.locations.label, state = "normal")
-    tcltk::tkconfigure(l25.write.table.locations.yes.rb, state = "normal")
-    tcltk::tkconfigure(l25.write.table.locations.no.rb, state = "normal")
-    tcltk::tkconfigure(l25.write.table.locations.yes.label, state = "normal")
-    tcltk::tkconfigure(l25.write.table.locations.no.label, state = "normal")
-    tcltk::tkconfigure(l26.exp.nondetc.tabs.label, state = "normal")
-    tcltk::tkconfigure(l26.exp.nondetc.tabs.yes.rb, state = "normal")
-    tcltk::tkconfigure(l26.exp.nondetc.tabs.no.rb, state = "normal")
-    tcltk::tkconfigure(l26.exp.nondetc.tabs.yes.label, state = "normal")
-    tcltk::tkconfigure(l26.exp.nondetc.tabs.no.label, state = "normal")
-    tcltk::tkconfigure(l27.write.tab.doc.file.label, state = "normal")
-    tcltk::tkconfigure(l27.write.tab.doc.file.yes.rb, state = "normal")
-    tcltk::tkconfigure(l27.write.tab.doc.file.no.rb, state = "normal")
-    tcltk::tkconfigure(l27.write.tab.doc.file.yes.label, state = "normal")
-    tcltk::tkconfigure(l27.write.tab.doc.file.no.label, state = "normal")
-    tcltk::tkconfigure(l22.context.label, state = "disabled")
-    tcltk::tkconfigure(l22.context.entry, state = "disabled")
-    tcltk::tclvalue(context.var) <- "0"
-    tcltk::tkconfigure(l22.context.slider, to = "0")
-    tcltk::tkconfigure(l28.write.txt.doc.file.label, state = "disabled")
-    tcltk::tkconfigure(l28.write.txt.doc.file.yes.rb, state = "disabled")
-    tcltk::tkconfigure(l28.write.txt.doc.file.no.rb, state = "disabled")
-    tcltk::tkconfigure(l28.write.txt.doc.file.yes.label, state = "disabled")
-    tcltk::tkconfigure(l28.write.txt.doc.file.no.label, state = "disabled")
-    ## only accept a list of search words
-    tcltk::tkconfigure(l19.extract.all.tables.all.rb, state = "normal")
-    tcltk::tkconfigure(l19.extract.all.tables.all.label, state = "normal")
-  }
-  l8.ontxtandtab.click <- function() {
-
-    tcltk::tkconfigure(l12.table.heading.words.label, state = "normal")
-    tcltk::tkconfigure(l12.table.heading.words.entry, state = "normal")
-    tcltk::tkconfigure(l13.ignore.case.th.label, state = "normal")
-    tcltk::tkconfigure(l13.ignore.case.th.yes.rb, state = "normal")
-    tcltk::tkconfigure(l13.ignore.case.th.no.rb, state = "normal")
-    tcltk::tkconfigure(l13.ignore.case.th.yes.label, state = "normal")
-    tcltk::tkconfigure(l13.ignore.case.th.no.label, state = "normal")
-    tcltk::tkconfigure(l14.dev.label, state = "normal")
-    tcltk::tkconfigure(l14.dev.entry, state = "normal")
-    tcltk::tkconfigure(l14.dev.slider, to = "200")
-    tcltk::tclvalue(dev.var) <- "20"
-    tcltk::tkconfigure(l19.extract.all.tables.label, state = "normal")
-    tcltk::tkconfigure(l19.extract.all.tables.all.rb, state = "normal")
-    tcltk::tkconfigure(l19.extract.all.tables.all.label, state = "normal")
-    tcltk::tkconfigure(l19.extract.all.tables.searchwords.label, state = "normal")
-    tcltk::tkconfigure(l19.extract.all.tables.searchwords.rb, state = "normal")
-    tcltk::tclvalue(l19.rbValue) <- "searchwords"
-    tcltk::tkconfigure(l20.search.words.label, state="normal")
-    tcltk::tkconfigure(l25.write.table.locations.label, state = "normal")
-    tcltk::tkconfigure(l25.write.table.locations.yes.rb, state = "normal")
-    tcltk::tkconfigure(l25.write.table.locations.no.rb, state = "normal")
-    tcltk::tkconfigure(l25.write.table.locations.yes.label, state = "normal")
-    tcltk::tkconfigure(l25.write.table.locations.no.label, state = "normal")
-    tcltk::tkconfigure(l26.exp.nondetc.tabs.label, state = "normal")
-    tcltk::tkconfigure(l26.exp.nondetc.tabs.yes.rb, state = "normal")
-    tcltk::tkconfigure(l26.exp.nondetc.tabs.no.rb, state = "normal")
-    tcltk::tkconfigure(l26.exp.nondetc.tabs.yes.label, state = "normal")
-    tcltk::tkconfigure(l26.exp.nondetc.tabs.no.label, state = "normal")
-    tcltk::tkconfigure(l27.write.tab.doc.file.label, state = "normal")
-    tcltk::tkconfigure(l27.write.tab.doc.file.yes.rb, state = "normal")
-    tcltk::tkconfigure(l27.write.tab.doc.file.no.rb, state = "normal")
-    tcltk::tkconfigure(l27.write.tab.doc.file.yes.label, state = "normal")
-    tcltk::tkconfigure(l27.write.tab.doc.file.no.label, state = "normal")
-    tcltk::tkconfigure(l22.context.label, state = "normal")
-    tcltk::tkconfigure(l22.context.entry, state = "normal")
-    tcltk::tkconfigure(l22.context.slider, to = "100")
-    tcltk::tkconfigure(l28.write.txt.doc.file.label, state = "normal")
-    tcltk::tkconfigure(l28.write.txt.doc.file.yes.rb, state = "normal")
-    tcltk::tkconfigure(l28.write.txt.doc.file.no.rb, state = "normal")
-    tcltk::tkconfigure(l28.write.txt.doc.file.yes.label, state = "normal")
-    tcltk::tkconfigure(l28.write.txt.doc.file.no.label, state = "normal")
-    ## only accept a list of search words
-    l19.rbValue="searchwords"
-    tcltk::tkconfigure(l19.extract.all.tables.all.rb, state = "disabled")
-    tcltk::tkconfigure(l19.extract.all.tables.all.label, state = "disabled")
-  }
-  l8.ontxtandtab.click()
-  l8.whattoextr.txt.rb <- tcltk::tkradiobutton(l8, variable = whattoextr.var, 
-                                               value = "txt", command = l8.ontxt.click,background="#05F2C7")
-  l8.whattoextr.tab.rb <- tcltk::tkradiobutton(l8, variable = whattoextr.var, 
-                                               value = "tab", command = l8.ontab.click,background="#05F2C7")
-  l8.whattoextr.txtandtab.rb <- tcltk::tkradiobutton(l8, variable = whattoextr.var, 
-                                                     value = "txtandtab", 
-                                                     command = l8.ontxtandtab.click,background="#05F2C7")
-
-
-
-  ## combobox list -------------------------------------------------
-
-  ## in_output
-  l10.out.table.format.options <- c(".csv (WINDOWS-1252)", ".csv (macintosh)", ".csv (UTF-8)", 
-                                    ".tsv (WINDOWS-1252)",".tsv (macintosh)",".tsv (UTF-8)")
-  l10.out.table.format.combo <- tcltk2::tk2combobox(l10,
-                                                    values = l10.out.table.format.options, state = "readonly")
-  tcltk::tkconfigure(l10.out.table.format.combo, textvariable = out.table.format.var)
-
-  ## progress bar --------------------------------------------------
-  l30.progress.bar.pb <- tcltk2::tk2progress(l30, value = 0,
-                                             maximum = 100, length = 500)
-
-
-  ## buttons -------------------------------------------------------
-
-  ## line 1 load a tsv to fill in all the boxes
-  load.tsv <- function() {
-
-    tcltk::tclvalue(tsv_location.var) <- tcltk::tk_choose.files(default = tcltk::tclvalue(tsv_location.var),
-                                                                caption = "Choose the TSV file",
-                                                                multi = FALSE)
+  } else {
+    ## if tcltk works continue
+    PDE.globals$ttanalyzer <- tcltk::tktoplevel(bg = "#05F2DB")
+    tcltk::tkwm.geometry(PDE.globals$ttanalyzer, "+0+0")
+    tcltk::tkwm.title(PDE.globals$ttanalyzer, "PDE analyzer - Choose your variables")
+  
+    ## style ------------------------------------------------------
+    themes <- try(tcltk2::tk2theme.list(), silent = TRUE)
+    if (!inherits(themes, "try-error")) {
+      if ("vista" %in% themes) {
+        # This must be aquaTk on a Mac
+        try(tcltk2::tk2theme("vista"), silent = TRUE)
+      } else if ("clam" %in% themes) {
+        try(tcltk2::tk2theme("clam"), silent = TRUE)
+      } else if ("aquaTk" %in% themes) {
+        # This must be Vista or Win 7
+        try(tcltk2::tk2theme("aquaTk"), silent = TRUE)
+      }
+    }
+  
+    ## min size so that no buttons disappear vertically
+    tcltk::tkwm.minsize(PDE.globals$ttanalyzer, 800, 0)
+  
+  
+    ## frames --------------------------------------------
+    ## right frame
+    r <- tcltk::tkframe(PDE.globals$ttanalyzer, bg = "#05F2DB")
+    ## line 1 with buttons
+    l1 <- tcltk::tkframe(PDE.globals$ttanalyzer, bg = "#05F2DB")
+    ## line in_output (line6-10) with buttons
+    in_output <- tcltk::tkframe(PDE.globals$ttanalyzer, borderwidth = 1, relief = "solid")
+    l6 <- tcltk::tkframe(in_output, bg = "#05F2C7")  ## caption
+    l7 <- tcltk::tkframe(in_output, bg = "#05F2C7")  ## pdfs
+    l8 <- tcltk::tkframe(in_output, bg = "#05F2C7")  ## whattoextr
+    l9 <- tcltk::tkframe(in_output, bg = "#05F2C7")  ## outputfolder
+    l10 <- tcltk::tkframe(in_output, bg = "#05F2C7")  ## out.table.format
+    ## line paras (line11-23) with buttons
+    paras <- tcltk::tkframe(PDE.globals$ttanalyzer, borderwidth = 1, relief = "solid",
+                            bg = "#05F2DB")
+    l11 <- tcltk::tkframe(paras, bg = "#05F2DB")  ## caption
+    l12 <- tcltk::tkframe(paras, bg = "#05F2DB")  ## table.heading.words
+    l13 <- tcltk::tkframe(paras, bg = "#05F2DB")  ## ignore.case.th
+    l14 <- tcltk::tkframe(paras, bg = "#05F2DB")  ## dev.caption
+    l15 <- tcltk::tkframe(paras, bg = "#05F2DB")  ## filter words?
+    l16 <- tcltk::tkframe(paras, bg = "#05F2DB")  ## filter.words
+    l17 <- tcltk::tkframe(paras, bg = "#05F2DB")  ## ignore.case.fw
+    l18 <- tcltk::tkframe(paras, bg = "#05F2DB")  ## filter.word.times.caption
+    l19 <- tcltk::tkframe(paras, bg = "#05F2DB")  ## extract all tables?
+    l20 <- tcltk::tkframe(paras, bg = "#05F2DB")  ## search.words
+    l21 <- tcltk::tkframe(paras, bg = "#05F2DB")  ## ignore.case.sw
+    l22 <- tcltk::tkframe(paras, bg = "#05F2DB")  ## context.caption
+    l23 <- tcltk::tkframe(paras, bg = "#05F2DB")  ## eval.abbrevs.caption
+    ## line docus (line24-28) with buttons
+    docus <- tcltk::tkframe(PDE.globals$ttanalyzer, borderwidth = 1, relief = "solid",
+                            bg = "#05F2C7")
+    l24 <- tcltk::tkframe(docus, bg = "#05F2C7")  ## caption
+    l25 <- tcltk::tkframe(docus, bg = "#05F2C7")  ## write table values
+    l26 <- tcltk::tkframe(docus, bg = "#05F2C7")  ## exp.nondetc.tabs
+    l27 <- tcltk::tkframe(docus, bg = "#05F2C7")  ## write.tab.doc.file
+    l28 <- tcltk::tkframe(docus, bg = "#05F2C7")  ## write.txt.doc.file
+    l29 <- tcltk::tkframe(docus, bg = "#05F2C7")  ## delete
+    e <- tcltk::tkframe(PDE.globals$ttanalyzer, bg = "#05F2DB")
+    l30 <- tcltk::tkframe(e, bg = "#05F2DB")  ## progress bar
     
-    if (length(tcltk::tclvalue(tsv_location.var)) > 0 && tcltk::tclvalue(tsv_location.var) != "") {
-      values_table <- utils::read.table(tcltk::tclvalue(tsv_location.var),
-                                        sep = "\t", header = TRUE, quote = "\"")
-      res <- try(values_table[, "variable"],
-                 silent = TRUE)
-      if (class(res) == "try-error") {
-        tcltk::tkmessageBox(title = "Error", type = "ok",
-                            icon = "error", message = paste0("Please select a correctly formated TSV file."))
-      } else {
-
-        ## preset mandatory variables for running search
-        ## word
-        whattoextr <- sub(" ", "", as.character(values_table[(grep("whattoextr",
-                                                                   values_table[, "variable"])), "value"]))
+    ## test os.font ------------------------------------------------------------------------
+    res <- try(tcltk2::tk2label(l1, text = "test", font = os.font.ten.bold), silent = TRUE)
+    if (class(res)[1] == "try-error") {
+      out_msg <- c(out_msg, "There is an error with the allocation of tcl system fonts.")
+      if (verbose) cat(utils::tail(out_msg,1), sep="\n")
+      os.font <- ""
+      os.font.ten.bold <- ""
+      os.font.twelve.bold <- ""
+    }
   
-        ## correct spelling
-        if (whattoextr == "table" || whattoextr ==
-            "tables")
-          whattoextr <- "tab"
-        if (whattoextr == "tableandtxt" || whattoextr ==
-            "tableandtext" || whattoextr == "tabandtext" ||
-            whattoextr == "textandtab" || whattoextr ==
-            "tabandtxt" || whattoextr == "txtandtable" ||
-            whattoextr == "tablesandtxt" || whattoextr ==
-            "txtandtables")
-          whattoextr <- "txtandtab"
-        ## test if whattoextr files exist
-        if ((whattoextr == "txtandtab" || whattoextr ==
-             "tab" || whattoextr == "txt"))
-          tcltk::tclvalue(whattoextr.var) <- whattoextr
+    ## slider --------------------------------------------------------
   
-        ## uncheck the correct boxes
-        if (whattoextr == "txt")
-          l8.ontxt.click()
-        if (whattoextr == "tab")
-          l8.ontab.click()
-        if (whattoextr == "txtandtab")
-          l8.ontxtandtab.click()
+    ## A function that changes the label
+    ## paras l14.dev slider
+    l14.onChange <- function(...) {
+      l14.value <- as.integer(tcltk::tclvalue(dev.var))
+      l14.entry <- sprintf("%s", l14.value)
+      tcltk::tclvalue(dev.var) <- l14.entry
+    }
+    ## Add the slider
+    l14.dev.slider <- tcltk2::tk2scale(l14, from = 0, to = 200,
+                                       variable = dev.var, orient = "horizontal",
+                                       length = 100, command = l14.onChange)
   
-        ## fill the approriate checkmarks
-        l15.filter.words.rb <- as.character(values_table[(grep("l15.filter.words.rbValue",
-                                                               values_table[, "variable"])), "value"])
-        if (!(length(l15.filter.words.rb) == 0 ||
-              is.na(l15.filter.words.rb))) {
-          if (l15.filter.words.rb == "yes") {
-            l15.onyes.click()
-          } else if (l15.filter.words.rb == "no") {
-            l15.onno.click()
-          }
-          tcltk::tclvalue(l15.filter.words.rbValue) <- l15.filter.words.rb
-        }
+    ## l18.filter.word.times slider A function that
+    ## changes the label
+    l18.onChange <- function(...) {
+      l18.value <- as.integer(tcltk::tclvalue(filter.word.times.var))
+      l18.entry <- sprintf("%s", l18.value)
+      tcltk::tclvalue(filter.word.times.var) <- l18.entry
+    }
+    ## Add the slider
+    l18.filter.word.times.slider <- tcltk2::tk2scale(l18,
+                                                     from = 0, to = 500, variable = filter.word.times.var,
+                                                     orient = "horizontal", length = 100, command = l18.onChange)
+  
+    ## l22.context slider A function that changes the
+    ## label
+    l22.onChange <- function(...) {
+      l22.value <- as.integer(tcltk::tclvalue(context.var))
+      l22.entry <- sprintf("%s", l22.value)
+      tcltk::tclvalue(context.var) <- l22.entry
+    }
+    ## Add the slider
+    l22.context.slider <- tcltk2::tk2scale(l22, from = 0,
+                                           to = 100, variable = context.var, orient = "horizontal",
+                                           length = 100, command = l22.onChange)
   
   
-        l19.rb <- as.character(values_table[(grep("l19.rbValue",
-                                                  values_table[, "variable"])), "value"])
-        if (!(length(l19.rb) == 0 || is.na(l19.rb))) {
-          if (l19.rb == "all") {
-            l19.onall.click()
-          } else if (l19.rb == "searchwords") {
-            l19.onsearchwords.click()
-          }
-          tcltk::tclvalue(l19.rbValue) <- l19.rb
-        }
+    ## labels -----------------------------------------------------------
   
-        search.wds <- as.character(values_table[(grep("search.words",
-                                                      values_table[, "variable"])), "value"])
-        if (!(length(search.wds) == 0 || is.na(search.wds)))
-          tcltk::tclvalue(search.words.var) <- search.wds
-        ## ignore.case.sw
-        ic.sw <- as.logical(values_table[(grep("ignore.case.sw",
-                                               values_table[, "variable"])), "value"])
-        if (!(length(ic.sw) == 0 || is.na(ic.sw)))
-          tcltk::tclvalue(ignore.case.sw.var) <- as.character(ic.sw)
-        ## eval.abbrevs
-        eval.abbrevs <- as.logical(values_table[(grep("eval.abbrevs",
-                                                      values_table[, "variable"])), "value"])
-        if (!(length(eval.abbrevs) == 0 || is.na(eval.abbrevs)))
-          tcltk::tclvalue(eval.abbrevs.var) <- as.character(eval.abbrevs)
+    ## line in_output (line6-10) with buttons
+    l6.caption.label <- tcltk2::tk2label(l6, text = "Input/output",
+                                         font = os.font.ten.bold, background = "#05F2C7")
+    l7.pdfs.label <- tcltk2::tk2label(l7, text = "Choose the PDF(s)/folder:",
+                                      background = "#05F2C7")
+    l8.whattoextr.label <- tcltk2::tk2label(l8, text = "Choose what to extract from the PDF files:",
+                                            background = "#05F2C7")
+    l8.whattoextr.sentences.label <- tcltk2::tk2label(l8, text = "sentences",
+                                                      background = "#05F2C7")
+    l8.whattoextr.tables.label <- tcltk2::tk2label(l8, text = "tables",
+                                                   background = "#05F2C7")
+    l8.whattoextr.both.label <- tcltk2::tk2label(l8, text = "both",
+                                                 background = "#05F2C7")
+    l9.outputfolder.label <- tcltk2::tk2label(l9, text = "Choose the output folder:",
+                                              background = "#05F2C7")
+    l10.out.table.format.label <- tcltk2::tk2label(l10, text = "Choose the output format:",
+                                                   background = "#05F2C7")
+  
+    ## line paras (line11-23) with buttons
+    l11.caption.label <- tcltk2::tk2label(l11, text = "Parameters",
+                                          font = os.font.ten.bold, background = "#05F2DB")
+    l12.table.heading.words.label <- tcltk2::tk2label(l12,
+                                        text = "Enter all table headings other than \"table\" (separated by ; without extra spaces):",
+                                        background = "#05F2DB")
+    l13.ignore.case.th.label <- tcltk2::tk2label(l13, text = "Are the table headings case sensitive (capitalization important)?",
+                                                 background = "#05F2DB")
+    l13.ignore.case.th.yes.label <- tcltk2::tk2label(l13,
+                                                     text = "yes", background = "#05F2DB")
+    l13.ignore.case.th.no.label <- tcltk2::tk2label(l13,
+                                                    text = "no", background = "#05F2DB")
+    l14.dev.label <- tcltk2::tk2label(l14, text = "Enter the pixel deviation where different table columns are considered same:",
+                                      background = "#05F2DB")
+    l15.filter.words.yes.label <- tcltk2::tk2label(l15, text = "yes",
+                                                   background = "#05F2DB")
+    l15.filter.words.no.label <- tcltk2::tk2label(l15, text = "no",
+                                                  background = "#05F2DB")
+    l15.filter.words.yesno.label <- tcltk2::tk2label(l15, text = "Filtering of PDF files according to the presence of filter words?",
+                                                     background = "#05F2DB")
+    l16.filter.words.label <- tcltk2::tk2label(l16, text = "Filter words (separated by ; without extra spaces):",
+                                               background = "#05F2DB")
+    l17.ignore.case.fw.label <- tcltk2::tk2label(l17, text = "Are the filter words case sensitive (capitalization important)?",
+                                                 background = "#05F2DB")
+    l17.ignore.case.fw.yes.label <- tcltk2::tk2label(l17, text = "yes",
+                                                     background = "#05F2DB")
+    l17.ignore.case.fw.no.label <- tcltk2::tk2label(l17, text = "no",
+                                                    background = "#05F2DB")
+    l18.filter.word.times.label <- tcltk2::tk2label(l18,
+                                                    text = "Min. number of words from filter word list required to be detected in the PDF file:",
+                                                    background = "#05F2DB")
+    l19.extract.all.tables.label <- tcltk2::tk2label(l19, text = "Extract all tables or only ones with search words?",
+                                                     background = "#05F2DB")
+    l19.extract.all.tables.all.label <- tcltk2::tk2label(l19,
+                                                         text = "all", background = "#05F2DB")
+    l19.extract.all.tables.searchwords.label <- tcltk2::tk2label(l19,
+                                                                 text = "search words only", background = "#05F2DB")
+    l20.search.words.label <- tcltk2::tk2label(l20, text = "Search words (separated by ; without extra spaces):",
+                                               background = "#05F2DB")
+    l21.ignore.case.sw.yes.label <- tcltk2::tk2label(l21, text = "yes",
+                                                     background = "#05F2DB")
+    l21.ignore.case.sw.no.label <- tcltk2::tk2label(l21, text = "no",
+                                                    background = "#05F2DB")
+    l21.ignore.case.sw.label <- tcltk2::tk2label(l21, text = "Are the search words case sensitive (capitalization important)?",
+                                                 background = "#05F2DB")
+    l22.context.label <- tcltk2::tk2label(l22, text = "Number of sentences extracted before and after the sentence with the search word:",
+                                          background = "#05F2DB")
+    l23.eval.abbrevs.label <- tcltk2::tk2label(l23, text = "Should abbreviations of the search word be replaced by the search word during the analysis?",
+                                               background = "#05F2DB")
+    l23.eval.abbrevs.yes.label <- tcltk2::tk2label(l23, text = "yes",
+                                                   background = "#05F2DB")
+    l23.eval.abbrevs.no.label <- tcltk2::tk2label(l23, text = "no",
+                                                  background = "#05F2DB")
+    # (line24-28) with buttons
+    l24.caption.label <- tcltk2::tk2label(l24, text = "Documentation/Debugging",
+                                          font = os.font.ten.bold, background = "#05F2C7")
+    l25.write.table.locations.label <- tcltk2::tk2label(l25, text = "Should the table values (coordinates within the files) be written in an output file?",
+                                                     background = "#05F2C7")
+    l25.write.table.locations.yes.label <- tcltk2::tk2label(l25,
+                                                         text = "yes", background = "#05F2C7")
+    l25.write.table.locations.no.label <- tcltk2::tk2label(l25,
+                                                        text = "no", background = "#05F2C7")
+    l26.exp.nondetc.tabs.label <- tcltk2::tk2label(l26, text = "Should the tables with problems exported as pngs?",
+                                                   background = "#05F2C7")
+    l26.exp.nondetc.tabs.yes.label <- tcltk2::tk2label(l26,
+                                                       text = "yes", background = "#05F2C7")
+    l26.exp.nondetc.tabs.no.label <- tcltk2::tk2label(l26,
+                                                      text = "no", background = "#05F2C7")
+    l27.write.tab.doc.file.label <- tcltk2::tk2label(l27, text = "Should a table documentation file be created (file that reports if there was no table found)?",
+                                                     background = "#05F2C7")
+    l27.write.tab.doc.file.yes.label <- tcltk2::tk2label(l27,
+                                                         text = "yes", background = "#05F2C7")
+    l27.write.tab.doc.file.no.label <- tcltk2::tk2label(l27,
+                                                        text = "no", background = "#05F2C7")
+    l28.write.txt.doc.file.label <- tcltk2::tk2label(l28, text = "Should a sentence documentation file be created (file that reports if there was no sentence found)?",
+                                                     background = "#05F2C7")
+    l28.write.txt.doc.file.yes.label <- tcltk2::tk2label(l28,
+                                                         text = "yes", background = "#05F2C7")
+    l28.write.txt.doc.file.no.label <- tcltk2::tk2label(l28,
+                                                        text = "no", background = "#05F2C7")
+    l29.delete.label <- tcltk2::tk2label(l29, text = "Should the intermediate files be deleted?",
+                                         background = "#05F2C7")
+    l29.delete.yes.label <- tcltk2::tk2label(l29, text = "yes",
+                                             background = "#05F2C7")
+    l29.delete.no.label <- tcltk2::tk2label(l29, text = "no",
+                                            background = "#05F2C7")
+    ## line (line29) with buttons
+    PDE.globals$l30.progress.textbox <- tcltk2::tk2combobox(l30, values = c("",""), textvariable = "", justify = "center")
+  
+    ## entry boxes -----------------------------------------------
+  
+    ## in_output
+    l7.pdfs.entry <- tcltk2::tk2entry(l7, textvariable = pdfs.var,
+                                      width = 10)
+    l9.outputfolder.entry <- tcltk2::tk2entry(l9, textvariable = outputfolder.var,
+                                              width = 10)
+    ## paras
+    l12.table.heading.words.entry <- tcltk2::tk2entry(l12,
+                                                      textvariable = table.heading.words.var, width = 10)
+    l14.dev.entry <- tcltk2::tk2entry(l14, textvariable = dev.var,
+                                      width = 4)
+    l16.filter.words.entry <- tcltk2::tk2entry(l16, textvariable = filter.words.var,
+                                               width = 10)
+    l18.filter.word.times.entry <- tcltk2::tk2entry(l18,
+                                                    textvariable = filter.word.times.var, width = 4)
+    l20.search.words.entry <- tcltk2::tk2entry(l20, textvariable = search.words.var,
+                                               width = 10)
+    l22.context.entry <- tcltk2::tk2entry(l22, textvariable = context.var,
+                                          width = 4)
+    ## docus
+  
+    ## radio buttons --------------------------------------------
+  
+    l13.ignore.case.th.yes.rb <- tcltk::tkradiobutton(l13,
+                                                      variable = ignore.case.th.var, value = "FALSE",
+                                                      background = "#05F2DB")
+    l13.ignore.case.th.no.rb <- tcltk::tkradiobutton(l13,
+                                                     variable = ignore.case.th.var, value = "TRUE",
+                                                     background = "#05F2DB")
+    l17.ignore.case.fw.yes.rb <- tcltk::tkradiobutton(l17,
+                                                      variable = ignore.case.fw.var, value = "FALSE",
+                                                      background = "#05F2DB")
+    l17.ignore.case.fw.no.rb <- tcltk::tkradiobutton(l17,
+                                                     variable = ignore.case.fw.var, value = "TRUE",
+                                                     background = "#05F2DB")
+  
+    l15.onyes.click <- function() {
+      tcltk::tkconfigure(l16.filter.words.label, state = "normal")
+      tcltk::tkconfigure(l16.filter.words.entry, state = "normal")
+      tcltk::tkconfigure(l17.ignore.case.fw.label, state = "normal")
+      tcltk::tkconfigure(l17.ignore.case.fw.yes.rb, state = "normal")
+      tcltk::tkconfigure(l17.ignore.case.fw.yes.label, state = "normal")
+      tcltk::tkconfigure(l17.ignore.case.fw.no.label, state = "normal")
+      tcltk::tkconfigure(l17.ignore.case.fw.no.rb, state = "normal")
+      tcltk::tkconfigure(l18.filter.word.times.label,
+                         state = "normal")
+      tcltk::tkconfigure(l18.filter.word.times.entry,
+                         state = "normal")
+      tcltk::tkconfigure(l18.filter.word.times.slider,
+                         to = "500")
+      tcltk::tclvalue(filter.word.times.var) = "20"
+    }
+    l15.onno.click <- function() {
+      tcltk::tkconfigure(l16.filter.words.label, state = "disabled")
+      tcltk::tkconfigure(l16.filter.words.entry, state = "disabled")
+      tcltk::tkconfigure(l17.ignore.case.fw.label, state = "disabled")
+      tcltk::tkconfigure(l17.ignore.case.fw.yes.rb, state = "disabled")
+      tcltk::tkconfigure(l17.ignore.case.fw.no.rb, state = "disabled")
+      tcltk::tkconfigure(l17.ignore.case.fw.yes.label, state = "disabled")
+      tcltk::tkconfigure(l17.ignore.case.fw.no.label, state = "disabled")
+      tcltk::tkconfigure(l18.filter.word.times.label,
+                         state = "disabled")
+      tcltk::tkconfigure(l18.filter.word.times.entry,
+                         state = "disabled")
+      tcltk::tclvalue(filter.word.times.var) <- "0"
+      tcltk::tkconfigure(l18.filter.word.times.slider,
+                         to = "0")
+      ## delete all filterwords
+      tcltk::tclvalue(filter.words.var) <- ""
+    }
+    l15.filter.words.yes.rb <- tcltk::tkradiobutton(l15, variable = l15.filter.words.rbValue,
+                                                    value = "yes", command = l15.onyes.click, background = "#05F2DB")
+    l15.filter.words.no.rb <- tcltk::tkradiobutton(l15, variable = l15.filter.words.rbValue,
+                                                   value = "no", command = l15.onno.click, background = "#05F2DB")
+  
+    l21.ignore.case.sw.yes.rb <- tcltk::tkradiobutton(l21,
+                                                      variable = ignore.case.sw.var, value = "FALSE",
+                                                      background = "#05F2DB")
+    l21.ignore.case.sw.no.rb <- tcltk::tkradiobutton(l21,
+                                                     variable = ignore.case.sw.var, value = "TRUE",
+                                                     background = "#05F2DB")
   
   
-        ## write.table.locations (generates 3 tables with
-        ## the locations of the tables within the txt/html
-        ## files)
-        wtl <- as.logical(values_table[(grep("write.table.locations",
-                                             values_table[, "variable"])), "value"])
-        if (!(length(wtl) == 0 || is.na(wtl))) tcltk::tclvalue(write.table.locations.var) <- as.character(wtl)
+    l19.onall.click <- function() {
+      tcltk::tkconfigure(l20.search.words.label, state = "disabled")
+      tcltk::tkconfigure(l20.search.words.entry, state = "disabled")
+      tcltk::tkconfigure(l21.ignore.case.sw.label, state = "disabled")
+      tcltk::tkconfigure(l21.ignore.case.sw.yes.label, state = "disabled")
+      tcltk::tkconfigure(l21.ignore.case.sw.no.label, state = "disabled")
+      tcltk::tkconfigure(l21.ignore.case.sw.yes.rb, state = "disabled")
+      tcltk::tkconfigure(l21.ignore.case.sw.no.rb, state = "disabled")
+      tcltk::tkconfigure(l23.eval.abbrevs.yes.rb, state = "disabled")
+      tcltk::tkconfigure(l23.eval.abbrevs.no.rb, state = "disabled")
+      tcltk::tkconfigure(l23.eval.abbrevs.yes.label, state = "disabled")
+      tcltk::tkconfigure(l23.eval.abbrevs.no.label, state = "disabled")
+      ## delete all filterwords
+      tcltk::tclvalue(search.words.var) <- ""
+    }
+    l19.onsearchwords.click <- function() {
+      tcltk::tkconfigure(l20.search.words.label, state = "normal")
+      tcltk::tkconfigure(l20.search.words.entry, state = "normal")
+      tcltk::tkconfigure(l21.ignore.case.sw.label, state = "normal")
+      tcltk::tkconfigure(l21.ignore.case.sw.yes.label, state = "normal")
+      tcltk::tkconfigure(l21.ignore.case.sw.no.label, state = "normal")
+      tcltk::tkconfigure(l21.ignore.case.sw.yes.rb, state = "normal")
+      tcltk::tkconfigure(l21.ignore.case.sw.no.rb, state = "normal")
+      tcltk::tkconfigure(l23.eval.abbrevs.yes.rb, state = "normal")
+      tcltk::tkconfigure(l23.eval.abbrevs.no.rb, state = "normal")
+      tcltk::tkconfigure(l23.eval.abbrevs.yes.label, state = "normal")
+      tcltk::tkconfigure(l23.eval.abbrevs.no.label, state = "normal")
+    }
+    l19.extract.all.tables.all.rb <- tcltk::tkradiobutton(l19,
+                                                          variable = l19.rbValue, value = "all", command = l19.onall.click,
+                                                          background = "#05F2DB")
+    l19.extract.all.tables.searchwords.rb <- tcltk::tkradiobutton(l19,
+                                                                  variable = l19.rbValue, value = "searchwords",
+                                                                  command = l19.onsearchwords.click, background = "#05F2DB")
   
-        outputfolder <- as.character(values_table[(grep("outputfolder",
-                                                        values_table[, "variable"])), "value"])
-        
-        if (!(length(outputfolder) == 0 || is.na(outputfolder))) {
-          if (grepl("^examples/MTX_output", outputfolder)){
-            tcltk::tclvalue(outputfolder.var) <- paste0(PDE_path(),"/",outputfolder)
-          } else {
-            tcltk::tclvalue(outputfolder.var) <- outputfolder
-          }
-        } else {
-          tcltk::tclvalue(outputfolder.var) <- ""
-        }
-        
+    l23.eval.abbrevs.yes.rb <- tcltk::tkradiobutton(l23,
+                                                    variable = eval.abbrevs.var, value = "TRUE",
+                                                    background = "#05F2DB")
+    l23.eval.abbrevs.no.rb <- tcltk::tkradiobutton(l23,
+                                                   variable = eval.abbrevs.var, value = "FALSE",
+                                                   background = "#05F2DB")
   
-        pdfs <- as.character(values_table[(grep("pdfs",
-                                                values_table[, "variable"])), "value"])
-        if (length(pdfs) == 0 || is.na(pdfs)) {
-          pdfs <- as.character(values_table[(grep("pdffolder",
-                                                  values_table[, "variable"])), "value"])
-        }
-        
-        if (length(pdfs) == 0 || is.na(pdfs)) {
-          pdfs <- ""
-        }
+    l25.write.table.locations.yes.rb <- tcltk::tkradiobutton(l25,
+                                                          variable = write.table.locations.var, value = "TRUE",
+                                                          background = "#05F2C7")
+    l25.write.table.locations.no.rb <- tcltk::tkradiobutton(l25,
+                                                         variable = write.table.locations.var, value = "FALSE",
+                                                         background = "#05F2C7")
+  
+    l26.exp.nondetc.tabs.yes.rb <- tcltk::tkradiobutton(l26,
+                                                        variable = exp.nondetc.tabs.var, value = "TRUE",
+                                                        background = "#05F2C7")
+    l26.exp.nondetc.tabs.no.rb <- tcltk::tkradiobutton(l26,
+                                                       variable = exp.nondetc.tabs.var, value = "FALSE",
+                                                       background = "#05F2C7")
+  
+    l27.write.tab.doc.file.yes.rb <- tcltk::tkradiobutton(l27,
+                                                          variable = write.tab.doc.file.var, value = "TRUE",
+                                                          background = "#05F2C7")
+    l27.write.tab.doc.file.no.rb <- tcltk::tkradiobutton(l27,
+                                                         variable = write.tab.doc.file.var, value = "FALSE",
+                                                         background = "#05F2C7")
+  
+    l28.write.txt.doc.file.yes.rb <- tcltk::tkradiobutton(l28,
+                                                          variable = write.txt.doc.file.var, value = "TRUE",
+                                                          background = "#05F2C7")
+    l28.write.txt.doc.file.no.rb <- tcltk::tkradiobutton(l28,
+                                                         variable = write.txt.doc.file.var, value = "FALSE",
+                                                         background = "#05F2C7")
+  
+    l29.delete.yes.rb <- tcltk::tkradiobutton(l29, variable = delete.var,
+                                              value = "TRUE", background = "#05F2C7")
+    l29.delete.no.rb <- tcltk::tkradiobutton(l29, variable = delete.var,
+                                             value = "FALSE", background = "#05F2C7")
+  
+    l8.ontxt.click <- function() {
+      tcltk::tkconfigure(l12.table.heading.words.label, state = "disabled")
+      tcltk::tkconfigure(l12.table.heading.words.entry, state = "disabled")
+      tcltk::tkconfigure(l13.ignore.case.th.label, state = "disabled")
+      tcltk::tkconfigure(l13.ignore.case.th.yes.rb, state = "disabled")
+      tcltk::tkconfigure(l13.ignore.case.th.no.rb, state = "disabled")
+      tcltk::tkconfigure(l13.ignore.case.th.yes.label, state = "disabled")
+      tcltk::tkconfigure(l13.ignore.case.th.no.label, state = "disabled")
+      tcltk::tkconfigure(l14.dev.label, state = "disabled")
+      tcltk::tkconfigure(l14.dev.entry, state = "disabled")
+      tcltk::tclvalue(dev.var) <- "0"
+      tcltk::tkconfigure(l14.dev.slider, to = "0")
+      tcltk::tkconfigure(l19.extract.all.tables.label, state = "disabled")
+      tcltk::tkconfigure(l19.extract.all.tables.all.rb, state = "disabled")
+      tcltk::tkconfigure(l19.extract.all.tables.all.label, state = "disabled")
+      tcltk::tkconfigure(l19.extract.all.tables.searchwords.label, state = "disabled")
+      tcltk::tkconfigure(l19.extract.all.tables.searchwords.rb, state = "disabled")
+      tcltk::tclvalue(l19.rbValue) <- "searchwords"
+      tcltk::tkconfigure(l25.write.table.locations.label, state = "disabled")
+      tcltk::tkconfigure(l25.write.table.locations.yes.rb, state = "disabled")
+      tcltk::tkconfigure(l25.write.table.locations.no.rb, state = "disabled")
+      tcltk::tkconfigure(l25.write.table.locations.yes.label, state = "disabled")
+      tcltk::tkconfigure(l25.write.table.locations.no.label, state = "disabled")
+      tcltk::tkconfigure(l26.exp.nondetc.tabs.label, state = "disabled")
+      tcltk::tkconfigure(l26.exp.nondetc.tabs.yes.rb, state = "disabled")
+      tcltk::tkconfigure(l26.exp.nondetc.tabs.no.rb, state = "disabled")
+      tcltk::tkconfigure(l26.exp.nondetc.tabs.yes.label, state = "disabled")
+      tcltk::tkconfigure(l26.exp.nondetc.tabs.no.label, state = "disabled")
+      tcltk::tkconfigure(l27.write.tab.doc.file.label, state = "disabled")
+      tcltk::tkconfigure(l27.write.tab.doc.file.yes.rb, state = "disabled")
+      tcltk::tkconfigure(l27.write.tab.doc.file.no.rb, state = "disabled")
+      tcltk::tkconfigure(l27.write.tab.doc.file.yes.label, state = "disabled")
+      tcltk::tkconfigure(l27.write.tab.doc.file.no.label, state = "disabled")
+      tcltk::tkconfigure(l20.search.words.label, state="normal")
+      tcltk::tkconfigure(l22.context.label, state = "normal")
+      tcltk::tkconfigure(l22.context.entry, state = "normal")
+      tcltk::tkconfigure(l22.context.slider, to = "100")
+      tcltk::tkconfigure(l28.write.txt.doc.file.label, state = "normal")
+      tcltk::tkconfigure(l28.write.txt.doc.file.yes.rb, state = "normal")
+      tcltk::tkconfigure(l28.write.txt.doc.file.no.rb, state = "normal")
+      tcltk::tkconfigure(l28.write.txt.doc.file.yes.label, state = "normal")
+      tcltk::tkconfigure(l28.write.txt.doc.file.no.label, state = "normal")
+    }
+    l8.ontab.click <- function() {
+      tcltk::tkconfigure(l12.table.heading.words.label, state = "normal")
+      tcltk::tkconfigure(l12.table.heading.words.entry, state = "normal")
+      tcltk::tkconfigure(l13.ignore.case.th.label, state = "normal")
+      tcltk::tkconfigure(l13.ignore.case.th.yes.rb, state = "normal")
+      tcltk::tkconfigure(l13.ignore.case.th.no.rb, state = "normal")
+      tcltk::tkconfigure(l13.ignore.case.th.yes.label, state = "normal")
+      tcltk::tkconfigure(l13.ignore.case.th.no.label, state = "normal")
+      tcltk::tkconfigure(l14.dev.label, state = "normal")
+      tcltk::tkconfigure(l14.dev.entry, state = "normal")
+      tcltk::tkconfigure(l14.dev.slider, to = "200")
+      tcltk::tkconfigure(l19.extract.all.tables.label, state = "normal")
+      tcltk::tkconfigure(l19.extract.all.tables.all.rb, state = "normal")
+      tcltk::tkconfigure(l19.extract.all.tables.all.label, state = "normal")
+      tcltk::tkconfigure(l19.extract.all.tables.searchwords.label, state = "normal")
+      tcltk::tkconfigure(l19.extract.all.tables.searchwords.rb, state = "normal")
+      tcltk::tkconfigure(l25.write.table.locations.label, state = "normal")
+      tcltk::tkconfigure(l25.write.table.locations.yes.rb, state = "normal")
+      tcltk::tkconfigure(l25.write.table.locations.no.rb, state = "normal")
+      tcltk::tkconfigure(l25.write.table.locations.yes.label, state = "normal")
+      tcltk::tkconfigure(l25.write.table.locations.no.label, state = "normal")
+      tcltk::tkconfigure(l26.exp.nondetc.tabs.label, state = "normal")
+      tcltk::tkconfigure(l26.exp.nondetc.tabs.yes.rb, state = "normal")
+      tcltk::tkconfigure(l26.exp.nondetc.tabs.no.rb, state = "normal")
+      tcltk::tkconfigure(l26.exp.nondetc.tabs.yes.label, state = "normal")
+      tcltk::tkconfigure(l26.exp.nondetc.tabs.no.label, state = "normal")
+      tcltk::tkconfigure(l27.write.tab.doc.file.label, state = "normal")
+      tcltk::tkconfigure(l27.write.tab.doc.file.yes.rb, state = "normal")
+      tcltk::tkconfigure(l27.write.tab.doc.file.no.rb, state = "normal")
+      tcltk::tkconfigure(l27.write.tab.doc.file.yes.label, state = "normal")
+      tcltk::tkconfigure(l27.write.tab.doc.file.no.label, state = "normal")
+      tcltk::tkconfigure(l22.context.label, state = "disabled")
+      tcltk::tkconfigure(l22.context.entry, state = "disabled")
+      tcltk::tclvalue(context.var) <- "0"
+      tcltk::tkconfigure(l22.context.slider, to = "0")
+      tcltk::tkconfigure(l28.write.txt.doc.file.label, state = "disabled")
+      tcltk::tkconfigure(l28.write.txt.doc.file.yes.rb, state = "disabled")
+      tcltk::tkconfigure(l28.write.txt.doc.file.no.rb, state = "disabled")
+      tcltk::tkconfigure(l28.write.txt.doc.file.yes.label, state = "disabled")
+      tcltk::tkconfigure(l28.write.txt.doc.file.no.label, state = "disabled")
+      ## only accept a list of search words
+      tcltk::tkconfigure(l19.extract.all.tables.all.rb, state = "normal")
+      tcltk::tkconfigure(l19.extract.all.tables.all.label, state = "normal")
+    }
+    l8.ontxtandtab.click <- function() {
+  
+      tcltk::tkconfigure(l12.table.heading.words.label, state = "normal")
+      tcltk::tkconfigure(l12.table.heading.words.entry, state = "normal")
+      tcltk::tkconfigure(l13.ignore.case.th.label, state = "normal")
+      tcltk::tkconfigure(l13.ignore.case.th.yes.rb, state = "normal")
+      tcltk::tkconfigure(l13.ignore.case.th.no.rb, state = "normal")
+      tcltk::tkconfigure(l13.ignore.case.th.yes.label, state = "normal")
+      tcltk::tkconfigure(l13.ignore.case.th.no.label, state = "normal")
+      tcltk::tkconfigure(l14.dev.label, state = "normal")
+      tcltk::tkconfigure(l14.dev.entry, state = "normal")
+      tcltk::tkconfigure(l14.dev.slider, to = "200")
+      tcltk::tclvalue(dev.var) <- "20"
+      tcltk::tkconfigure(l19.extract.all.tables.label, state = "normal")
+      tcltk::tkconfigure(l19.extract.all.tables.all.rb, state = "normal")
+      tcltk::tkconfigure(l19.extract.all.tables.all.label, state = "normal")
+      tcltk::tkconfigure(l19.extract.all.tables.searchwords.label, state = "normal")
+      tcltk::tkconfigure(l19.extract.all.tables.searchwords.rb, state = "normal")
+      tcltk::tclvalue(l19.rbValue) <- "searchwords"
+      tcltk::tkconfigure(l20.search.words.label, state="normal")
+      tcltk::tkconfigure(l25.write.table.locations.label, state = "normal")
+      tcltk::tkconfigure(l25.write.table.locations.yes.rb, state = "normal")
+      tcltk::tkconfigure(l25.write.table.locations.no.rb, state = "normal")
+      tcltk::tkconfigure(l25.write.table.locations.yes.label, state = "normal")
+      tcltk::tkconfigure(l25.write.table.locations.no.label, state = "normal")
+      tcltk::tkconfigure(l26.exp.nondetc.tabs.label, state = "normal")
+      tcltk::tkconfigure(l26.exp.nondetc.tabs.yes.rb, state = "normal")
+      tcltk::tkconfigure(l26.exp.nondetc.tabs.no.rb, state = "normal")
+      tcltk::tkconfigure(l26.exp.nondetc.tabs.yes.label, state = "normal")
+      tcltk::tkconfigure(l26.exp.nondetc.tabs.no.label, state = "normal")
+      tcltk::tkconfigure(l27.write.tab.doc.file.label, state = "normal")
+      tcltk::tkconfigure(l27.write.tab.doc.file.yes.rb, state = "normal")
+      tcltk::tkconfigure(l27.write.tab.doc.file.no.rb, state = "normal")
+      tcltk::tkconfigure(l27.write.tab.doc.file.yes.label, state = "normal")
+      tcltk::tkconfigure(l27.write.tab.doc.file.no.label, state = "normal")
+      tcltk::tkconfigure(l22.context.label, state = "normal")
+      tcltk::tkconfigure(l22.context.entry, state = "normal")
+      tcltk::tkconfigure(l22.context.slider, to = "100")
+      tcltk::tkconfigure(l28.write.txt.doc.file.label, state = "normal")
+      tcltk::tkconfigure(l28.write.txt.doc.file.yes.rb, state = "normal")
+      tcltk::tkconfigure(l28.write.txt.doc.file.no.rb, state = "normal")
+      tcltk::tkconfigure(l28.write.txt.doc.file.yes.label, state = "normal")
+      tcltk::tkconfigure(l28.write.txt.doc.file.no.label, state = "normal")
+      ## only accept a list of search words
+      l19.rbValue="searchwords"
+      tcltk::tkconfigure(l19.extract.all.tables.all.rb, state = "disabled")
+      tcltk::tkconfigure(l19.extract.all.tables.all.label, state = "disabled")
+    }
+    l8.ontxtandtab.click()
+    l8.whattoextr.txt.rb <- tcltk::tkradiobutton(l8, variable = whattoextr.var, 
+                                                 value = "txt", command = l8.ontxt.click,background="#05F2C7")
+    l8.whattoextr.tab.rb <- tcltk::tkradiobutton(l8, variable = whattoextr.var, 
+                                                 value = "tab", command = l8.ontab.click,background="#05F2C7")
+    l8.whattoextr.txtandtab.rb <- tcltk::tkradiobutton(l8, variable = whattoextr.var, 
+                                                       value = "txtandtab", 
+                                                       command = l8.ontxtandtab.click,background="#05F2C7")
+  
+  
+  
+    ## combobox list -------------------------------------------------
+  
+    ## in_output
+    l10.out.table.format.options <- c(".csv (WINDOWS-1252)", ".csv (macintosh)", ".csv (UTF-8)", 
+                                      ".tsv (WINDOWS-1252)",".tsv (macintosh)",".tsv (UTF-8)")
+    l10.out.table.format.combo <- tcltk2::tk2combobox(l10,
+                                                      values = l10.out.table.format.options, state = "readonly")
+    tcltk::tkconfigure(l10.out.table.format.combo, textvariable = out.table.format.var)
+  
+    ## progress bar --------------------------------------------------
+    l30.progress.bar.pb <- tcltk2::tk2progress(l30, value = 0,
+                                               maximum = 100, length = 500)
+  
+  
+    ## buttons -------------------------------------------------------
+  
+    ## line 1 load a tsv to fill in all the boxes
+    load.tsv <- function() {
+  
+      tcltk::tclvalue(tsv_location.var) <- tcltk::tk_choose.files(default = tcltk::tclvalue(tsv_location.var),
+                                                                  caption = "Choose the TSV file",
+                                                                  multi = FALSE)
       
-        ## if it is a directory
-        ## if it is a single file
-        ## if example working directory
-        if (dir.exists(pdfs) || 
-            file.exists(pdfs) ||
-            all(file.exists(unlist(strsplit(pdfs,
-                                            ";"))))) {
-          tcltk::tclvalue(pdfs.var) <- pdfs
+      if (length(tcltk::tclvalue(tsv_location.var)) > 0 && tcltk::tclvalue(tsv_location.var) != "") {
+        values_table <- utils::read.table(tcltk::tclvalue(tsv_location.var),
+                                          sep = "\t", header = TRUE, quote = "\"")
+        res <- try(values_table[, "variable"],
+                   silent = TRUE)
+        if (class(res) == "try-error") {
+          tcltk::tkmessageBox(title = "Error", type = "ok",
+                              icon = "error", message = paste0("Please select a correctly formated TSV file."))
+        } else {
+  
+          ## preset mandatory variables for running search
+          ## word
+          whattoextr <- sub(" ", "", as.character(values_table[(grep("whattoextr",
+                                                                     values_table[, "variable"])), "value"]))
+    
+          ## correct spelling
+          if (whattoextr == "table" || whattoextr ==
+              "tables")
+            whattoextr <- "tab"
+          if (whattoextr == "tableandtxt" || whattoextr ==
+              "tableandtext" || whattoextr == "tabandtext" ||
+              whattoextr == "textandtab" || whattoextr ==
+              "tabandtxt" || whattoextr == "txtandtable" ||
+              whattoextr == "tablesandtxt" || whattoextr ==
+              "txtandtables")
+            whattoextr <- "txtandtab"
+          ## test if whattoextr files exist
+          if ((whattoextr == "txtandtab" || whattoextr ==
+               "tab" || whattoextr == "txt"))
+            tcltk::tclvalue(whattoextr.var) <- whattoextr
+    
+          ## uncheck the correct boxes
+          if (whattoextr == "txt")
+            l8.ontxt.click()
+          if (whattoextr == "tab")
+            l8.ontab.click()
+          if (whattoextr == "txtandtab")
+            l8.ontxtandtab.click()
+    
+          ## fill the approriate checkmarks
+          l15.filter.words.rb <- as.character(values_table[(grep("l15.filter.words.rbValue",
+                                                                 values_table[, "variable"])), "value"])
+          if (!(length(l15.filter.words.rb) == 0 ||
+                is.na(l15.filter.words.rb))) {
+            if (l15.filter.words.rb == "yes") {
+              l15.onyes.click()
+            } else if (l15.filter.words.rb == "no") {
+              l15.onno.click()
+            }
+            tcltk::tclvalue(l15.filter.words.rbValue) <- l15.filter.words.rb
+          }
+    
+    
+          l19.rb <- as.character(values_table[(grep("l19.rbValue",
+                                                    values_table[, "variable"])), "value"])
+          if (!(length(l19.rb) == 0 || is.na(l19.rb))) {
+            if (l19.rb == "all") {
+              l19.onall.click()
+            } else if (l19.rb == "searchwords") {
+              l19.onsearchwords.click()
+            }
+            tcltk::tclvalue(l19.rbValue) <- l19.rb
+          }
+    
+          search.wds <- as.character(values_table[(grep("search.words",
+                                                        values_table[, "variable"])), "value"])
+          if (!(length(search.wds) == 0 || is.na(search.wds)))
+            tcltk::tclvalue(search.words.var) <- search.wds
+          ## ignore.case.sw
+          ic.sw <- as.logical(values_table[(grep("ignore.case.sw",
+                                                 values_table[, "variable"])), "value"])
+          if (!(length(ic.sw) == 0 || is.na(ic.sw)))
+            tcltk::tclvalue(ignore.case.sw.var) <- as.character(ic.sw)
+          ## eval.abbrevs
+          eval.abbrevs <- as.logical(values_table[(grep("eval.abbrevs",
+                                                        values_table[, "variable"])), "value"])
+          if (!(length(eval.abbrevs) == 0 || is.na(eval.abbrevs)))
+            tcltk::tclvalue(eval.abbrevs.var) <- as.character(eval.abbrevs)
+    
+    
+          ## write.table.locations (generates 3 tables with
+          ## the locations of the tables within the txt/html
+          ## files)
+          wtl <- as.logical(values_table[(grep("write.table.locations",
+                                               values_table[, "variable"])), "value"])
+          if (!(length(wtl) == 0 || is.na(wtl))) tcltk::tclvalue(write.table.locations.var) <- as.character(wtl)
+    
+          outputfolder <- as.character(values_table[(grep("outputfolder",
+                                                          values_table[, "variable"])), "value"])
+          
+          if (!(length(outputfolder) == 0 || is.na(outputfolder))) {
+            if (grepl("^examples/MTX_output", outputfolder)){
+              tcltk::tclvalue(outputfolder.var) <- paste0(PDE_path(),"/",outputfolder)
+            } else {
+              tcltk::tclvalue(outputfolder.var) <- outputfolder
+            }
+          } else {
+            tcltk::tclvalue(outputfolder.var) <- ""
+          }
+          
+    
+          pdfs <- as.character(values_table[(grep("pdfs",
+                                                  values_table[, "variable"])), "value"])
+          if (length(pdfs) == 0 || is.na(pdfs)) {
+            pdfs <- as.character(values_table[(grep("pdffolder",
+                                                    values_table[, "variable"])), "value"])
+          }
+          
+          if (length(pdfs) == 0 || is.na(pdfs)) {
+            pdfs <- ""
+          }
+        
           ## if it is a directory
           ## if it is a single file
-        } else if (dir.exists(paste0(PDE_path(),"/",pdfs)) ||
-                   file.exists(paste0(PDE_path(),"/",pdfs))) {
-          tcltk::tclvalue(pdfs.var) <- paste0(PDE_path(),"/",pdfs)
-        } else if (all(file.exists(paste0(PDE_path(),"/",unlist(strsplit(pdfs,
-                                                                       ";")))))) {
-          tcltk::tclvalue(pdfs.var) <- paste0(paste0(PDE_path(),"/",unlist(strsplit(pdfs,
-                                                                           ";"))), collapse = ";")
-        }
-  
-        ## preset the additional parameters filter words
-        filter.wds <- as.character(values_table[(grep("^filter.words$",
-                                                      values_table[, "variable"])), "value"])
-        if (!(length(filter.wds) == 0 || is.na(filter.wds))) tcltk::tclvalue(filter.words.var) <- filter.wds
-        if (length(grep(";", filter.wds)) > 0) tcltk::tclvalue(filter.words.var) <- filter.wds
-  
-        ## ignore.case.fw
-        ic.fw <- as.logical(values_table[(grep("ignore.case.fw",
-                                               values_table[, "variable"])), "value"])
-        if (!(length(ic.fw) == 0 || is.na(ic.fw))) tcltk::tclvalue(ignore.case.fw.var) <- as.character(ic.fw)
-  
-        ## filter.word.times
-        filter.word.times <- strtoi(values_table[(grep("filter.word.times",
-                                                       values_table[, "variable"])), "value"])
-        if (!(length(filter.word.times) == 0 ||
-              is.na(filter.word.times))) tcltk::tclvalue(filter.word.times.var) <- filter.word.times
-  
-        ## table headings
-        table.heading.wds <- as.character(values_table[(grep("table.heading.words",
-                                                             values_table[, "variable"])), "value"])
-        if (!(length(table.heading.wds) == 0 ||
-              is.na(filter.wds))) tcltk::tclvalue(table.heading.words.var) <- table.heading.wds
-        if (length(grep(";", table.heading.wds)) > 0) tcltk::tclvalue(table.heading.words.var) <- table.heading.wds
-  
-        ## ignore.case.th
-        ic.th <- as.logical(values_table[(grep("ignore.case.th",
-                                               values_table[, "variable"])), "value"])
-        if (!(length(ic.th) == 0 || is.na(ic.th))) tcltk::tclvalue(ignore.case.th.var) <- as.character(ic.th)
-  
-        out.table.format <- as.character(values_table[(grep("out.table.format",
-                                                            values_table[, "variable"])), "value"])
-        valid.out.table.formats <- c(".csv (WINDOWS-1252)", ".csv (macintosh)", ".csv (UTF-8)", 
-                    ".tsv (WINDOWS-1252)",".tsv (macintosh)",".tsv (UTF-8)")
-        if (!(length(out.table.format) == 0)){
-          if (!is.na(out.table.format) &&
-              out.table.format %in% valid.out.table.formats){
-                tcltk::tclvalue(out.table.format.var) <- out.table.format
+          ## if example working directory
+          if (dir.exists(pdfs) || 
+              file.exists(pdfs) ||
+              all(file.exists(unlist(strsplit(pdfs,
+                                              ";"))))) {
+            tcltk::tclvalue(pdfs.var) <- pdfs
+            ## if it is a directory
+            ## if it is a single file
+          } else if (dir.exists(paste0(PDE_path(),"/",pdfs)) ||
+                     file.exists(paste0(PDE_path(),"/",pdfs))) {
+            tcltk::tclvalue(pdfs.var) <- paste0(PDE_path(),"/",pdfs)
+          } else if (all(file.exists(paste0(PDE_path(),"/",unlist(strsplit(pdfs,
+                                                                         ";")))))) {
+            tcltk::tclvalue(pdfs.var) <- paste0(paste0(PDE_path(),"/",unlist(strsplit(pdfs,
+                                                                             ";"))), collapse = ";")
           }
-        }
-  
-        dev <- strtoi(values_table[(grep("dev",
-                                         values_table[, "variable"])), "value"])
-        if (!(length(dev) == 0 || is.na(dev))) tcltk::tclvalue(dev.var) <- dev
-  
-        context <- strtoi(values_table[(grep("context",
-                                             values_table[, "variable"])), "value"])
-        if (!(length(context) == 0 || is.na(context))) tcltk::tclvalue(context.var) <- context
-  
-        write.tab.doc.file <- as.logical(values_table[(grep("write.tab.doc.file",
-                                                            values_table[, "variable"])), "value"])
-        if (!(length(write.tab.doc.file) == 0 ||
-              is.na(write.tab.doc.file))) tcltk::tclvalue(write.tab.doc.file.var) <- as.character(write.tab.doc.file)
-  
-        exp.nondetc.tabs <- as.logical(values_table[(grep("exp.nondetc.tabs",
-                                                          values_table[, "variable"])), "value"])
-        if (!(length(exp.nondetc.tabs) == 0 ||
-              is.na(exp.nondetc.tabs))) tcltk::tclvalue(exp.nondetc.tabs.var) <- as.character(exp.nondetc.tabs)
-  
-        write.txt.doc.file <- as.logical(values_table[(grep("write.txt.doc.file",
-                                                            values_table[, "variable"])), "value"])
-        if (!(length(write.txt.doc.file) == 0 ||
-              is.na(write.txt.doc.file))) tcltk::tclvalue(write.txt.doc.file.var) <- as.character(write.txt.doc.file)
-  
-        exp.nondetc.tabs <- as.logical(values_table[(grep("exp.nondetc.tabs",
-                                                          values_table[, "variable"])), "value"])
-        if (!(length(exp.nondetc.tabs) == 0 ||
-              is.na(exp.nondetc.tabs))) tcltk::tclvalue(exp.nondetc.tabs.var) <- as.character(exp.nondetc.tabs)
-  
-        delete <- as.logical(values_table[(grep("delete",
-                                                values_table[, "variable"])), "value"])
-        if (!(length(delete) == 0 || is.na(delete))) tcltk::tclvalue(delete.var) <- as.character(delete)
-      } ## if wrong TSV was selected
-    }
-
-    tcltk::tkfocus(start.pause.but)
-    tcltk::tkraise(PDE.globals$ttanalyzer)
-  }
-  l1.load.tsv.but <- tcltk2::tk2button(l1, text = "Load form from TSV",
-                                       command = load.tsv)
-
-  ## save current variables into tsv to fill in all
-  ## the boxes
-  save.tsv <- function() {
-    todays.date <- format(Sys.Date(), "%Y-%m-%d")
-    if (tcltk::tclvalue(tsv_location.var) == ""){
-      PDE_parameters_filename <- paste0(todays.date, 
-                                      "_", "PDE_parameters_v1.0.tsv")
-    } else {
-      PDE_parameters_filename <-  basename(tcltk::tclvalue(tsv_location.var))
-    }
-    tcltk::tclvalue(tsv_location.var) <- tcltk::tkgetSaveFile(initialdir = dirname(tcltk::tclvalue(tsv_location.var)),
-                                                              initialfile = PDE_parameters_filename,
-                                                         defaultextension = ".tsv", 
-                                                         filetypes = "{ {TSV Files} {.tsv} } { {All Files} * }")
-
-    values_table <- data.frame(matrix(ncol = 2,
-                                      nrow = 21))
-    x <- c("variable", "value")
-    colnames(values_table) <- x
-    values_table$variable <- c("whattoextr", "pdfs",
-                               "outputfolder", "table.heading.words",
-                               "ignore.case.th", "filter.words", "ignore.case.fw",
-                               "filter.word.times", "search.words", "ignore.case.sw",
-                               "eval.abbrevs",
-                               "write.table.locations", "delete", "exp.nondetc.tabs",
-                               "out.table.format", "dev", "context", "write.tab.doc.file",
-                               "write.txt.doc.file", "l15.filter.words.rbValue",
-                               "l19.rbValue")
-
-    values_table[grep("whattoextr", values_table[,
-                                                 "variable"]), "value"] <- tcltk::tclvalue(whattoextr.var)
-    values_table[grep("pdfs", values_table[, "variable"]),
-                 "value"] <- tcltk::tclvalue(pdfs.var)
-    values_table[grep("outputfolder", values_table[,
-                                                   "variable"]), "value"] <- tcltk::tclvalue(outputfolder.var)
-    values_table[grep("table.heading.words", values_table[,
-                                                          "variable"]), "value"] <- tcltk::tclvalue(table.heading.words.var)
-    values_table[grep("ignore.case.th", values_table[,
-                                                     "variable"]), "value"] <- tcltk::tclvalue(ignore.case.th.var)
-    values_table[grep("filter.words", values_table[,
-                                                   "variable"]), "value"] <- tcltk::tclvalue(filter.words.var)
-    values_table[grep("ignore.case.fw", values_table[,
-                                                     "variable"]), "value"] <- tcltk::tclvalue(ignore.case.fw.var)
-    values_table[grep("filter.word.times", values_table[,
-                                                        "variable"]), "value"] <- tcltk::tclvalue(filter.word.times.var)
-    values_table[grep("search.words", values_table[,
-                                                   "variable"]), "value"] <- tcltk::tclvalue(search.words.var)
-    values_table[grep("ignore.case.sw", values_table[,
-                                                     "variable"]), "value"] <- tcltk::tclvalue(ignore.case.sw.var)
-    values_table[grep("eval.abbrevs", values_table[,
-                                                   "variable"]), "value"] <- tcltk::tclvalue(eval.abbrevs.var)
-    values_table[grep("write.table.locations", values_table[,
-                                                         "variable"]), "value"] <- tcltk::tclvalue(write.table.locations.var)
-    values_table[grep("delete", values_table[,
-                                             "variable"]), "value"] = tcltk::tclvalue(delete.var)
-    values_table[grep("exp.nondetc.tabs", values_table[,
-                                                       "variable"]), "value"] <- tcltk::tclvalue(exp.nondetc.tabs.var)
-    values_table[grep("out.table.format", values_table[,
-                                                       "variable"]), "value"] <- tcltk::tclvalue(out.table.format.var)
-    values_table[grep("dev", values_table[, "variable"]),
-                 "value"] <- tcltk::tclvalue(dev.var)
-    values_table[grep("context", values_table[,
-                                              "variable"]), "value"] <- tcltk::tclvalue(context.var)
-    values_table[grep("write.tab.doc.file", values_table[,
-                                                         "variable"]), "value"] <- tcltk::tclvalue(write.tab.doc.file.var)
-    values_table[grep("write.txt.doc.file", values_table[,
-                                                         "variable"]), "value"] <- tcltk::tclvalue(write.txt.doc.file.var)
-
-    ## additional variable for interactive user form
-    values_table[grep("l15.filter.words.rbValue",
-                      values_table[, "variable"]), "value"] <- tcltk::tclvalue(l15.filter.words.rbValue)
-    values_table[grep("l19.rbValue", values_table[,
-                                                  "variable"]), "value"] <- tcltk::tclvalue(l19.rbValue)
-
-    if (tcltk::tclvalue(tsv_location.var) != "") utils::write.table(values_table, file = tcltk::tclvalue(tsv_location.var),
-                                               row.names = FALSE, sep = "\t", quote = FALSE)
-
-    tcltk::tkfocus(PDE.globals$ttanalyzer)
-    tcltk::tkraise(PDE.globals$ttanalyzer)
-  }
-
-  l1.save.tsv.but <- tcltk2::tk2button(l1, text = "Save form as TSV",
-                                       command = save.tsv)
-
-  reset <- function() {
-    ## in_output
-    tcltk::tclvalue(pdfs.var) <- ""
-    tcltk::tclvalue(whattoextr.var) <- "txtandtab"
-    tcltk::tclvalue(outputfolder.var) <- ""
-    tcltk::tclvalue(out.table.format.var) <- ".csv (WINDOWS-1252)"
-    ## paras
-    tcltk::tclvalue(table.heading.words.var) <- ""
-    tcltk::tclvalue(ignore.case.th.var) <- "FALSE"
-    tcltk::tclvalue(dev.var) <- "20"
-    tcltk::tclvalue(l15.filter.words.rbValue) <- "yes"
-    tcltk::tclvalue(filter.words.var) <- ""
-    tcltk::tclvalue(filter.word.times.var) <- "20"
-    tcltk::tclvalue(ignore.case.fw.var) <- "FALSE"
-    tcltk::tclvalue(l19.rbValue) <- "searchwords"
-    tcltk::tclvalue(search.words.var) <- ""
-    tcltk::tclvalue(ignore.case.sw.var) <- "FALSE"
-    tcltk::tclvalue(eval.abbrevs.var) <- "TRUE"
-    tcltk::tclvalue(context.var) <- "0"
-    ## docus
-    tcltk::tclvalue(write.table.locations.var) <- "FALSE"
-    tcltk::tclvalue(exp.nondetc.tabs.var) <- "FALSE"
-    tcltk::tclvalue(write.tab.doc.file.var) <- "FALSE"
-    tcltk::tclvalue(write.txt.doc.file.var) <- "FALSE"
-    tcltk::tclvalue(delete.var) <- "TRUE"
-    l8.ontxtandtab.click()
-    l15.onyes.click()
-    l19.onsearchwords.click()
-    tcltk::tkconfigure(l30.progress.bar.pb, value = 0)
-    tcltk::tclvalue(proc.pdf) <- ""
-    ## add progress info
-    tcltk::tkconfigure(PDE.globals$l30.progress.textbox,values = c("",""))
-    tcltk::tkconfigure(PDE.globals$l30.progress.textbox,textvariable = tcltk::tclVar(""))
-  }
-  l1.reset.but <- tcltk2::tk2button(l1, text = "Reset form",
-                                    command = reset)
-
-  ## in_output
-
-  ## line 7 ######### open the PDF file location
-  open.pdffolder <- function() {
     
-    default.pdffolder <- unlist(strsplit(tcltk::tclvalue(pdfs.var),";"))[1]
-    if (is.na(default.pdffolder)) default.pdffolder <- ""
-    if (!dir.exists(default.pdffolder)) default.pdffolder <- dirname(default.pdffolder)
-    pdfs <- tcltk::tk_choose.dir(default = default.pdffolder, caption = "Choose folder with PDF files")
-    tcltk::tclvalue(pdfs.var) <- pdfs
-    tcltk::tkfocus(PDE.globals$ttanalyzer)
-    tcltk::tkraise(PDE.globals$ttanalyzer)
-
-  }
-  l7.open.pdffolder.but <- tcltk2::tk2button(l7, text = "Open folder",
-                                             command = open.pdffolder)
-
-  load.pdffiles <- function() {
-    default.pdffolder <- unlist(strsplit(tcltk::tclvalue(pdfs.var),";"))[1]
-    if (is.na(default.pdffolder)) default.pdffolder <- ""
-    if (!dir.exists(default.pdffolder)) default.pdffolder <- dirname(default.pdffolder)
-    pdfs <- tcltk::tk_choose.files(default = default.pdffolder,
-                                   caption = "Choose all PDF files",
-                                   multi = TRUE)
-    ## sometimes tk_choose.files produces additional paths that don't exists which are removed below
-    for (pdffile in pdfs){
-      if (!file.exists(pdffile)) pdfs <- pdfs[!(pdfs %in% pdffile)]
-    }
+          ## preset the additional parameters filter words
+          filter.wds <- as.character(values_table[(grep("^filter.words$",
+                                                        values_table[, "variable"])), "value"])
+          if (!(length(filter.wds) == 0 || is.na(filter.wds))) tcltk::tclvalue(filter.words.var) <- filter.wds
+          if (length(grep(";", filter.wds)) > 0) tcltk::tclvalue(filter.words.var) <- filter.wds
     
-    tcltk::tclvalue(pdfs.var) <- paste(pdfs, collapse = ";")
-    tcltk::tkfocus(PDE.globals$ttanalyzer)
-    tcltk::tkraise(PDE.globals$ttanalyzer)
-  }
-  l7.load.pdffiles.but <- tcltk2::tk2button(l7, text = "Load files",
-                                            command = load.pdffiles)
-
-  ## line 9 open the functions file location
-  open.outputfolder <- function() {
-    outputfolder <- tcltk::tk_choose.dir(default = tcltk::tclvalue(outputfolder.var),
-                                         caption = "Choose folder with PDF files")
-    if (is.na(outputfolder)) outputfolder <- ""
-    tcltk::tclvalue(outputfolder.var) <- outputfolder
-    tcltk::tkfocus(PDE.globals$ttanalyzer)
-    tcltk::tkraise(PDE.globals$ttanalyzer)
-  }
-  l9.open.outputfolder.but <- tcltk2::tk2button(l9, text = "Open",
-                                                command = open.outputfolder)
-
-  start.pause <- function() {
-    if (tcltk::tclvalue(start.pause.but.label.var) == "Start analysis"){
-      tcltk::tclvalue(start.pause.but.label.var) <- "Pause analysis"
-      tcltk::tclvalue(close.stop.but.label.var) <- "Stop analysis"
-      tcltk::tkconfigure(start.pause.but, text = tcltk::tclvalue(start.pause.but.label.var))
-      tcltk::tkconfigure(quit.but, text = tcltk::tclvalue(close.stop.but.label.var))
-      ## this grid gets added at the end
-      save.res <- as.character(tcltk::tkmessageBox(title = "Warning",
-                                                   type = "yesnocancel", icon = "question",
-                                                   message = "Do you want to save the form before starting the analysis?"))
-  
-      ## Write the entries of the form
-      if (save.res == "yes") {
-        save.tsv()
+          ## ignore.case.fw
+          ic.fw <- as.logical(values_table[(grep("ignore.case.fw",
+                                                 values_table[, "variable"])), "value"])
+          if (!(length(ic.fw) == 0 || is.na(ic.fw))) tcltk::tclvalue(ignore.case.fw.var) <- as.character(ic.fw)
+    
+          ## filter.word.times
+          filter.word.times <- strtoi(values_table[(grep("filter.word.times",
+                                                         values_table[, "variable"])), "value"])
+          if (!(length(filter.word.times) == 0 ||
+                is.na(filter.word.times))) tcltk::tclvalue(filter.word.times.var) <- filter.word.times
+    
+          ## table headings
+          table.heading.wds <- as.character(values_table[(grep("table.heading.words",
+                                                               values_table[, "variable"])), "value"])
+          if (!(length(table.heading.wds) == 0 ||
+                is.na(filter.wds))) tcltk::tclvalue(table.heading.words.var) <- table.heading.wds
+          if (length(grep(";", table.heading.wds)) > 0) tcltk::tclvalue(table.heading.words.var) <- table.heading.wds
+    
+          ## ignore.case.th
+          ic.th <- as.logical(values_table[(grep("ignore.case.th",
+                                                 values_table[, "variable"])), "value"])
+          if (!(length(ic.th) == 0 || is.na(ic.th))) tcltk::tclvalue(ignore.case.th.var) <- as.character(ic.th)
+    
+          out.table.format <- as.character(values_table[(grep("out.table.format",
+                                                              values_table[, "variable"])), "value"])
+          valid.out.table.formats <- c(".csv (WINDOWS-1252)", ".csv (macintosh)", ".csv (UTF-8)", 
+                      ".tsv (WINDOWS-1252)",".tsv (macintosh)",".tsv (UTF-8)")
+          if (!(length(out.table.format) == 0)){
+            if (!is.na(out.table.format) &&
+                out.table.format %in% valid.out.table.formats){
+                  tcltk::tclvalue(out.table.format.var) <- out.table.format
+            }
+          }
+    
+          dev <- strtoi(values_table[(grep("dev",
+                                           values_table[, "variable"])), "value"])
+          if (!(length(dev) == 0 || is.na(dev))) tcltk::tclvalue(dev.var) <- dev
+    
+          context <- strtoi(values_table[(grep("context",
+                                               values_table[, "variable"])), "value"])
+          if (!(length(context) == 0 || is.na(context))) tcltk::tclvalue(context.var) <- context
+    
+          write.tab.doc.file <- as.logical(values_table[(grep("write.tab.doc.file",
+                                                              values_table[, "variable"])), "value"])
+          if (!(length(write.tab.doc.file) == 0 ||
+                is.na(write.tab.doc.file))) tcltk::tclvalue(write.tab.doc.file.var) <- as.character(write.tab.doc.file)
+    
+          exp.nondetc.tabs <- as.logical(values_table[(grep("exp.nondetc.tabs",
+                                                            values_table[, "variable"])), "value"])
+          if (!(length(exp.nondetc.tabs) == 0 ||
+                is.na(exp.nondetc.tabs))) tcltk::tclvalue(exp.nondetc.tabs.var) <- as.character(exp.nondetc.tabs)
+    
+          write.txt.doc.file <- as.logical(values_table[(grep("write.txt.doc.file",
+                                                              values_table[, "variable"])), "value"])
+          if (!(length(write.txt.doc.file) == 0 ||
+                is.na(write.txt.doc.file))) tcltk::tclvalue(write.txt.doc.file.var) <- as.character(write.txt.doc.file)
+    
+          exp.nondetc.tabs <- as.logical(values_table[(grep("exp.nondetc.tabs",
+                                                            values_table[, "variable"])), "value"])
+          if (!(length(exp.nondetc.tabs) == 0 ||
+                is.na(exp.nondetc.tabs))) tcltk::tclvalue(exp.nondetc.tabs.var) <- as.character(exp.nondetc.tabs)
+    
+          delete <- as.logical(values_table[(grep("delete",
+                                                  values_table[, "variable"])), "value"])
+          if (!(length(delete) == 0 || is.na(delete))) tcltk::tclvalue(delete.var) <- as.character(delete)
+        } ## if wrong TSV was selected
       }
   
-      if (!save.res == "cancel") {
-        start.analysis <- NULL
-        ## check input boxes for correct format -------
+      tcltk::tkfocus(start.pause.but)
+      tcltk::tkraise(PDE.globals$ttanalyzer)
+    }
+    l1.load.tsv.but <- tcltk2::tk2button(l1, text = "Load form from TSV",
+                                         command = load.tsv)
   
-        ######### pdfs #############
-        if (any(dir.exists(tcltk::tclvalue(pdfs.var)),
-                file.exists(tcltk::tclvalue(pdfs.var)),
-                all(file.exists(unlist(strsplit(tcltk::tclvalue(pdfs.var), ";")))))) {
-        } else {
-          start.analysis <- c(start.analysis,
-                              "input PDF file folder")
+    ## save current variables into tsv to fill in all
+    ## the boxes
+    save.tsv <- function() {
+      todays.date <- format(Sys.Date(), "%Y-%m-%d")
+      if (tcltk::tclvalue(tsv_location.var) == ""){
+        PDE_parameters_filename <- paste0(todays.date, 
+                                        "_", "PDE_parameters_v1.0.tsv")
+      } else {
+        PDE_parameters_filename <-  basename(tcltk::tclvalue(tsv_location.var))
+      }
+      tcltk::tclvalue(tsv_location.var) <- tcltk::tkgetSaveFile(initialdir = dirname(tcltk::tclvalue(tsv_location.var)),
+                                                                initialfile = PDE_parameters_filename,
+                                                           defaultextension = ".tsv", 
+                                                           filetypes = "{ {TSV Files} {.tsv} } { {All Files} * }")
+  
+      values_table <- data.frame(matrix(ncol = 2,
+                                        nrow = 21))
+      x <- c("variable", "value")
+      colnames(values_table) <- x
+      values_table$variable <- c("whattoextr", "pdfs",
+                                 "outputfolder", "table.heading.words",
+                                 "ignore.case.th", "filter.words", "ignore.case.fw",
+                                 "filter.word.times", "search.words", "ignore.case.sw",
+                                 "eval.abbrevs",
+                                 "write.table.locations", "delete", "exp.nondetc.tabs",
+                                 "out.table.format", "dev", "context", "write.tab.doc.file",
+                                 "write.txt.doc.file", "l15.filter.words.rbValue",
+                                 "l19.rbValue")
+  
+      values_table[grep("whattoextr", values_table[,
+                                                   "variable"]), "value"] <- tcltk::tclvalue(whattoextr.var)
+      values_table[grep("pdfs", values_table[, "variable"]),
+                   "value"] <- tcltk::tclvalue(pdfs.var)
+      values_table[grep("outputfolder", values_table[,
+                                                     "variable"]), "value"] <- tcltk::tclvalue(outputfolder.var)
+      values_table[grep("table.heading.words", values_table[,
+                                                            "variable"]), "value"] <- tcltk::tclvalue(table.heading.words.var)
+      values_table[grep("ignore.case.th", values_table[,
+                                                       "variable"]), "value"] <- tcltk::tclvalue(ignore.case.th.var)
+      values_table[grep("filter.words", values_table[,
+                                                     "variable"]), "value"] <- tcltk::tclvalue(filter.words.var)
+      values_table[grep("ignore.case.fw", values_table[,
+                                                       "variable"]), "value"] <- tcltk::tclvalue(ignore.case.fw.var)
+      values_table[grep("filter.word.times", values_table[,
+                                                          "variable"]), "value"] <- tcltk::tclvalue(filter.word.times.var)
+      values_table[grep("search.words", values_table[,
+                                                     "variable"]), "value"] <- tcltk::tclvalue(search.words.var)
+      values_table[grep("ignore.case.sw", values_table[,
+                                                       "variable"]), "value"] <- tcltk::tclvalue(ignore.case.sw.var)
+      values_table[grep("eval.abbrevs", values_table[,
+                                                     "variable"]), "value"] <- tcltk::tclvalue(eval.abbrevs.var)
+      values_table[grep("write.table.locations", values_table[,
+                                                           "variable"]), "value"] <- tcltk::tclvalue(write.table.locations.var)
+      values_table[grep("delete", values_table[,
+                                               "variable"]), "value"] = tcltk::tclvalue(delete.var)
+      values_table[grep("exp.nondetc.tabs", values_table[,
+                                                         "variable"]), "value"] <- tcltk::tclvalue(exp.nondetc.tabs.var)
+      values_table[grep("out.table.format", values_table[,
+                                                         "variable"]), "value"] <- tcltk::tclvalue(out.table.format.var)
+      values_table[grep("dev", values_table[, "variable"]),
+                   "value"] <- tcltk::tclvalue(dev.var)
+      values_table[grep("context", values_table[,
+                                                "variable"]), "value"] <- tcltk::tclvalue(context.var)
+      values_table[grep("write.tab.doc.file", values_table[,
+                                                           "variable"]), "value"] <- tcltk::tclvalue(write.tab.doc.file.var)
+      values_table[grep("write.txt.doc.file", values_table[,
+                                                           "variable"]), "value"] <- tcltk::tclvalue(write.txt.doc.file.var)
+  
+      ## additional variable for interactive user form
+      values_table[grep("l15.filter.words.rbValue",
+                        values_table[, "variable"]), "value"] <- tcltk::tclvalue(l15.filter.words.rbValue)
+      values_table[grep("l19.rbValue", values_table[,
+                                                    "variable"]), "value"] <- tcltk::tclvalue(l19.rbValue)
+  
+      if (tcltk::tclvalue(tsv_location.var) != "") utils::write.table(values_table, file = tcltk::tclvalue(tsv_location.var),
+                                                 row.names = FALSE, sep = "\t", quote = FALSE)
+  
+      tcltk::tkfocus(PDE.globals$ttanalyzer)
+      tcltk::tkraise(PDE.globals$ttanalyzer)
+    }
+  
+    l1.save.tsv.but <- tcltk2::tk2button(l1, text = "Save form as TSV",
+                                         command = save.tsv)
+  
+    reset <- function() {
+      ## in_output
+      tcltk::tclvalue(pdfs.var) <- ""
+      tcltk::tclvalue(whattoextr.var) <- "txtandtab"
+      tcltk::tclvalue(outputfolder.var) <- ""
+      tcltk::tclvalue(out.table.format.var) <- ".csv (WINDOWS-1252)"
+      ## paras
+      tcltk::tclvalue(table.heading.words.var) <- ""
+      tcltk::tclvalue(ignore.case.th.var) <- "FALSE"
+      tcltk::tclvalue(dev.var) <- "20"
+      tcltk::tclvalue(l15.filter.words.rbValue) <- "yes"
+      tcltk::tclvalue(filter.words.var) <- ""
+      tcltk::tclvalue(filter.word.times.var) <- "20"
+      tcltk::tclvalue(ignore.case.fw.var) <- "FALSE"
+      tcltk::tclvalue(l19.rbValue) <- "searchwords"
+      tcltk::tclvalue(search.words.var) <- ""
+      tcltk::tclvalue(ignore.case.sw.var) <- "FALSE"
+      tcltk::tclvalue(eval.abbrevs.var) <- "TRUE"
+      tcltk::tclvalue(context.var) <- "0"
+      ## docus
+      tcltk::tclvalue(write.table.locations.var) <- "FALSE"
+      tcltk::tclvalue(exp.nondetc.tabs.var) <- "FALSE"
+      tcltk::tclvalue(write.tab.doc.file.var) <- "FALSE"
+      tcltk::tclvalue(write.txt.doc.file.var) <- "FALSE"
+      tcltk::tclvalue(delete.var) <- "TRUE"
+      l8.ontxtandtab.click()
+      l15.onyes.click()
+      l19.onsearchwords.click()
+      tcltk::tkconfigure(l30.progress.bar.pb, value = 0)
+      tcltk::tclvalue(proc.pdf) <- ""
+      ## add progress info
+      tcltk::tkconfigure(PDE.globals$l30.progress.textbox,values = c("",""))
+      tcltk::tkconfigure(PDE.globals$l30.progress.textbox,textvariable = tcltk::tclVar(""))
+    }
+    l1.reset.but <- tcltk2::tk2button(l1, text = "Reset form",
+                                      command = reset)
+  
+    ## in_output
+  
+    ## line 7 ######### open the PDF file location
+    open.pdffolder <- function() {
+      
+      default.pdffolder <- unlist(strsplit(tcltk::tclvalue(pdfs.var),";"))[1]
+      if (is.na(default.pdffolder)) default.pdffolder <- ""
+      if (!dir.exists(default.pdffolder)) default.pdffolder <- dirname(default.pdffolder)
+      pdfs <- tcltk::tk_choose.dir(default = default.pdffolder, caption = "Choose folder with PDF files")
+      tcltk::tclvalue(pdfs.var) <- pdfs
+      tcltk::tkfocus(PDE.globals$ttanalyzer)
+      tcltk::tkraise(PDE.globals$ttanalyzer)
+  
+    }
+    l7.open.pdffolder.but <- tcltk2::tk2button(l7, text = "Open folder",
+                                               command = open.pdffolder)
+  
+    load.pdffiles <- function() {
+      default.pdffolder <- unlist(strsplit(tcltk::tclvalue(pdfs.var),";"))[1]
+      if (is.na(default.pdffolder)) default.pdffolder <- ""
+      if (!dir.exists(default.pdffolder)) default.pdffolder <- dirname(default.pdffolder)
+      pdfs <- tcltk::tk_choose.files(default = default.pdffolder,
+                                     caption = "Choose all PDF files",
+                                     multi = TRUE)
+      ## sometimes tk_choose.files produces additional paths that don't exists which are removed below
+      for (pdffile in pdfs){
+        if (!file.exists(pdffile)) pdfs <- pdfs[!(pdfs %in% pdffile)]
+      }
+      
+      tcltk::tclvalue(pdfs.var) <- paste(pdfs, collapse = ";")
+      tcltk::tkfocus(PDE.globals$ttanalyzer)
+      tcltk::tkraise(PDE.globals$ttanalyzer)
+    }
+    l7.load.pdffiles.but <- tcltk2::tk2button(l7, text = "Load files",
+                                              command = load.pdffiles)
+  
+    ## line 9 open the functions file location
+    open.outputfolder <- function() {
+      outputfolder <- tcltk::tk_choose.dir(default = tcltk::tclvalue(outputfolder.var),
+                                           caption = "Choose folder with PDF files")
+      if (is.na(outputfolder)) outputfolder <- ""
+      tcltk::tclvalue(outputfolder.var) <- outputfolder
+      tcltk::tkfocus(PDE.globals$ttanalyzer)
+      tcltk::tkraise(PDE.globals$ttanalyzer)
+    }
+    l9.open.outputfolder.but <- tcltk2::tk2button(l9, text = "Open",
+                                                  command = open.outputfolder)
+  
+    start.pause <- function() {
+      if (tcltk::tclvalue(start.pause.but.label.var) == "Start analysis"){
+        tcltk::tclvalue(start.pause.but.label.var) <- "Pause analysis"
+        tcltk::tclvalue(close.stop.but.label.var) <- "Stop analysis"
+        tcltk::tkconfigure(start.pause.but, text = tcltk::tclvalue(start.pause.but.label.var))
+        tcltk::tkconfigure(quit.but, text = tcltk::tclvalue(close.stop.but.label.var))
+        ## this grid gets added at the end
+        save.res <- as.character(tcltk::tkmessageBox(title = "Warning",
+                                                     type = "yesnocancel", icon = "question",
+                                                     message = "Do you want to save the form before starting the analysis?"))
+    
+        ## Write the entries of the form
+        if (save.res == "yes") {
+          save.tsv()
         }
-  
-        ######### filterwords? #############
-        if (tcltk::tclvalue(l15.filter.words.rbValue) == "no") {
-          filter.for <- ""
-        } else {
-          if (length(grep(";", tcltk::tclvalue(filter.words.var))) > 0) {
-            filter.for <- strsplit(tcltk::tclvalue(filter.words.var), ";")[[1]]
+    
+        if (!save.res == "cancel") {
+          start.analysis <- NULL
+          ## check input boxes for correct format -------
+    
+          ######### pdfs #############
+          if (any(dir.exists(tcltk::tclvalue(pdfs.var)),
+                  file.exists(tcltk::tclvalue(pdfs.var)),
+                  all(file.exists(unlist(strsplit(tcltk::tclvalue(pdfs.var), ";")))))) {
           } else {
-            filter.for <- tcltk::tclvalue(filter.words.var)
+            start.analysis <- c(start.analysis,
+                                "input PDF file folder")
           }
-        }
-  
-        ######### search words? #############
-        if (tcltk::tclvalue(l19.rbValue) == "l19.rbValue") {
-          search.for <- ""
-        } else {
-          if (length(grep(";", tcltk::tclvalue(search.words.var))) > 0) {
-            search.for <- strsplit(tcltk::tclvalue(search.words.var), ";")[[1]]
+    
+          ######### filterwords? #############
+          if (tcltk::tclvalue(l15.filter.words.rbValue) == "no") {
+            filter.for <- ""
           } else {
-            search.for <- tcltk::tclvalue(search.words.var)
+            if (length(grep(";", tcltk::tclvalue(filter.words.var))) > 0) {
+              filter.for <- strsplit(tcltk::tclvalue(filter.words.var), ";")[[1]]
+            } else {
+              filter.for <- tcltk::tclvalue(filter.words.var)
+            }
           }
-        }
-  
-        ## set all variable for executing analysis ---------
-        whattoextr <- tcltk::tclvalue(whattoextr.var)
-        pdfs <- tcltk::tclvalue(pdfs.var)
-        outputfolder <- tcltk::tclvalue(outputfolder.var)
-        out.table.format <- tcltk::tclvalue(out.table.format.var)
-        if (length(grep(";", tcltk::tclvalue(table.heading.words.var))) > 0) {
-          table.heading.for <- strsplit(tcltk::tclvalue(table.heading.words.var), ";")[[1]]
-        } else {
-          table.heading.for <- tcltk::tclvalue(table.heading.words.var)
-        }
-        ic.th <- tcltk::tclvalue(ignore.case.th.var)
-        ic.fw <- tcltk::tclvalue(ignore.case.fw.var)
-        ic.sw <- tcltk::tclvalue(ignore.case.sw.var)
-        eval.abbrevs <- tcltk::tclvalue(eval.abbrevs.var)
-        filter.word.times <- as.numeric(tcltk::tclvalue(filter.word.times.var))
-        context <- as.numeric(tcltk::tclvalue(context.var))
-        dev <- as.numeric(tcltk::tclvalue(dev.var))
-        wtl <- tcltk::tclvalue(write.table.locations.var)
-        exp.nondetc.tabs <- tcltk::tclvalue(exp.nondetc.tabs.var)
-        write.tab.doc.file <- tcltk::tclvalue(write.tab.doc.file.var)
-        write.txt.doc.file <- tcltk::tclvalue(write.txt.doc.file.var)
-        delete <- tcltk::tclvalue(delete.var)
-  
-        if (length(start.analysis) == 0) {
-  
-          # source(tcltk::tclvalue(functionsfile.var))
-  
-  
-          ## if it is a directory
-          if (dir.exists(pdfs)) {
-            pdf.files <- list.files(pdfs, pattern = "*.pdf",
-                                    full.names = TRUE, recursive = TRUE)
-            ## if it is a single file
-          } else if (file.exists(pdfs)) {
-            pdf.files <- pdfs
-          } else if (all(file.exists(unlist(strsplit(pdfs,
-                                                     ";"))))) {
-            pdf.files <- unlist(strsplit(pdfs,
-                                         ";"))
+    
+          ######### search words? #############
+          if (tcltk::tclvalue(l19.rbValue) == "l19.rbValue") {
+            search.for <- ""
+          } else {
+            if (length(grep(";", tcltk::tclvalue(search.words.var))) > 0) {
+              search.for <- strsplit(tcltk::tclvalue(search.words.var), ";")[[1]]
+            } else {
+              search.for <- tcltk::tclvalue(search.words.var)
+            }
           }
-  
-          output <- NULL
-  
-          for (pdf in pdf.files) {
-            
-            # wait if pause is pressed
-            # counter <- 0
-            while (tcltk::tclvalue(start.pause.but.label.var) == "Resume analysis"){
-              Sys.sleep(1)
-              # counter <-  counter + 1
-              # if (counter == 144000) break
+    
+          ## set all variable for executing analysis ---------
+          whattoextr <- tcltk::tclvalue(whattoextr.var)
+          pdfs <- tcltk::tclvalue(pdfs.var)
+          outputfolder <- tcltk::tclvalue(outputfolder.var)
+          out.table.format <- tcltk::tclvalue(out.table.format.var)
+          if (length(grep(";", tcltk::tclvalue(table.heading.words.var))) > 0) {
+            table.heading.for <- strsplit(tcltk::tclvalue(table.heading.words.var), ";")[[1]]
+          } else {
+            table.heading.for <- tcltk::tclvalue(table.heading.words.var)
+          }
+          ic.th <- tcltk::tclvalue(ignore.case.th.var)
+          ic.fw <- tcltk::tclvalue(ignore.case.fw.var)
+          ic.sw <- tcltk::tclvalue(ignore.case.sw.var)
+          eval.abbrevs <- tcltk::tclvalue(eval.abbrevs.var)
+          filter.word.times <- as.numeric(tcltk::tclvalue(filter.word.times.var))
+          context <- as.numeric(tcltk::tclvalue(context.var))
+          dev <- as.numeric(tcltk::tclvalue(dev.var))
+          wtl <- tcltk::tclvalue(write.table.locations.var)
+          exp.nondetc.tabs <- tcltk::tclvalue(exp.nondetc.tabs.var)
+          write.tab.doc.file <- tcltk::tclvalue(write.tab.doc.file.var)
+          write.txt.doc.file <- tcltk::tclvalue(write.txt.doc.file.var)
+          delete <- tcltk::tclvalue(delete.var)
+    
+          if (length(start.analysis) == 0) {
+    
+            # source(tcltk::tclvalue(functionsfile.var))
+    
+    
+            ## if it is a directory
+            if (dir.exists(pdfs)) {
+              pdf.files <- list.files(pdfs, pattern = "*.pdf",
+                                      full.names = TRUE, recursive = TRUE)
+              ## if it is a single file
+            } else if (file.exists(pdfs)) {
+              pdf.files <- pdfs
+            } else if (all(file.exists(unlist(strsplit(pdfs,
+                                                       ";"))))) {
+              pdf.files <- unlist(strsplit(pdfs,
+                                           ";"))
+            }
+    
+            output <- NULL
+    
+            for (pdf in pdf.files) {
+              
+              # wait if pause is pressed
+              # counter <- 0
+              while (tcltk::tclvalue(start.pause.but.label.var) == "Resume analysis"){
+                Sys.sleep(1)
+                # counter <-  counter + 1
+                # if (counter == 144000) break
+                ## if the execution was stopped
+                if (tcltk::tclvalue(start.pause.but.label.var) == "Start analysis"){
+                  break
+                }
+              }
+              
               ## if the execution was stopped
               if (tcltk::tclvalue(start.pause.but.label.var) == "Start analysis"){
                 break
               }
+              
+              ## update progress bar
+              tcltk::tclvalue(progress) <- as.character(round(((grep(pdf,
+                                                                     pdf.files, fixed = TRUE) - 1)/length(pdf.files) *
+                                                                 100), digits = 0))
+              tcltk::tkconfigure(l30.progress.bar.pb,
+                                 value = as.numeric(tcltk::tclvalue(progress)))
+              ## update progress bar label
+              tcltk::tclvalue(proc.pdf) <- paste0(tcltk::tclvalue(progress),
+                                                  "%, ", basename(pdf))
+              ## add progress info 1
+              progress_info_length <- length(tcltk2::tk2list.get(PDE.globals$l30.progress.textbox))
+              if (progress_info_length > 3) {
+                new_list <- tcltk2::tk2list.get(PDE.globals$l30.progress.textbox)[!grepl("^$",
+                                                        tcltk2::tk2list.get(PDE.globals$l30.progress.textbox))]
+              } else {
+                new_list <- tcltk2::tk2list.get(PDE.globals$l30.progress.textbox)
+              }
+              tcltk::tkconfigure(PDE.globals$l30.progress.textbox,values = c(new_list,tcltk::tclvalue(proc.pdf)))
+              tcltk::tkconfigure(PDE.globals$l30.progress.textbox,textvariable = proc.pdf)
+              tcltk::tcl("update")
+              tcltk::tkfocus(l30)
+    
+    
+              tablelines <- .PDE_extr_data_from_pdf(pdf = pdf,
+                                                    whattoextr = whattoextr,
+                                                    out = outputfolder, context = context,
+                                                    dev = dev, filter.words = filter.for,
+                                                    ignore.case.fw = ic.fw, filter.word.times = filter.word.times,
+                                                    table.heading.words = table.heading.for,
+                                                    ignore.case.th = ic.th, search.words = search.for,
+                                                    ignore.case.sw = ic.sw, eval.abbrevs = eval.abbrevs,
+                                                    write.table.locations = wtl,
+                                                    write.tab.doc.file = write.tab.doc.file,
+                                                    write.txt.doc.file = write.txt.doc.file,
+                                                    exp.nondetc.tabs = exp.nondetc.tabs,
+                                                    out.table.format = out.table.format,
+                                                    delete = delete, verbose = verbose)
+    
+              tcltk::tcl("update")
+              tcltk::tkfocus(l30)
+    
+              ## if the algorithm was not run in table detection
+              ## setting tablelines is NULL
+              if (length(tablelines) > 0) {
+    
+                ## add new tablelines to output
+                output[[length(output) + 1]] <- tablelines
+              }
             }
-            
-            ## if the execution was stopped
-            if (tcltk::tclvalue(start.pause.but.label.var) == "Start analysis"){
-              break
-            }
-            
-            ## update progress bar
-            tcltk::tclvalue(progress) <- as.character(round(((grep(pdf,
-                                                                   pdf.files, fixed = TRUE) - 1)/length(pdf.files) *
-                                                               100), digits = 0))
-            tcltk::tkconfigure(l30.progress.bar.pb,
-                               value = as.numeric(tcltk::tclvalue(progress)))
-            ## update progress bar label
-            tcltk::tclvalue(proc.pdf) <- paste0(tcltk::tclvalue(progress),
-                                                "%, ", basename(pdf))
-            ## add progress info 1
+    
+            ## add completion  info
             progress_info_length <- length(tcltk2::tk2list.get(PDE.globals$l30.progress.textbox))
             if (progress_info_length > 3) {
               new_list <- tcltk2::tk2list.get(PDE.globals$l30.progress.textbox)[!grepl("^$",
-                                                      tcltk2::tk2list.get(PDE.globals$l30.progress.textbox))]
+                                                          tcltk2::tk2list.get(PDE.globals$l30.progress.textbox))]
             } else {
               new_list <- tcltk2::tk2list.get(PDE.globals$l30.progress.textbox)
             }
-            tcltk::tkconfigure(PDE.globals$l30.progress.textbox,values = c(new_list,tcltk::tclvalue(proc.pdf)))
-            tcltk::tkconfigure(PDE.globals$l30.progress.textbox,textvariable = proc.pdf)
+            out_msg <- c(out_msg, "Analyses are complete.")
+            if (verbose) cat(utils::tail(out_msg,1), sep="\n")
+            
+            tcltk::tkconfigure(PDE.globals$l30.progress.textbox,values = c(new_list,"complete"))
+            tcltk::tkconfigure(PDE.globals$l30.progress.textbox,textvariable = tcltk::tclVar("complete"))
+            tcltk::tkconfigure(l30.progress.bar.pb, value = 100)
             tcltk::tcl("update")
-            tcltk::tkfocus(l30)
-  
-  
-            tablelines <- .PDE_extr_data_from_pdf(pdf = pdf,
-                                                  whattoextr = whattoextr,
-                                                  out = outputfolder, context = context,
-                                                  dev = dev, filter.words = filter.for,
-                                                  ignore.case.fw = ic.fw, filter.word.times = filter.word.times,
-                                                  table.heading.words = table.heading.for,
-                                                  ignore.case.th = ic.th, search.words = search.for,
-                                                  ignore.case.sw = ic.sw, eval.abbrevs = eval.abbrevs,
-                                                  write.table.locations = wtl,
-                                                  write.tab.doc.file = write.tab.doc.file,
-                                                  write.txt.doc.file = write.txt.doc.file,
-                                                  exp.nondetc.tabs = exp.nondetc.tabs,
-                                                  out.table.format = out.table.format,
-                                                  delete = delete, verbose = verbose)
-  
-            tcltk::tcl("update")
-            tcltk::tkfocus(l30)
-  
-            ## if the algorithm was not run in table detection
-            ## setting tablelines is NULL
-            if (length(tablelines) > 0) {
-  
-              ## add new tablelines to output
-              output[[length(output) + 1]] <- tablelines
-            }
-          }
-  
-          ## add completion  info
-          progress_info_length <- length(tcltk2::tk2list.get(PDE.globals$l30.progress.textbox))
-          if (progress_info_length > 3) {
-            new_list <- tcltk2::tk2list.get(PDE.globals$l30.progress.textbox)[!grepl("^$",
-                                                        tcltk2::tk2list.get(PDE.globals$l30.progress.textbox))]
+            tcltk::tkfocus(PDE.globals$ttanalyzer)
+            tcltk::tkraise(PDE.globals$ttanalyzer)
+    
+          } else if (length(start.analysis) == 1) {
+            tcltk::tkmessageBox(title = "Error", type = "ok",
+                                icon = "error", message = paste0("Analysis not started. Check the ",
+                                                                  start.analysis[1], " and ", start.analysis[2],
+                                                                  " for corrrect path and formating before analysis."))
           } else {
-            new_list <- tcltk2::tk2list.get(PDE.globals$l30.progress.textbox)
+            tcltk::tkmessageBox(title = "Error", type = "ok",
+                                icon = "error", message = paste0("Analysis not started. Check the ",
+                                                                  paste(start.analysis[-length(start.analysis)],
+                                                                        collapse = ", "), " and ",
+                                                                  start.analysis[length(start.analysis)],
+                                                                  " for corrrect path and formating before analysis."))
           }
-          out_msg <- c(out_msg, "Analyses are complete.")
-          if (verbose) cat(utils::tail(out_msg,1), sep="\n")
-          
-          tcltk::tkconfigure(PDE.globals$l30.progress.textbox,values = c(new_list,"complete"))
-          tcltk::tkconfigure(PDE.globals$l30.progress.textbox,textvariable = tcltk::tclVar("complete"))
-          tcltk::tkconfigure(l30.progress.bar.pb, value = 100)
-          tcltk::tcl("update")
-          tcltk::tkfocus(PDE.globals$ttanalyzer)
-          tcltk::tkraise(PDE.globals$ttanalyzer)
-  
-        } else if (length(start.analysis) == 1) {
-          tcltk::tkmessageBox(title = "Error", type = "ok",
-                              icon = "error", message = paste0("Analysis not started. Check the ",
-                                                                start.analysis[1], " and ", start.analysis[2],
-                                                                " for corrrect path and formating before analysis."))
-        } else {
-          tcltk::tkmessageBox(title = "Error", type = "ok",
-                              icon = "error", message = paste0("Analysis not started. Check the ",
-                                                                paste(start.analysis[-length(start.analysis)],
-                                                                      collapse = ", "), " and ",
-                                                                start.analysis[length(start.analysis)],
-                                                                " for corrrect path and formating before analysis."))
-        }
-      }  ## end if cancel was not pressed
-      tcltk::tclvalue(start.pause.but.label.var) <- "Start analysis"
-      tcltk::tclvalue(close.stop.but.label.var) <- "Close session"
-      tcltk::tkconfigure(start.pause.but, text = tcltk::tclvalue(start.pause.but.label.var))
-      tcltk::tkconfigure(quit.but, text = tcltk::tclvalue(close.stop.but.label.var))
-    } else if (tcltk::tclvalue(start.pause.but.label.var) == "Pause analysis") { ## end if Start analysis was pressed
-      tcltk::tclvalue(start.pause.but.label.var) <- "Resume analysis"
-      tcltk::tclvalue(close.stop.but.label.var) <- "Stop analysis"
-      tcltk::tkconfigure(start.pause.but, text = tcltk::tclvalue(start.pause.but.label.var))
-      tcltk::tkconfigure(quit.but, text = tcltk::tclvalue(close.stop.but.label.var))
-    } else if (tcltk::tclvalue(start.pause.but.label.var) == "Resume analysis") { ## end if Start analysis was pressed
-      tcltk::tclvalue(start.pause.but.label.var) <- "Pause analysis"
-      tcltk::tclvalue(close.stop.but.label.var) <- "Stop analysis"
-      tcltk::tkconfigure(start.pause.but, text = tcltk::tclvalue(start.pause.but.label.var))
-      tcltk::tkconfigure(quit.but, text = tcltk::tclvalue(close.stop.but.label.var))
-    }
-  }
-  
-  start.pause.but <- tcltk2::tk2button(e, text = tcltk::tclvalue(start.pause.but.label.var),
-                                 command = start.pause)
-
-  close.stop_session <- function() {
-    if (tcltk::tclvalue(close.stop.but.label.var) == "Close session"){
-      ## this grid gets added at the end
-      quit.res <- as.character(tcltk::tkmessageBox(title = "Warning",
-                                                   type = "yesnocancel", icon = "warning",
-                                                   message = "Do you want to save the form before closing?"))
-      if (quit.res == "yes") {
-        save.tsv
-        tcltk::tkdestroy(PDE.globals$ttanalyzer)
-      } else if (quit.res == "no") {
-        tcltk::tkdestroy(PDE.globals$ttanalyzer)
+        }  ## end if cancel was not pressed
+        tcltk::tclvalue(start.pause.but.label.var) <- "Start analysis"
+        tcltk::tclvalue(close.stop.but.label.var) <- "Close session"
+        tcltk::tkconfigure(start.pause.but, text = tcltk::tclvalue(start.pause.but.label.var))
+        tcltk::tkconfigure(quit.but, text = tcltk::tclvalue(close.stop.but.label.var))
+      } else if (tcltk::tclvalue(start.pause.but.label.var) == "Pause analysis") { ## end if Start analysis was pressed
+        tcltk::tclvalue(start.pause.but.label.var) <- "Resume analysis"
+        tcltk::tclvalue(close.stop.but.label.var) <- "Stop analysis"
+        tcltk::tkconfigure(start.pause.but, text = tcltk::tclvalue(start.pause.but.label.var))
+        tcltk::tkconfigure(quit.but, text = tcltk::tclvalue(close.stop.but.label.var))
+      } else if (tcltk::tclvalue(start.pause.but.label.var) == "Resume analysis") { ## end if Start analysis was pressed
+        tcltk::tclvalue(start.pause.but.label.var) <- "Pause analysis"
+        tcltk::tclvalue(close.stop.but.label.var) <- "Stop analysis"
+        tcltk::tkconfigure(start.pause.but, text = tcltk::tclvalue(start.pause.but.label.var))
+        tcltk::tkconfigure(quit.but, text = tcltk::tclvalue(close.stop.but.label.var))
       }
-    } else {
-      tcltk::tclvalue(start.pause.but.label.var) <- "Start analysis"
-      tcltk::tclvalue(close.stop.but.label.var) <- "Close session"
-      tcltk::tkconfigure(start.pause.but, text = tcltk::tclvalue(start.pause.but.label.var))
-      tcltk::tkconfigure(quit.but, text = tcltk::tclvalue(close.stop.but.label.var))
     }
-  }
-  quit.but <- tcltk2::tk2button(e, text = tcltk::tclvalue(close.stop.but.label.var),
-                                command = close.stop_session)
-
-
-  save.progress_info <- function() {
-    todays.date_time <- paste0(format(Sys.Date(), "%Y-%m-%d"),format(Sys.time(), "-%Hh-%Mm"))
-    PDE_parameters_filename <- paste0(todays.date_time,
-                                      "_", "progress_info")
-    txt_location <- tcltk::tclvalue(tcltk::tkgetSaveFile(initialfile = PDE_parameters_filename,
-                                                         defaultextension = ".txt", 
-                                                         filetypes = "{ {TXT Files} {.txt} } { {All Files} * }"))
-
-    progress_info <- tcltk2::tk2list.get(PDE.globals$l30.progress.textbox)
-    progress_info <- gsub(" file path maybe too long.",
-                          " might be too long of a file path to be read by some programs. Consider using a shorter output path.",
-                          progress_info)
-    output_progress_info <- paste(progress_info, collapse = "\n")
-    if (txt_location != "") write(output_progress_info, file = txt_location)
-
+    
+    start.pause.but <- tcltk2::tk2button(e, text = tcltk::tclvalue(start.pause.but.label.var),
+                                   command = start.pause)
+  
+    close.stop_session <- function() {
+      if (tcltk::tclvalue(close.stop.but.label.var) == "Close session"){
+        ## this grid gets added at the end
+        quit.res <- as.character(tcltk::tkmessageBox(title = "Warning",
+                                                     type = "yesnocancel", icon = "warning",
+                                                     message = "Do you want to save the form before closing?"))
+        if (quit.res == "yes") {
+          save.tsv
+          tcltk::tkdestroy(PDE.globals$ttanalyzer)
+        } else if (quit.res == "no") {
+          tcltk::tkdestroy(PDE.globals$ttanalyzer)
+        }
+      } else {
+        tcltk::tclvalue(start.pause.but.label.var) <- "Start analysis"
+        tcltk::tclvalue(close.stop.but.label.var) <- "Close session"
+        tcltk::tkconfigure(start.pause.but, text = tcltk::tclvalue(start.pause.but.label.var))
+        tcltk::tkconfigure(quit.but, text = tcltk::tclvalue(close.stop.but.label.var))
+      }
+    }
+    quit.but <- tcltk2::tk2button(e, text = tcltk::tclvalue(close.stop.but.label.var),
+                                  command = close.stop_session)
+  
+  
+    save.progress_info <- function() {
+      todays.date_time <- paste0(format(Sys.Date(), "%Y-%m-%d"),format(Sys.time(), "-%Hh-%Mm"))
+      PDE_parameters_filename <- paste0(todays.date_time,
+                                        "_", "progress_info")
+      txt_location <- tcltk::tclvalue(tcltk::tkgetSaveFile(initialfile = PDE_parameters_filename,
+                                                           defaultextension = ".txt", 
+                                                           filetypes = "{ {TXT Files} {.txt} } { {All Files} * }"))
+  
+      progress_info <- tcltk2::tk2list.get(PDE.globals$l30.progress.textbox)
+      progress_info <- gsub(" file path maybe too long.",
+                            " might be too long of a file path to be read by some programs. Consider using a shorter output path.",
+                            progress_info)
+      output_progress_info <- paste(progress_info, collapse = "\n")
+      if (txt_location != "") write(output_progress_info, file = txt_location)
+  
+      tcltk::tkfocus(PDE.globals$ttanalyzer)
+      tcltk::tkraise(PDE.globals$ttanalyzer)
+    }
+    l30.save.txt.but <- tcltk2::tk2button(l30, text = "^ save ^", width = 8,
+                                          command = save.progress_info)
+    ## the scroll buttons -----------------------------------------------------
+  
+    down <- function() {
+      if (tcltk::tclvalue(scrollpos) == "0") {
+        tcltk::tkpack.forget(l1)
+        tcltk::tclvalue(scrollpos) <- "-1"
+      }  else if (tcltk::tclvalue(scrollpos) == "-1") {
+        tcltk::tkpack.forget(in_output)
+        tcltk::tclvalue(scrollpos) <- "-2"
+      } else if (tcltk::tclvalue(scrollpos) == "-2") {
+        tcltk::tkpack.forget(paras)
+        tcltk::tclvalue(scrollpos) <- "-3"
+      } else if (tcltk::tclvalue(scrollpos) == "-3") {
+        tcltk::tkpack.forget(docus)
+        tcltk::tclvalue(scrollpos) <- "-4"
+      }
+    }
+  
+    up <- function() {
+      if (tcltk::tclvalue(scrollpos) == "0") {
+      } else if (tcltk::tclvalue(scrollpos) == "-1") {
+        tcltk::tkpack(l1, side = "top", fill = "x", before = in_output)
+        tcltk::tclvalue(scrollpos) <- "0"
+      } else if (tcltk::tclvalue(scrollpos) == "-2") {
+        tcltk::tkpack(in_output, side = "top", fill = "x",
+                      before = paras)
+        tcltk::tclvalue(scrollpos) <- "-1"
+      } else if (tcltk::tclvalue(scrollpos) == "-3") {
+        tcltk::tkpack(paras, side = "top", fill = "x",
+                      before = docus)
+        tcltk::tclvalue(scrollpos) <- "-2"
+      } else if (tcltk::tclvalue(scrollpos) == "-4") {
+        tcltk::tkpack(docus, side = "top", fill = "x",
+                      before = e)
+        tcltk::tclvalue(scrollpos) <- "-3"
+      }
+    }
+  
+    Up.but <- tcltk2::tk2button(r, text = "/\\", width = 2,
+                                command = up)
+    Down.but <- tcltk2::tk2button(r, text = "\\/", width = 2,
+                                  command = down)
+  
+    ## How the form looks --------------------------------------
+  
+    ## the scroll buttons --------------------------------------
+  
+    tcltk::tkpack(Up.but, expand = TRUE, side = "top", fill = "both")
+    tcltk::tkpack(Down.but, expand = TRUE, side = "top", fill = "both")
+    tcltk::tkpack(r, side = "right", anchor = "e", fill = "y")
+  
+    ## line 1 (buttons) ---------------------------------------
+    tcltk::tkpack(l1.load.tsv.but, l1.save.tsv.but, l1.reset.but,
+                  side = "left", expand = TRUE, pady = 2, padx = 5)
+    tcltk::tkpack(l1, side = "top", anchor = "nw", fill = "x")
+  
+  
+    ## in_output ---------------------------------------------
+    ## line 6
+    tcltk::tkpack(l6.caption.label, side = "left", pady = 2,
+                  padx = 5)
+    ## line 7
+    tcltk::tkpack(l7.pdfs.label, side = "left", pady = 2,
+                  padx = 5)
+    tcltk::tkpack(l7.pdfs.entry, side = "left", expand = TRUE,
+                  fill = "x", pady = 2, padx = 5)
+    tcltk::tkpack(l7.open.pdffolder.but, l7.load.pdffiles.but,
+                  side = "left", pady = 2)
+    ## line 8
+    tcltk::tkpack(l8.whattoextr.label, side = "left", pady = 2,
+                  padx = 5)
+    tcltk::tkpack(l8.whattoextr.sentences.label, l8.whattoextr.txt.rb,
+                  l8.whattoextr.tables.label, l8.whattoextr.tab.rb,
+                  l8.whattoextr.both.label, l8.whattoextr.txtandtab.rb,
+                  side = "left", pady = 2)
+    ## line 9
+    tcltk::tkpack(l9.outputfolder.label, side = "left", pady = 2,
+                  padx = 5)
+    tcltk::tkpack(l9.outputfolder.entry, side = "left", expand = TRUE,
+                  fill = "x", pady = 2, padx = 5)
+    tcltk::tkpack(l9.open.outputfolder.but, side = "left",
+                  pady = 2, padx = 5)
+    ## line 10
+    tcltk::tkpack(l10.out.table.format.label, side = "left",
+                  pady = 2, padx = 5)
+    tcltk::tkpack(l10.out.table.format.combo, side = "left",
+                  pady = 2, padx = 5)
+  
+    tcltk::tkpack(l6, l7, l8, l9, l10, side = "top", fill = "x")
+    tcltk::tkpack(in_output, side = "top", fill = "x")
+  
+    ## paras ---------------------------------------------
+    ## line 11
+    tcltk::tkpack(l11.caption.label, side = "left", pady = 2,
+                  padx = 5)
+    ## line 12
+    tcltk::tkpack(l12.table.heading.words.label, side = "left",
+                  pady = 2, padx = 5)
+    tcltk::tkpack(l12.table.heading.words.entry, side = "left",
+                  expand = TRUE, fill = "x", pady = 2, padx = 5)
+    ## line 13
+    tcltk::tkpack(l13.ignore.case.th.label, side = "left",
+                  pady = 2, padx = 5)
+    tcltk::tkpack(l13.ignore.case.th.yes.label, l13.ignore.case.th.yes.rb,
+                  l13.ignore.case.th.no.label, l13.ignore.case.th.no.rb,
+                  side = "left", pady = 2)
+    ## line 14
+    tcltk::tkpack(l14.dev.label, l14.dev.entry, side = "left",
+                  pady = 2, padx = 5)
+    tcltk::tkpack(l14.dev.slider, expand = TRUE, fill = "x",
+                  side = "left", pady = 2, padx = 5)
+    ## line 15
+    tcltk::tkpack(l15.filter.words.yesno.label, side = "left",
+                  pady = 2, padx = 5)
+    tcltk::tkpack(l15.filter.words.yes.label, l15.filter.words.yes.rb,
+                  l15.filter.words.no.label, l15.filter.words.no.rb,
+                  side = "left", pady = 2)
+    ## line 16
+    tcltk::tkpack(l16.filter.words.label, side = "left", pady = 2,
+                  padx = 5)
+    tcltk::tkpack(l16.filter.words.entry, side = "left", expand = TRUE,
+                  fill = "x", pady = 2, padx = 5)
+    ## line 17
+    tcltk::tkpack(l17.ignore.case.fw.label, side = "left",
+                  pady = 2, padx = 5)
+    tcltk::tkpack(l17.ignore.case.fw.yes.label, l17.ignore.case.fw.yes.rb,
+                  l17.ignore.case.fw.no.label, l17.ignore.case.fw.no.rb,
+                  side = "left", pady = 2)
+    ## line 18
+    tcltk::tkpack(l18.filter.word.times.label, l18.filter.word.times.entry,
+                  side = "left", pady = 2, padx = 5)
+    tcltk::tkpack(l18.filter.word.times.slider, expand = TRUE,
+                  fill = "x", side = "left", pady = 2, padx = 5)
+    ## line 19
+    tcltk::tkpack(l19.extract.all.tables.label, side = "left",
+                  pady = 2, padx = 5)
+    tcltk::tkpack(l19.extract.all.tables.all.label, l19.extract.all.tables.all.rb,
+                  l19.extract.all.tables.searchwords.label, l19.extract.all.tables.searchwords.rb,
+                  side = "left", pady = 2)
+    ## line 20
+    tcltk::tkpack(l20.search.words.label, side = "left", pady = 2,
+                  padx = 5)
+    tcltk::tkpack(l20.search.words.entry, side = "left", expand = TRUE,
+                  fill = "x", pady = 2, padx = 5)
+    ## line 21
+    tcltk::tkpack(l21.ignore.case.sw.label, side = "left",
+                  pady = 2, padx = 5)
+    tcltk::tkpack(l21.ignore.case.sw.yes.label, l21.ignore.case.sw.yes.rb,
+                  l21.ignore.case.sw.no.label, l21.ignore.case.sw.no.rb,
+                  side = "left", pady = 2)
+    ## line 22
+    tcltk::tkpack(l22.context.label, l22.context.entry,
+                  side = "left", pady = 2, padx = 5)
+    tcltk::tkpack(l22.context.slider, expand = TRUE, fill = "x",
+                  side = "left", pady = 2, padx = 5)
+    ## line 23
+    tcltk::tkpack(l23.eval.abbrevs.label, side = "left",
+                  pady = 2, padx = 5)
+    tcltk::tkpack(l23.eval.abbrevs.yes.label, l23.eval.abbrevs.yes.rb,
+                  l23.eval.abbrevs.no.label, l23.eval.abbrevs.no.rb,
+                  side = "left", pady = 2)
+    tcltk::tkpack(l11, l12, l13, l14, l15, l16, l17, l18,
+                  l19, l20, l21, l22, l23, side = "top", fill = "x")
+    tcltk::tkpack(paras, side = "top", fill = "x")
+  
+    ## docus -----------------------------------------
+    ## line 24
+    tcltk::tkpack(l24.caption.label, side = "left", pady = 2,
+                  padx = 5)
+    ## line 25
+    tcltk::tkpack(l25.write.table.locations.label, side = "left",
+                  pady = 2, padx = 5)
+    tcltk::tkpack(l25.write.table.locations.yes.label, l25.write.table.locations.yes.rb,
+                  l25.write.table.locations.no.label, l25.write.table.locations.no.rb,
+                  side = "left", pady = 2)
+    ## line 26
+    tcltk::tkpack(l26.exp.nondetc.tabs.label, side = "left",
+                  pady = 2, padx = 5)
+    tcltk::tkpack(l26.exp.nondetc.tabs.yes.label, l26.exp.nondetc.tabs.yes.rb,
+                  l26.exp.nondetc.tabs.no.label, l26.exp.nondetc.tabs.no.rb,
+                  side = "left", pady = 2)
+    # line 27
+    tcltk::tkpack(l27.write.tab.doc.file.label, side = "left",
+                  pady = 2, padx = 5)
+    tcltk::tkpack(l27.write.tab.doc.file.yes.label, l27.write.tab.doc.file.yes.rb,
+                  l27.write.tab.doc.file.no.label, l27.write.tab.doc.file.no.rb,
+                  side = "left", pady = 2)
+    ## line 28
+    tcltk::tkpack(l28.write.txt.doc.file.label, side = "left",
+                  pady = 2, padx = 5)
+    tcltk::tkpack(l28.write.txt.doc.file.yes.label, l28.write.txt.doc.file.yes.rb,
+                  l28.write.txt.doc.file.no.label, l28.write.txt.doc.file.no.rb,
+                  side = "left", pady = 2)
+    # line 29
+    tcltk::tkpack(l29.delete.label, side = "left", pady = 2,
+                  padx = 5)
+    tcltk::tkpack(l29.delete.yes.label, l29.delete.yes.rb,
+                  l29.delete.no.label, l29.delete.no.rb, side = "left",
+                  pady = 2)
+  
+    tcltk::tkpack(l24, l25, l26, l27, l28, l29, side = "top",
+                  fill = "x")
+    tcltk::tkpack(docus, side = "top", fill = "x")
+  
+    ## end buttons -----------------------------------------------
+  
+    tcltk::tkpack(PDE.globals$l30.progress.textbox, l30.save.txt.but, side="left",fill="x", pady= 2)
+    tcltk::tkpack(l30.progress.bar.pb, PDE.globals$l30.progress.textbox, side="top",fill="x", pady= 2)
+    tcltk::tkpack(start.pause.but, quit.but, side="left",pady= 2, padx= 5)
+    tcltk::tkpack(l30,expand=TRUE,fill="x", side="left",pady= 2, padx= 5)
+    tcltk::tkpack(e, side="top",fill="x")
     tcltk::tkfocus(PDE.globals$ttanalyzer)
     tcltk::tkraise(PDE.globals$ttanalyzer)
-  }
-  l30.save.txt.but <- tcltk2::tk2button(l30, text = "^ save ^", width = 8,
-                                        command = save.progress_info)
-  ## the scroll buttons -----------------------------------------------------
-
-  down <- function() {
-    if (tcltk::tclvalue(scrollpos) == "0") {
-      tcltk::tkpack.forget(l1)
-      tcltk::tclvalue(scrollpos) <- "-1"
-    }  else if (tcltk::tclvalue(scrollpos) == "-1") {
-      tcltk::tkpack.forget(in_output)
-      tcltk::tclvalue(scrollpos) <- "-2"
-    } else if (tcltk::tclvalue(scrollpos) == "-2") {
-      tcltk::tkpack.forget(paras)
-      tcltk::tclvalue(scrollpos) <- "-3"
-    } else if (tcltk::tclvalue(scrollpos) == "-3") {
-      tcltk::tkpack.forget(docus)
-      tcltk::tclvalue(scrollpos) <- "-4"
-    }
-  }
-
-  up <- function() {
-    if (tcltk::tclvalue(scrollpos) == "0") {
-    } else if (tcltk::tclvalue(scrollpos) == "-1") {
-      tcltk::tkpack(l1, side = "top", fill = "x", before = in_output)
-      tcltk::tclvalue(scrollpos) <- "0"
-    } else if (tcltk::tclvalue(scrollpos) == "-2") {
-      tcltk::tkpack(in_output, side = "top", fill = "x",
-                    before = paras)
-      tcltk::tclvalue(scrollpos) <- "-1"
-    } else if (tcltk::tclvalue(scrollpos) == "-3") {
-      tcltk::tkpack(paras, side = "top", fill = "x",
-                    before = docus)
-      tcltk::tclvalue(scrollpos) <- "-2"
-    } else if (tcltk::tclvalue(scrollpos) == "-4") {
-      tcltk::tkpack(docus, side = "top", fill = "x",
-                    before = e)
-      tcltk::tclvalue(scrollpos) <- "-3"
-    }
-  }
-
-  Up.but <- tcltk2::tk2button(r, text = "/\\", width = 2,
-                              command = up)
-  Down.but <- tcltk2::tk2button(r, text = "\\/", width = 2,
-                                command = down)
-
-  ## How the form looks --------------------------------------
-
-  ## the scroll buttons --------------------------------------
-
-  tcltk::tkpack(Up.but, expand = TRUE, side = "top", fill = "both")
-  tcltk::tkpack(Down.but, expand = TRUE, side = "top", fill = "both")
-  tcltk::tkpack(r, side = "right", anchor = "e", fill = "y")
-
-  ## line 1 (buttons) ---------------------------------------
-  tcltk::tkpack(l1.load.tsv.but, l1.save.tsv.but, l1.reset.but,
-                side = "left", expand = TRUE, pady = 2, padx = 5)
-  tcltk::tkpack(l1, side = "top", anchor = "nw", fill = "x")
-
-
-  ## in_output ---------------------------------------------
-  ## line 6
-  tcltk::tkpack(l6.caption.label, side = "left", pady = 2,
-                padx = 5)
-  ## line 7
-  tcltk::tkpack(l7.pdfs.label, side = "left", pady = 2,
-                padx = 5)
-  tcltk::tkpack(l7.pdfs.entry, side = "left", expand = TRUE,
-                fill = "x", pady = 2, padx = 5)
-  tcltk::tkpack(l7.open.pdffolder.but, l7.load.pdffiles.but,
-                side = "left", pady = 2)
-  ## line 8
-  tcltk::tkpack(l8.whattoextr.label, side = "left", pady = 2,
-                padx = 5)
-  tcltk::tkpack(l8.whattoextr.sentences.label, l8.whattoextr.txt.rb,
-                l8.whattoextr.tables.label, l8.whattoextr.tab.rb,
-                l8.whattoextr.both.label, l8.whattoextr.txtandtab.rb,
-                side = "left", pady = 2)
-  ## line 9
-  tcltk::tkpack(l9.outputfolder.label, side = "left", pady = 2,
-                padx = 5)
-  tcltk::tkpack(l9.outputfolder.entry, side = "left", expand = TRUE,
-                fill = "x", pady = 2, padx = 5)
-  tcltk::tkpack(l9.open.outputfolder.but, side = "left",
-                pady = 2, padx = 5)
-  ## line 10
-  tcltk::tkpack(l10.out.table.format.label, side = "left",
-                pady = 2, padx = 5)
-  tcltk::tkpack(l10.out.table.format.combo, side = "left",
-                pady = 2, padx = 5)
-
-  tcltk::tkpack(l6, l7, l8, l9, l10, side = "top", fill = "x")
-  tcltk::tkpack(in_output, side = "top", fill = "x")
-
-  ## paras ---------------------------------------------
-  ## line 11
-  tcltk::tkpack(l11.caption.label, side = "left", pady = 2,
-                padx = 5)
-  ## line 12
-  tcltk::tkpack(l12.table.heading.words.label, side = "left",
-                pady = 2, padx = 5)
-  tcltk::tkpack(l12.table.heading.words.entry, side = "left",
-                expand = TRUE, fill = "x", pady = 2, padx = 5)
-  ## line 13
-  tcltk::tkpack(l13.ignore.case.th.label, side = "left",
-                pady = 2, padx = 5)
-  tcltk::tkpack(l13.ignore.case.th.yes.label, l13.ignore.case.th.yes.rb,
-                l13.ignore.case.th.no.label, l13.ignore.case.th.no.rb,
-                side = "left", pady = 2)
-  ## line 14
-  tcltk::tkpack(l14.dev.label, l14.dev.entry, side = "left",
-                pady = 2, padx = 5)
-  tcltk::tkpack(l14.dev.slider, expand = TRUE, fill = "x",
-                side = "left", pady = 2, padx = 5)
-  ## line 15
-  tcltk::tkpack(l15.filter.words.yesno.label, side = "left",
-                pady = 2, padx = 5)
-  tcltk::tkpack(l15.filter.words.yes.label, l15.filter.words.yes.rb,
-                l15.filter.words.no.label, l15.filter.words.no.rb,
-                side = "left", pady = 2)
-  ## line 16
-  tcltk::tkpack(l16.filter.words.label, side = "left", pady = 2,
-                padx = 5)
-  tcltk::tkpack(l16.filter.words.entry, side = "left", expand = TRUE,
-                fill = "x", pady = 2, padx = 5)
-  ## line 17
-  tcltk::tkpack(l17.ignore.case.fw.label, side = "left",
-                pady = 2, padx = 5)
-  tcltk::tkpack(l17.ignore.case.fw.yes.label, l17.ignore.case.fw.yes.rb,
-                l17.ignore.case.fw.no.label, l17.ignore.case.fw.no.rb,
-                side = "left", pady = 2)
-  ## line 18
-  tcltk::tkpack(l18.filter.word.times.label, l18.filter.word.times.entry,
-                side = "left", pady = 2, padx = 5)
-  tcltk::tkpack(l18.filter.word.times.slider, expand = TRUE,
-                fill = "x", side = "left", pady = 2, padx = 5)
-  ## line 19
-  tcltk::tkpack(l19.extract.all.tables.label, side = "left",
-                pady = 2, padx = 5)
-  tcltk::tkpack(l19.extract.all.tables.all.label, l19.extract.all.tables.all.rb,
-                l19.extract.all.tables.searchwords.label, l19.extract.all.tables.searchwords.rb,
-                side = "left", pady = 2)
-  ## line 20
-  tcltk::tkpack(l20.search.words.label, side = "left", pady = 2,
-                padx = 5)
-  tcltk::tkpack(l20.search.words.entry, side = "left", expand = TRUE,
-                fill = "x", pady = 2, padx = 5)
-  ## line 21
-  tcltk::tkpack(l21.ignore.case.sw.label, side = "left",
-                pady = 2, padx = 5)
-  tcltk::tkpack(l21.ignore.case.sw.yes.label, l21.ignore.case.sw.yes.rb,
-                l21.ignore.case.sw.no.label, l21.ignore.case.sw.no.rb,
-                side = "left", pady = 2)
-  ## line 22
-  tcltk::tkpack(l22.context.label, l22.context.entry,
-                side = "left", pady = 2, padx = 5)
-  tcltk::tkpack(l22.context.slider, expand = TRUE, fill = "x",
-                side = "left", pady = 2, padx = 5)
-  ## line 23
-  tcltk::tkpack(l23.eval.abbrevs.label, side = "left",
-                pady = 2, padx = 5)
-  tcltk::tkpack(l23.eval.abbrevs.yes.label, l23.eval.abbrevs.yes.rb,
-                l23.eval.abbrevs.no.label, l23.eval.abbrevs.no.rb,
-                side = "left", pady = 2)
-  tcltk::tkpack(l11, l12, l13, l14, l15, l16, l17, l18,
-                l19, l20, l21, l22, l23, side = "top", fill = "x")
-  tcltk::tkpack(paras, side = "top", fill = "x")
-
-  ## docus -----------------------------------------
-  ## line 24
-  tcltk::tkpack(l24.caption.label, side = "left", pady = 2,
-                padx = 5)
-  ## line 25
-  tcltk::tkpack(l25.write.table.locations.label, side = "left",
-                pady = 2, padx = 5)
-  tcltk::tkpack(l25.write.table.locations.yes.label, l25.write.table.locations.yes.rb,
-                l25.write.table.locations.no.label, l25.write.table.locations.no.rb,
-                side = "left", pady = 2)
-  ## line 26
-  tcltk::tkpack(l26.exp.nondetc.tabs.label, side = "left",
-                pady = 2, padx = 5)
-  tcltk::tkpack(l26.exp.nondetc.tabs.yes.label, l26.exp.nondetc.tabs.yes.rb,
-                l26.exp.nondetc.tabs.no.label, l26.exp.nondetc.tabs.no.rb,
-                side = "left", pady = 2)
-  # line 27
-  tcltk::tkpack(l27.write.tab.doc.file.label, side = "left",
-                pady = 2, padx = 5)
-  tcltk::tkpack(l27.write.tab.doc.file.yes.label, l27.write.tab.doc.file.yes.rb,
-                l27.write.tab.doc.file.no.label, l27.write.tab.doc.file.no.rb,
-                side = "left", pady = 2)
-  ## line 28
-  tcltk::tkpack(l28.write.txt.doc.file.label, side = "left",
-                pady = 2, padx = 5)
-  tcltk::tkpack(l28.write.txt.doc.file.yes.label, l28.write.txt.doc.file.yes.rb,
-                l28.write.txt.doc.file.no.label, l28.write.txt.doc.file.no.rb,
-                side = "left", pady = 2)
-  # line 29
-  tcltk::tkpack(l29.delete.label, side = "left", pady = 2,
-                padx = 5)
-  tcltk::tkpack(l29.delete.yes.label, l29.delete.yes.rb,
-                l29.delete.no.label, l29.delete.no.rb, side = "left",
-                pady = 2)
-
-  tcltk::tkpack(l24, l25, l26, l27, l28, l29, side = "top",
-                fill = "x")
-  tcltk::tkpack(docus, side = "top", fill = "x")
-
-  ## end buttons -----------------------------------------------
-
-  tcltk::tkpack(PDE.globals$l30.progress.textbox, l30.save.txt.but, side="left",fill="x", pady= 2)
-  tcltk::tkpack(l30.progress.bar.pb, PDE.globals$l30.progress.textbox, side="top",fill="x", pady= 2)
-  tcltk::tkpack(start.pause.but, quit.but, side="left",pady= 2, padx= 5)
-  tcltk::tkpack(l30,expand=TRUE,fill="x", side="left",pady= 2, padx= 5)
-  tcltk::tkpack(e, side="top",fill="x")
-  tcltk::tkfocus(PDE.globals$ttanalyzer)
-  tcltk::tkraise(PDE.globals$ttanalyzer)
+  } ## end tcltk check
 }
 
 #'Extracting data from PDF (Portable Document Format) files
@@ -5978,7 +5991,7 @@ PDE_analyzer <- function(PDE_parameters_file_path = NA, verbose=TRUE){
 #' @section Note:
 #' A detailed description of the elements in the user interface can be found in the markdown file (README_PDE.md)
 #'
-#' @import tcltk2
+#' @import tcltk tcltk2
 #' 
 #' @examples
 #'  
@@ -6096,866 +6109,546 @@ PDE_reader_i <- function(verbose=TRUE) {
   tcltk.test <- try(test <- tcltk::tktoplevel(bg = "#05F2DB"), silent = TRUE)
   tcltk.test2 <- try(tcltk::tkdestroy(test), silent = TRUE)
   if (class(tcltk.test) == "try-error"){
-    stop("Package tcltk is not working properly. If you are on a Mac try installing the latest version of xquartz.")
-  }
-  ttreader <- tcltk::tktoplevel(bg = "#05F2DB")
-  tcltk::tkwm.geometry(ttreader, "+0+0")
-  tcltk::tkwm.title(ttreader, "PDE reader")
-
-  ## style ---------------------------------------------------------------------
-  themes <- try(tcltk2::tk2theme.list(), silent = TRUE)
-  if (!inherits(themes, "try-error")) {
-    if ("vista" %in% themes) {
-      # This must be aquaTk on a Mac
-      try(tcltk2::tk2theme("vista"), silent = TRUE)
-    } else if ("clam" %in% themes) {
-      try(tcltk2::tk2theme("clam"), silent = TRUE)
-    } else if ("aquaTk" %in% themes) {
-      # This must be Vista or Win 7
-      try(tcltk2::tk2theme("aquaTk"), silent = TRUE)
-    }
-  }
-
-  ## min size so that no buttons disappear vertically
-  tcltk::tkwm.minsize(ttreader, 750, 0)
-
-
-  ## frames ---------------------------------------------------
-
-  ## right frame
-  top <- tcltk::tkframe(ttreader, bg = "#05F2DB")
-  ## line 1 with buttons
-  l1 <- tcltk::tkframe(top, bg = "#05F2DB")
-  l2 <- tcltk::tkframe(top, bg = "#05F2DB")
-  l3 <- tcltk::tkframe(top, bg = "#05F2DB")
-  l4 <- tcltk::tkframe(top, bg = "#05F2DB")
-  l5 <- tcltk::tkframe(top, bg = "#05F2DB")
-  mid <- tcltk::tkframe(ttreader, borderwidth = 1, relief = "solid",
-                        bg = "#05F2C7")
-  l6 <- tcltk::tkframe(mid, bg = "#05F2C7")
-  l7 <- tcltk::tkframe(mid, bg = "#05F2C7")
-  l8 <- tcltk::tkframe(mid, bg = "#05F2C7")
-  bot <- tcltk::tkframe(ttreader, bg = "#05F2DB")
-  l9 <- tcltk::tkframe(bot, bg = "#05F2DB")
-  
-  ## test os.font ------------------------------------------------------------------------
-  res <- try(tcltk2::tk2label(l1, text = "test", font = os.font.ten.bold),silent = TRUE)
-  if (class(res)[1] == "try-error") {
-    out_msg <- c(out_msg, "There is an error with the allocation of tcl system fonts.")
+    out_msg <- c(out_msg, paste("Package tcltk is not working properly.",
+                                "If you are on a Mac try installing the latest version of xquartz to use tcltk correctly."))
     if (verbose) cat(utils::tail(out_msg,1), sep="\n")
-    os.font <- ""
-    os.font.ten.bold <- ""
-    os.font.twelve.bold <- ""
-  }
-
-
-  ## labels -----------------------------------------------------------------
-  l1.progress.label <- tcltk2::tk2label(l1, text = tcltk::tclvalue(progress.var),
+  } else {
+    ## if tcltk works continue
+    ttreader <- tcltk::tktoplevel(bg = "#05F2DB")
+    tcltk::tkwm.geometry(ttreader, "+0+0")
+    tcltk::tkwm.title(ttreader, "PDE reader")
+  
+    ## style ---------------------------------------------------------------------
+    themes <- try(tcltk2::tk2theme.list(), silent = TRUE)
+    if (!inherits(themes, "try-error")) {
+      if ("vista" %in% themes) {
+        # This must be aquaTk on a Mac
+        try(tcltk2::tk2theme("vista"), silent = TRUE)
+      } else if ("clam" %in% themes) {
+        try(tcltk2::tk2theme("clam"), silent = TRUE)
+      } else if ("aquaTk" %in% themes) {
+        # This must be Vista or Win 7
+        try(tcltk2::tk2theme("aquaTk"), silent = TRUE)
+      }
+    }
+  
+    ## min size so that no buttons disappear vertically
+    tcltk::tkwm.minsize(ttreader, 750, 0)
+  
+  
+    ## frames ---------------------------------------------------
+  
+    ## right frame
+    top <- tcltk::tkframe(ttreader, bg = "#05F2DB")
+    ## line 1 with buttons
+    l1 <- tcltk::tkframe(top, bg = "#05F2DB")
+    l2 <- tcltk::tkframe(top, bg = "#05F2DB")
+    l3 <- tcltk::tkframe(top, bg = "#05F2DB")
+    l4 <- tcltk::tkframe(top, bg = "#05F2DB")
+    l5 <- tcltk::tkframe(top, bg = "#05F2DB")
+    mid <- tcltk::tkframe(ttreader, borderwidth = 1, relief = "solid",
+                          bg = "#05F2C7")
+    l6 <- tcltk::tkframe(mid, bg = "#05F2C7")
+    l7 <- tcltk::tkframe(mid, bg = "#05F2C7")
+    l8 <- tcltk::tkframe(mid, bg = "#05F2C7")
+    bot <- tcltk::tkframe(ttreader, bg = "#05F2DB")
+    l9 <- tcltk::tkframe(bot, bg = "#05F2DB")
+    
+    ## test os.font ------------------------------------------------------------------------
+    res <- try(tcltk2::tk2label(l1, text = "test", font = os.font.ten.bold),silent = TRUE)
+    if (class(res)[1] == "try-error") {
+      out_msg <- c(out_msg, "There is an error with the allocation of tcl system fonts.")
+      if (verbose) cat(utils::tail(out_msg,1), sep="\n")
+      os.font <- ""
+      os.font.ten.bold <- ""
+      os.font.twelve.bold <- ""
+    }
+  
+  
+    ## labels -----------------------------------------------------------------
+    l1.progress.label <- tcltk2::tk2label(l1, text = tcltk::tclvalue(progress.var),
+                                          background = "#05F2DB")
+    l5.jumpto.label <- tcltk2::tk2label(l5, text = "Jump to file:",
                                         background = "#05F2DB")
-  l5.jumpto.label <- tcltk2::tk2label(l5, text = "Jump to file:",
-                                      background = "#05F2DB")
-  l6.caption.label <- tcltk2::tk2label(l6, text = "Table:",
-                                       font = os.font.twelve.bold, background = "#05F2C7")
-  l6.font.label <- tcltk2::tk2label(l6, text = "font size",
-                                    background = "#05F2C7")
-  l6.hotkey.mode.label <- tcltk2::tk2label(l6, text = "hotkey mode:",
-                                           background = "#05F2C7")
-  l6.wrap.label <- tcltk2::tk2label(l6, text = "wrap", background = "#05F2C7")
-  l6.nowrap.label <- tcltk2::tk2label(l6, text = "don't wrap (for window resizing)",
+    l6.caption.label <- tcltk2::tk2label(l6, text = "Table:",
+                                         font = os.font.twelve.bold, background = "#05F2C7")
+    l6.font.label <- tcltk2::tk2label(l6, text = "font size",
                                       background = "#05F2C7")
-  l7.sentence.number.label <- tcltk2::tk2label(l7, text = "          sentence number:",
-                                               background = "#05F2C7")
-  l9.caption.label <- tcltk2::tk2label(l9, text = "Mark:",
-                                       background = "#05F2DB")
-
-  ## entry boxes -----------------------------------------------------
-  l3.pdffolder.entry <- tcltk2::tk2entry(l3, textvariable = pdffolder.var,
+    l6.hotkey.mode.label <- tcltk2::tk2label(l6, text = "hotkey mode:",
+                                             background = "#05F2C7")
+    l6.wrap.label <- tcltk2::tk2label(l6, text = "wrap", background = "#05F2C7")
+    l6.nowrap.label <- tcltk2::tk2label(l6, text = "don't wrap (for window resizing)",
+                                        background = "#05F2C7")
+    l7.sentence.number.label <- tcltk2::tk2label(l7, text = "          sentence number:",
+                                                 background = "#05F2C7")
+    l9.caption.label <- tcltk2::tk2label(l9, text = "Mark:",
+                                         background = "#05F2DB")
+  
+    ## entry boxes -----------------------------------------------------
+    l3.pdffolder.entry <- tcltk2::tk2entry(l3, textvariable = pdffolder.var,
+                                           width = 3)
+    l2.loadtsv.entry <- tcltk2::tk2entry(l2, textvariable = tsvfile.var,
                                          width = 3)
-  l2.loadtsv.entry <- tcltk2::tk2entry(l2, textvariable = tsvfile.var,
-                                       width = 3)
-  l4.pdfname.entry <- tcltk2::tk2entry(l4, textvariable = pdfname.var,
-                                       width = 10, state = "readonly")
-
-
-  ## progress bar ---------------------------------------------------
-  ## e
-  l1.progress.bar.pb <- tcltk2::tk2progress(l1, value = 0,
-                                            maximum = 100, length = 50)
-
-  ## scroll bar ----------------------------------------------------
-  scroll.y <- tcltk2::tk2scrollbar(l8, orient = "vertical",
-                                   command = function(...) tcltk::tkyview(l8.analysis.file.table,
-                                                                          ...))  ## command that performs the scrolling
-  l8.analysis.file.table <- tcltk2::tk2tablelist(l8, selectmode = "extended",
-                                                 exportselection = 0, stripebackground = "lightgrey",
-                                                 stretch = "anchor", selecttype = "cell", 
-                                                 yscrollcommand = function(...) tcltk::tkset(scroll.y,
-                                                                                                                                      ...))
-
-
-  ## buttons 1 -----------------------------------------------------------
-  ## Here what happens when the buttons are pressed
-  ## buttons 1
-
-  renamefile <- function(completefilename, checkfor,
-                         replacewith) {
-    filebase <- basename(completefilename)
-    filedir <- dirname(completefilename)
-    newfilename <- filebase
-    for (i in 1:length(checkfor)) {
-      if (substr(newfilename, 1, 2) == checkfor[i])
-        newfilename <- substr(newfilename, 3,
-                              nchar(newfilename))
-    }
-    if (!substr(newfilename, 1, 2) == replacewith)
-      newfilename <- paste0(replacewith, newfilename)
-    file.rename(from = completefilename, to = paste(filedir,
-                                                    newfilename, sep = "/"))
-    ## rename in PDE.globals$tables.masterlist
-    completefilename <- gsub("\\\\", "/", completefilename)
-    numb = gsub("-.*", "", tcltk::tclvalue(jumpto.var))
-    pos <- as.numeric(numb)
-    PDE.globals$tables.masterlist[["analysis.file_location"]][pos] <- list(paste(filedir,
-                                                                                 newfilename, sep = "/"))
-    return(newfilename)
-  }
-
-  flagfile <- function() {
-    if (tcltk::tclvalue(mark.var) == "Mark analysis file only" ||
-        tcltk::tclvalue(mark.var) == "Mark analysis file & PDF") {
-      ## Rename analysisfile
-      filename <- tcltk::tclvalue(filename.var)
-      searchfilename <- gsub("+", "[+]", filename,
-                             fixed = TRUE)
-      fullfilename <- list.files(tcltk::tclvalue(analysis.folder_location.var),
-                                 pattern = searchfilename, full.names = TRUE,
-                                 recursive = TRUE)[1]
-      tcltk::tclvalue(filename.var) <- renamefile(completefilename = fullfilename,
-                                                  checkfor = c("x_"), replacewith = "!_")
-      ## change filename also in jumpto.var
-      numb <- gsub("-.*", "", tcltk::tclvalue(jumpto.var))
-      PDE.globals$jumpto.list[as.numeric(numb)] <- paste0(numb, "-",
-                                                                        tcltk::tclvalue(filename.var))
-      tcltk::tclvalue(jumpto.var) <- paste0(numb, "-",
-                                            tcltk::tclvalue(filename.var))
-      if (length(PDE.globals$jumpto.list) > 1) {
-        tcltk::tkconfigure(l5.jumpto.cb, values = PDE.globals$jumpto.list)
-      } else {
-        tcltk::tkconfigure(l5.jumpto.cb, values = tcltk::as.tclObj(PDE.globals$jumpto.list,
-                                                                   drop = FALSE))
+    l4.pdfname.entry <- tcltk2::tk2entry(l4, textvariable = pdfname.var,
+                                         width = 10, state = "readonly")
+  
+  
+    ## progress bar ---------------------------------------------------
+    ## e
+    l1.progress.bar.pb <- tcltk2::tk2progress(l1, value = 0,
+                                              maximum = 100, length = 50)
+  
+    ## scroll bar ----------------------------------------------------
+    scroll.y <- tcltk2::tk2scrollbar(l8, orient = "vertical",
+                                     command = function(...) tcltk::tkyview(l8.analysis.file.table,
+                                                                            ...))  ## command that performs the scrolling
+    l8.analysis.file.table <- tcltk2::tk2tablelist(l8, selectmode = "extended",
+                                                   exportselection = 0, stripebackground = "lightgrey",
+                                                   stretch = "anchor", selecttype = "cell", 
+                                                   yscrollcommand = function(...) tcltk::tkset(scroll.y,
+                                                                                                                                        ...))
+  
+  
+    ## buttons 1 -----------------------------------------------------------
+    ## Here what happens when the buttons are pressed
+    ## buttons 1
+  
+    renamefile <- function(completefilename, checkfor,
+                           replacewith) {
+      filebase <- basename(completefilename)
+      filedir <- dirname(completefilename)
+      newfilename <- filebase
+      for (i in 1:length(checkfor)) {
+        if (substr(newfilename, 1, 2) == checkfor[i])
+          newfilename <- substr(newfilename, 3,
+                                nchar(newfilename))
       }
-
-    }
-    if (tcltk::tclvalue(mark.var) == "Mark PDF file only" ||
-        tcltk::tclvalue(mark.var) == "Mark analysis file & PDF") {
-      ## Rename PDF file
-      if (!tcltk::tclvalue(pdfname.var) == "") {
-        completefilename <- list.files(tcltk::tclvalue(pdffolder.var),
-                                       pattern = tcltk::tclvalue(pdfname.var),
-                                       full.names = TRUE, recursive = TRUE)[1]
-        tcltk::tclvalue(pdfname.var) <- renamefile(completefilename = completefilename,
-                                                   checkfor = c("x_"), replacewith = "!_")
-        tcltk::tclvalue(fullpdfname.var) <- paste(dirname(completefilename),
-                                                  tcltk::tclvalue(pdfname.var), sep = "/")
-      }
-    }
-  }
-  l9.flagfile.but <- tcltk2::tk2button(l9, text = "Flag file",
-                                       width = 9, command = flagfile, state = "disabled",
-                                       underline = "0")
-
-  xmarkfile <- function() {
-    if (tcltk::tclvalue(mark.var) == "Mark analysis file only" ||
-        tcltk::tclvalue(mark.var) == "Mark analysis file & PDF") {
-      ## Rename analysisfile
-      filename <- tcltk::tclvalue(filename.var)
-      searchfilename <- gsub("+", "[+]", filename,
-                             fixed = TRUE)
-      fullfilename <- list.files(tcltk::tclvalue(analysis.folder_location.var),
-                                 pattern = searchfilename, full.names = TRUE,
-                                 recursive = TRUE)[1]
-      tcltk::tclvalue(filename.var) <- renamefile(completefilename = fullfilename,
-                                                  checkfor = c("!_"), replacewith = "x_")
-      ## change filename also in jumpto.var
+      if (!substr(newfilename, 1, 2) == replacewith)
+        newfilename <- paste0(replacewith, newfilename)
+      file.rename(from = completefilename, to = paste(filedir,
+                                                      newfilename, sep = "/"))
+      ## rename in PDE.globals$tables.masterlist
+      completefilename <- gsub("\\\\", "/", completefilename)
       numb = gsub("-.*", "", tcltk::tclvalue(jumpto.var))
-      PDE.globals$jumpto.list[as.numeric(numb)] <- paste0(numb, "-",
-                                                                        tcltk::tclvalue(filename.var))
-      tcltk::tclvalue(jumpto.var) <- paste0(numb, "-",
-                                            tcltk::tclvalue(filename.var))
-      if (length(PDE.globals$jumpto.list) > 1) {
-        tcltk::tkconfigure(l5.jumpto.cb, values = PDE.globals$jumpto.list)
-      } else {
-        tcltk::tkconfigure(l5.jumpto.cb, values = tcltk::as.tclObj(PDE.globals$jumpto.list,
-                                                                   drop = FALSE))
+      pos <- as.numeric(numb)
+      PDE.globals$tables.masterlist[["analysis.file_location"]][pos] <- list(paste(filedir,
+                                                                                   newfilename, sep = "/"))
+      return(newfilename)
+    }
+  
+    flagfile <- function() {
+      if (tcltk::tclvalue(mark.var) == "Mark analysis file only" ||
+          tcltk::tclvalue(mark.var) == "Mark analysis file & PDF") {
+        ## Rename analysisfile
+        filename <- tcltk::tclvalue(filename.var)
+        searchfilename <- gsub("+", "[+]", filename,
+                               fixed = TRUE)
+        fullfilename <- list.files(tcltk::tclvalue(analysis.folder_location.var),
+                                   pattern = searchfilename, full.names = TRUE,
+                                   recursive = TRUE)[1]
+        tcltk::tclvalue(filename.var) <- renamefile(completefilename = fullfilename,
+                                                    checkfor = c("x_"), replacewith = "!_")
+        ## change filename also in jumpto.var
+        numb <- gsub("-.*", "", tcltk::tclvalue(jumpto.var))
+        PDE.globals$jumpto.list[as.numeric(numb)] <- paste0(numb, "-",
+                                                                          tcltk::tclvalue(filename.var))
+        tcltk::tclvalue(jumpto.var) <- paste0(numb, "-",
+                                              tcltk::tclvalue(filename.var))
+        if (length(PDE.globals$jumpto.list) > 1) {
+          tcltk::tkconfigure(l5.jumpto.cb, values = PDE.globals$jumpto.list)
+        } else {
+          tcltk::tkconfigure(l5.jumpto.cb, values = tcltk::as.tclObj(PDE.globals$jumpto.list,
+                                                                     drop = FALSE))
+        }
+  
+      }
+      if (tcltk::tclvalue(mark.var) == "Mark PDF file only" ||
+          tcltk::tclvalue(mark.var) == "Mark analysis file & PDF") {
+        ## Rename PDF file
+        if (!tcltk::tclvalue(pdfname.var) == "") {
+          completefilename <- list.files(tcltk::tclvalue(pdffolder.var),
+                                         pattern = tcltk::tclvalue(pdfname.var),
+                                         full.names = TRUE, recursive = TRUE)[1]
+          tcltk::tclvalue(pdfname.var) <- renamefile(completefilename = completefilename,
+                                                     checkfor = c("x_"), replacewith = "!_")
+          tcltk::tclvalue(fullpdfname.var) <- paste(dirname(completefilename),
+                                                    tcltk::tclvalue(pdfname.var), sep = "/")
+        }
       }
     }
-    if (tcltk::tclvalue(mark.var) == "Mark PDF file only" ||
-        tcltk::tclvalue(mark.var) == "Mark analysis file & PDF") {
-      ## Rename PDF file
-      if (!tcltk::tclvalue(pdfname.var) == "") {
-        completefilename <- list.files(tcltk::tclvalue(pdffolder.var),
-                                       pattern = tcltk::tclvalue(pdfname.var),
-                                       full.names = TRUE, recursive = TRUE)[1]
-        tcltk::tclvalue(pdfname.var) <- renamefile(completefilename = completefilename,
-                                                   checkfor = c("!_"), replacewith = "x_")
-        tcltk::tclvalue(fullpdfname.var) <- paste(dirname(completefilename),
-                                                  tcltk::tclvalue(pdfname.var), sep = "/")
-      }
-    }
-  }
-  l9.xmarkfile.but <- tcltk2::tk2button(l9, text = "x mark file",
-                                        width = 11, command = xmarkfile, state = "disabled",
-                                        underline = "0")
-
-  unmarkfile <- function() {
-    if (tcltk::tclvalue(mark.var) == "Mark analysis file only" ||
-        tcltk::tclvalue(mark.var) == "Mark analysis file & PDF") {
-      ## Rename analysisfile
-      filename <- tcltk::tclvalue(filename.var)
-      searchfilename <- gsub("+", "[+]", filename,
-                             fixed = TRUE)
-      fullfilename <- list.files(tcltk::tclvalue(analysis.folder_location.var),
-                                 pattern = searchfilename, full.names = TRUE,
-                                 recursive = TRUE)[1]
-      tcltk::tclvalue(filename.var) <- renamefile(completefilename = fullfilename,
-                                                  checkfor = c("!_", "x_"), replacewith = "")
-      ## change filename also in jumpto.var
-      numb <- gsub("-.*", "", tcltk::tclvalue(jumpto.var))
-      PDE.globals$jumpto.list[as.numeric(numb)] <- paste0(numb, "-",
-                                                                        tcltk::tclvalue(filename.var))
-      tcltk::tclvalue(jumpto.var) <- paste0(numb, "-",
-                                            tcltk::tclvalue(filename.var))
-      if (length(PDE.globals$jumpto.list) > 1) {
-        tcltk::tkconfigure(l5.jumpto.cb, values = PDE.globals$jumpto.list)
-      } else {
-        tcltk::tkconfigure(l5.jumpto.cb, values = tcltk::as.tclObj(PDE.globals$jumpto.list,
-                                                                   drop = FALSE))
-      }
-
-    }
-    if (tcltk::tclvalue(mark.var) == "Mark PDF file only" ||
-        tcltk::tclvalue(mark.var) == "Mark analysis file & PDF") {
-      ## Rename PDF file
-      if (!tcltk::tclvalue(pdfname.var) == "") {
-        completefilename <- list.files(tcltk::tclvalue(pdffolder.var),
-                                       pattern = tcltk::tclvalue(pdfname.var),
-                                       full.names = TRUE, recursive = TRUE)[1]
-        tcltk::tclvalue(pdfname.var) <- renamefile(completefilename = completefilename,
-                                                   checkfor = c("x_", "!_"), replacewith = "")
-        tcltk::tclvalue(fullpdfname.var) <- paste(dirname(completefilename),
-                                                  tcltk::tclvalue(pdfname.var), sep = "/")
-      }
-    }
-  }
-  l9.unmarkfile.but <- tcltk2::tk2button(l9, text = "Unmark file",
-                                         width = 11, command = unmarkfile, state = "disabled",
+    l9.flagfile.but <- tcltk2::tk2button(l9, text = "Flag file",
+                                         width = 9, command = flagfile, state = "disabled",
                                          underline = "0")
-
-  ## functions --------------------------------------------------
-  fill.table <- function(table, analysis.file_location) {
-    included.columns <- !(colnames(table) %in% "search.word.loc_total")
-    if (tcltk::tclvalue(txtcontent.only.var) == "1") {
-      included.columns <- (colnames(table) %in% "txtcontent")
-    }
-    table <- table[, included.columns]
-    ## clear table
-    tcltk::tkdelete(l8.analysis.file.table, 0, "end")
-
-    ## change the header
-    tcltk::tclvalue(filename.var) <- as.character(basename(analysis.file_location))
-    tcltk::tkwm.title(ttreader, paste0("PDE reader - ",tcltk::tclvalue(filename.var)))
-
-    if (tcltk::tclvalue(txtcontent.only.var) == "0") {
-      ## fill the header
-      columnhead <- NULL
-      for (c in 2:(ncol(table))) {
-        columnhead <- paste0(columnhead, "\" 0 \"",
-                             colnames(table)[c])
-      }
-      tcltk::tkconfigure(l8.analysis.file.table, columns = paste0("1 \"",
-                                                                  colnames(table)[1], columnhead, "\""))
-
-      ## make columns editable and wrap
-      for (c in 0:(ncol(table) - 1)) {
-        tcltk::tcl(l8.analysis.file.table, "columnconfigure",
-                   c, editable = 1)
-        tcltk::tcl(l8.analysis.file.table, "columnconfigure",
-                   c, wrap = tcltk::tclvalue(wrap.var))
-      }
-
-      ## fill table
-      for (r in 1:nrow(table)) {
-        rowlist <- NULL
-        for (c in 1:ncol(table)) {
-          rowlist <- c(rowlist, as.character(table[r,
-                                                   c]))
-        }
-        tcltk::tkinsert(l8.analysis.file.table, "end",
-                        rowlist)
-      }
-
-      tcltk::tclvalue(columnnumber.var) <- ncol(table)
-
-    } else {
-      ## fill the header
-      tcltk::tkconfigure(l8.analysis.file.table, columns = paste0("1 \"",
-                                                                  "txtcontent", "\""))
-      ## make columns editable and wrap
-      tcltk::tcl(l8.analysis.file.table, "columnconfigure",
-                 0, editable = 1)
-      tcltk::tcl(l8.analysis.file.table, "columnconfigure",
-                 0, wrap = tcltk::tclvalue(wrap.var))
-
-      ## fill table
-      for (r in 1:length(table)) {
-        tcltk::tkinsert(l8.analysis.file.table, "end",
-                        as.character(c(table[r],"")))
-      }
-      tcltk::tclvalue(columnnumber.var) <- 1
-    }
-
-    ## add mark option to combobox
-    if (PDE.globals$mark.list[1] == "") {
-      if (!tcltk::tclvalue(pdffolder.var) == "") {
-        PDE.globals$mark.list <- c("Mark analysis file only",
-                                   "Mark PDF file only", "Mark analysis file & PDF")
-      } else {
-        PDE.globals$mark.list <- c("Mark analysis file only")
-      }
-      tcltk::tkconfigure(l9.mark.cb, values = tcltk::as.tclObj(PDE.globals$mark.list,
-                                                               drop = FALSE))
-      tcltk::tclvalue(mark.var) = PDE.globals$mark.list[1]
-      tcltk::tkconfigure(l9.flagfile.but, state = "normal")
-      tcltk::tkconfigure(l9.xmarkfile.but, state = "normal")
-      tcltk::tkconfigure(l9.unmarkfile.but, state = "normal")
-    }
-
-  }
-
-  ## combobox list -------------------------------------------------------
-
-  l5.jumpto.cb <- tcltk2::tk2combobox(l5, textvariable = jumpto.var,
-                                      values = PDE.globals$jumpto.list, width = 30, state = "readonly")
-
-  ## onchange combobox
-  tcltk::tkbind(l5.jumpto.cb, "<<ComboboxSelected>>",
-                function() {
-                  numb = gsub("-.*", "", tcltk::tclvalue(jumpto.var))
-                  pos <- as.numeric(numb)
-                  loc <- PDE.globals$tables.masterlist[["analysis.file_location"]][[pos]]
-                  res <- try(PDE.globals$tables.masterlist[["values_table"]][[pos]], silent = TRUE)
-                  if (class(res) != "try-error" && !is.null(res)) {
-                    tab <- PDE.globals$tables.masterlist[["values_table"]][[pos]]
-                    loc <- PDE.globals$tables.masterlist[["analysis.file_location"]][[pos]]
-                    ## highlight search words if highlighting is on
-                    hightlighted.tab <- markwords(tab,
-                                                  loc, pos)
-                    ## update display of sentences
-                    display.values_table <- adjust.sent.display(hightlighted.tab)
-
-                    fill.table(table = display.values_table,
-                               analysis.file_location = loc)
-                    ## match PDF files if pdffolder was chosen
-                    if (!tcltk::tclvalue(pdffolder.var) == "") {
-                      load.pdffolder(tcltk::tclvalue(pdffolder.var))
-                    }
-                  } else {
-                    filename <- gsub("^[^-]*-", "", tcltk::tclvalue(jumpto.var))
-                    searchfilename <- gsub("+", "[+]", filename,
-                                           fixed = TRUE)
-                    ## find the file in the folder
-                    fullfilename <- list.files(tcltk::tclvalue(analysis.folder_location.var),
-                                               pattern = searchfilename, full.names = TRUE,
-                                               recursive = TRUE)[1]
-                    fullfilename <- gsub("\\\\", "/", fullfilename)
-                    open.analysis.file(analysis.file_location = fullfilename)
-                  }
-                })
-
-  l9.mark.cb <- tcltk2::tk2combobox(l9, textvariable = mark.var,
-                                    values = PDE.globals$mark.list, width = 20, state = "readonly")
-
-
-  fill.folder.infos <- function(table, analysis.file_location) {
-    filename <- as.character(basename(analysis.file_location))
-    
-    ## add file to jumpto list if it is not already in there
-    if (!(any(grepl(filename, PDE.globals$jumpto.list, fixed = TRUE)))) {
-      if (PDE.globals$jumpto.list[1] == "") {
-        PDE.globals$jumpto.list <- paste((length(PDE.globals$jumpto.list)),
-                                         filename, sep = "-")
-        analysis.file_location <- gsub("\\\\", "/", analysis.file_location)
-        pos <- 1
-        PDE.globals$tables.masterlist[["analysis.file_location"]][pos] <- list(analysis.file_location)
-      } else {
-        analysis.file_location <- gsub("\\\\", "/", analysis.file_location)
-        pos <- length(PDE.globals$jumpto.list) + 1
-        PDE.globals$tables.masterlist[["analysis.file_location"]][pos] <- list(analysis.file_location)
-        PDE.globals$jumpto.list <- c(PDE.globals$jumpto.list, paste(pos, filename, sep = "-"))
-      }
-      if (length(PDE.globals$jumpto.list) > 1) {
-        tcltk::tkconfigure(l5.jumpto.cb, values = PDE.globals$jumpto.list)
-      } else {
-        tcltk::tkconfigure(l5.jumpto.cb, values = tcltk::as.tclObj(PDE.globals$jumpto.list,
-                                                                   drop = FALSE))
-      }
-    } else {
-      pos <- grep(filename, PDE.globals$jumpto.list, fixed = TRUE)[1]
-    }
-    
-    if (!is.null(dim(table))) {
-      ## add value_table to masterlist of tables if not
-      ## already in there
-      res <- try(PDE.globals$tables.masterlist[["values_table"]][[pos]], silent = TRUE)
-      if (class(res) == "try-error") {
-        PDE.globals$tables.masterlist[["values_table"]][pos] <- list(table)
-        PDE.globals$tables.masterlist[["markedtables"]][pos][[1]][["tsvfile"]] <- list()
-        PDE.globals$tables.masterlist[["markedtables"]][pos][[1]][["table"]] <- list()
-        # PDE.globals$tables.masterlist[["woabbrev_values_table"]][pos] <- list()
-        PDE.globals$tables.masterlist[["woabbrev_markedtables"]][pos][[1]][["tsvfile"]] <- list()
-        PDE.globals$tables.masterlist[["woabbrev_markedtables"]][pos][[1]][["table"]] <- list()
-      } else if (is.null(PDE.globals$tables.masterlist[["values_table"]][[pos]])) {
-        PDE.globals$tables.masterlist[["values_table"]][pos] <- list(table)
-        PDE.globals$tables.masterlist[["markedtables"]][pos][[1]][["tsvfile"]] <- list()
-        PDE.globals$tables.masterlist[["markedtables"]][pos][[1]][["table"]] <- list()
-        # PDE.globals$tables.masterlist[["woabbrev_values_table"]][pos] <- list()
-        PDE.globals$tables.masterlist[["woabbrev_markedtables"]][pos][[1]][["tsvfile"]] <- list()
-        PDE.globals$tables.masterlist[["woabbrev_markedtables"]][pos][[1]][["table"]] <- list()
-      }
-      ## make folder structure
-    } else {
-      # PDE.globals$tables.masterlist[["values_table"]][pos] <- list()
-      PDE.globals$tables.masterlist[["markedtables"]][pos][[1]][["tsvfile"]] <- list()
-      PDE.globals$tables.masterlist[["markedtables"]][pos][[1]][["table"]] <- list()
-      # PDE.globals$tables.masterlist[["woabbrev_values_table"]][pos] <- list()
-      PDE.globals$tables.masterlist[["woabbrev_markedtables"]][pos][[1]][["tsvfile"]] <- list()
-      PDE.globals$tables.masterlist[["woabbrev_markedtables"]][pos][[1]][["table"]] <- list()
-    }
-    
-  }
-
-  searchfolder <- function(analysis.folder_location) {
-    analysis.tsv.files <- list.files(analysis.folder_location,
-                                     pattern = ".*(txt\\+-).*\\.tsv", full.names = TRUE,
-                                     recursive = TRUE)
-    analysis.csv.files <- list.files(analysis.folder_location,
-                                     pattern = ".*(txt\\+-).*\\.csv$", full.names = TRUE,
-                                     recursive = TRUE)
-    analysis.files <- c(analysis.tsv.files, analysis.csv.files)
-    return(analysis.files)
-  }
-
-  smaller.font <- function() {
-    newfontsize <- as.integer(tcltk::tkfont.actual("TkDefaultFont",
-                                                   "-size")) - 1
-    tcltk::tkfont.configure("TkDefaultFont", size = newfontsize)
-    tcltk::tclvalue(fontsize.var) = newfontsize
-  }
-  l6.smaller.font.but <- tcltk2::tk2button(l6, text = "-",
-                                           command = smaller.font, width = 2)
-
-  default.font <- function() {
-    tcltk::tkfont.configure("TkDefaultFont", size = tcltk::tclvalue(defaultfontsize.var))
-    tcltk::tclvalue(fontsize.var) <- tcltk::tclvalue(defaultfontsize.var)
-  }
-  l6.default.font.but <- tcltk2::tk2button(l6, text = "o",
-                                           command = default.font, width = 2)
-
-  larger.font <- function() {
-    newfontsize <- as.integer(tcltk::tkfont.actual("TkDefaultFont",
-                                                   "-size")) + 1
-    tcltk::tkfont.configure("TkDefaultFont", size = newfontsize)
-    tcltk::tclvalue(fontsize.var) <- newfontsize
-  }
-  l6.larger.font.but <- tcltk2::tk2button(l6, text = "+",
-                                          command = larger.font, width = 2)
-
-  adjust.sent.display <- function(input_table){
-    output_table <- input_table
-    if (as.numeric(tcltk::tclvalue(sent.count.indicator.var)) == 0){
-      return(input_table)
-    } else {
-      for (r in 1:nrow(input_table)){
-        ## evaluate sentence break positions
-        search.word.pos <- as.numeric(gsub("_.*","",input_table[r,"search.word.loc_total"]))
-        sent.number <- as.numeric(gsub(".*_","",input_table[r,"search.word.loc_total"]))
-        sent.count.indicator <- as.numeric(tcltk::tclvalue(sent.count.indicator.var))
-        period.pos <- c(1,gregexpr("\\. [0-9A-Z]",input_table[r,"txtcontent"])[[1]],
-                        nchar(input_table[r,"txtcontent"]))
-
-        ##adjust front of the sentences
-        ## if there are enough sentences in the front to be removed
-        ## --> (search.word.pos + sent.count.indicator) > 0
-        if ((search.word.pos + sent.count.indicator) > 0){
-          start.new.txt <- period.pos[search.word.pos + sent.count.indicator + 1]
-
-          ## if all sentences in the front are to be removed
-          ## --> (search.word.pos + sent.count.indicator) <= 0
-        } else if ((search.word.pos + sent.count.indicator) <= 0){
-          start.new.txt <- period.pos[search.word.pos]
-        }
-
-        ##adjust end of the sentences
-        ## if there are enough sentences in the end to be removed
-        ## --> (search.word.pos + sent.count.indicator) > 0
-        if ((sent.number - search.word.pos + sent.count.indicator) > 0){
-          end.new.txt <- period.pos[sent.number + sent.count.indicator + 1]
-
-          ## if all sentences in the end are to be removed
-          ## --> (search.word.pos + sent.count.indicator) <= 0
-        } else if ((sent.number - search.word.pos + sent.count.indicator) <= 0){
-          end.new.txt <- period.pos[search.word.pos + 1]
-        }
-
-        output_table[r,"txtcontent"] <- substr(input_table[r,"txtcontent"],(start.new.txt+2),end.new.txt)
-      } ## end for (r in 1:nrow(input_table)){
-      return(output_table)
-    } ## end if removal counter == 0
-  }
-
-  ## radiobuttons -----------------------------------------------------
-  changewrapping <- function() {
-    if (!tcltk::tclvalue(columnnumber.var) == "0") {
-      for (c in 0:(as.integer(tcltk::tclvalue(columnnumber.var)) - 1)) {
-        tcltk::tcl(l8.analysis.file.table, "columnconfigure",
-                   c, wrap = tcltk::tclvalue(wrap.var))
-      }
-    }
-  }
-
-  l6.wrap.rb <- tcltk::tkradiobutton(l6, variable = wrap.var,
-                                     value = "1", background = "#05F2C7", command = changewrapping)
-  l6.no.wrap.rb <- tcltk::tkradiobutton(l6, variable = wrap.var,
-                                        value = "0", background = "#05F2C7", command = changewrapping)
-
-  ## checkbuttons -----------------------------------------------------
-  change.txtcontent.only <- function() {
-    ##save scroll position
-    save.scroll.pos <- as.character(tcltk::tkyview(l8.analysis.file.table))[1]
-    ## reload the table
-    if (!(tcltk::tclvalue(jumpto.var) == "")) {
-      filename <- gsub("^[^-]*-", "", tcltk::tclvalue(jumpto.var))
-      searchfilename <- gsub("+", "[+]", filename,
-                             fixed = TRUE)
-      fullfilename <- list.files(tcltk::tclvalue(analysis.folder_location.var),
-                                 pattern = searchfilename, full.names = TRUE,
-                                 recursive = TRUE)[1]
-      open.analysis.file(analysis.file_location = fullfilename)
-    } else {
-      markwords("", "", 0)
-    }
-    ## reset scroll position
-    tcltk::tkyview.moveto(l8.analysis.file.table,save.scroll.pos)
-  }
-
-  l7.txtcontent.only.cb <- tcltk::tkcheckbutton(l7, variable = txtcontent.only.var, 
-                                                text = "show txtcontent only",
-                                                state = "normal", background = "#05F2C7", 
-                                                command = change.txtcontent.only)
-
-  change.collapse.abbrev <- function() {
-    ##save scroll position
-    save.scroll.pos <- as.character(tcltk::tkyview(l8.analysis.file.table))[1]
-    ## reload the table
-    if (!(tcltk::tclvalue(jumpto.var) == "")) {
-      filename <- gsub("^[^-]*-", "", tcltk::tclvalue(jumpto.var))
-      searchfilename <- gsub("+", "[+]", filename,
-                             fixed = TRUE)
-      fullfilename <- list.files(tcltk::tclvalue(analysis.folder_location.var),
-                                 pattern = searchfilename, full.names = TRUE,
-                                 recursive = TRUE)[1]
-      open.analysis.file(analysis.file_location = fullfilename)
-    } else {
-      markwords("", "", 0)
-    }
-    ## reset scroll position
-    tcltk::tkyview.moveto(l8.analysis.file.table,save.scroll.pos)
-  }
-
-  l7.collapse.abbrev.cb <- tcltk::tkcheckbutton(l7, variable = collapse.abbrev.var, 
-                                                text = "show original text (abbrev. collapsed)",
-                                                state = "normal", background = "#05F2C7", 
-                                                command = change.collapse.abbrev)
-
-  ## buttons 2 -----------------------------------------------------------------
-
-  save.memory <- function() {
-    todays.date <- format(Sys.Date(), "%Y-%m-%d")
-    PDE_parameters_filename <- paste0(todays.date,
-                                          "_", "memory.RData")
-    savefilelocation <- tcltk::tclvalue(tcltk::tkgetSaveFile(initialfile = PDE_parameters_filename,
-                                             defaultextension = ".RData", 
-                                             filetypes = "{ {RData Files} {.RData} } { {All Files} * }"))
-    if (!savefilelocation == ""){
-      jumpto.saved <-  tcltk::tclvalue(jumpto.var)
-      pdffolder.saved <- tcltk::tclvalue(pdffolder.var)
-      tsvfile.saved <- tcltk::tclvalue(tsvfile.var)
-      analysis.folder_location.saved <- tcltk::tclvalue(analysis.folder_location.var)
-      PDE.globals.jumpto.list <- PDE.globals$jumpto.list
-      PDE.globals.mark.list <- PDE.globals$mark.list
-      PDE.globals.tables.masterlist <- PDE.globals$tables.masterlist
-
-      save("PDE.globals.jumpto.list", "PDE.globals.mark.list", "PDE.globals.tables.masterlist",
-           "jumpto.saved", "pdffolder.saved", "tsvfile.saved", 
-           "analysis.folder_location.saved", file = paste(savefilelocation,
-                                                     collapse = " "))
-    }
-  }
-
-  load.memory <- function() {
-    ## reset loaded variables
-    PDE.globals.jumpto.list <-NULL
-    PDE.globals.mark.list <- NULL
-    PDE.globals.tables.masterlist <- NULL
-    tsvfile.saved <- NULL
-    analysis.folder_location.saved <- NULL
-    jumpto.saved <- NULL
-    pdffolder.saved <- NULL
-    
-    todays.date <- format(Sys.Date(), "%Y-%m-%d")
-    PDE_parameters_filename <- paste0(todays.date,
-                                          "_", "memory.RData")
-    openfilelocation <- tcltk::tclvalue(tcltk::tkgetOpenFile(initialfile = PDE_parameters_filename,
-                                             defaultextension = ".RData", 
-                                             filetypes = "{ {RData Files} {.RData} } { {All Files} * }"))
-    if (!openfilelocation == ""){
-      load(file = paste(openfilelocation, collapse = " "))
-
-      ## test if PDE.globals was loaded
-      if (is.null(PDE.globals.tables.masterlist)) {
-         PDE.globals$jumpto.list <- PDE.globals.jumpto.list
-         ## update marklist
-         PDE.globals$mark.list <- PDE.globals.mark.list
-         if (PDE.globals$mark.list != ""){
-            tcltk::tkconfigure(l9.mark.cb, values = tcltk::as.tclObj(PDE.globals$mark.list,
-                                                                  drop = FALSE))
-            tcltk::tclvalue(mark.var) <- PDE.globals$mark.list[1]
-            tcltk::tkconfigure(l9.flagfile.but, state = "normal")
-            tcltk::tkconfigure(l9.xmarkfile.but, state = "normal")
-            tcltk::tkconfigure(l9.unmarkfile.but, state = "normal")
-         }
-         ##
-         PDE.globals$tables.masterlist <- PDE.globals.tables.masterlist
-        
-        ## fill in tsv file
-        tcltk::tclvalue(tsvfile.var) <- tsvfile.saved
-        load.loadtsv(loadfile = "not")
-        
-        ## set the analysis.folder_location
-        tcltk::tclvalue(analysis.folder_location.var) <- analysis.folder_location.saved
-        
-        ## fill in jumpto.list
-        tcltk::tclvalue(jumpto.var) <- jumpto.saved
+  
+    xmarkfile <- function() {
+      if (tcltk::tclvalue(mark.var) == "Mark analysis file only" ||
+          tcltk::tclvalue(mark.var) == "Mark analysis file & PDF") {
+        ## Rename analysisfile
+        filename <- tcltk::tclvalue(filename.var)
+        searchfilename <- gsub("+", "[+]", filename,
+                               fixed = TRUE)
+        fullfilename <- list.files(tcltk::tclvalue(analysis.folder_location.var),
+                                   pattern = searchfilename, full.names = TRUE,
+                                   recursive = TRUE)[1]
+        tcltk::tclvalue(filename.var) <- renamefile(completefilename = fullfilename,
+                                                    checkfor = c("!_"), replacewith = "x_")
+        ## change filename also in jumpto.var
         numb = gsub("-.*", "", tcltk::tclvalue(jumpto.var))
-        pos <- as.numeric(numb)
-        tcltk::tkconfigure(l5.jumpto.cb, values = PDE.globals$jumpto.list)
-        if (is.na(pos)) pos <- 1
-        ## load tables
-        tab <- PDE.globals$tables.masterlist[["values_table"]][[pos]]
-        loc <- PDE.globals$tables.masterlist[["analysis.file_location"]][[pos]]
-        ## highlight search words if highlighting is on
-        hightlighted.tab <- markwords(tab,
-                                      loc, pos)
-        ## update display of sentences
-        display.values_table <- adjust.sent.display(hightlighted.tab)
-        
-        fill.table(table = display.values_table,
-                   analysis.file_location = loc)
-        tcltk::tclvalue(pdffolder.var) <- pdffolder.saved
-        ## match PDF files if pdffolder was chosen
+        PDE.globals$jumpto.list[as.numeric(numb)] <- paste0(numb, "-",
+                                                                          tcltk::tclvalue(filename.var))
+        tcltk::tclvalue(jumpto.var) <- paste0(numb, "-",
+                                              tcltk::tclvalue(filename.var))
+        if (length(PDE.globals$jumpto.list) > 1) {
+          tcltk::tkconfigure(l5.jumpto.cb, values = PDE.globals$jumpto.list)
+        } else {
+          tcltk::tkconfigure(l5.jumpto.cb, values = tcltk::as.tclObj(PDE.globals$jumpto.list,
+                                                                     drop = FALSE))
+        }
+      }
+      if (tcltk::tclvalue(mark.var) == "Mark PDF file only" ||
+          tcltk::tclvalue(mark.var) == "Mark analysis file & PDF") {
+        ## Rename PDF file
+        if (!tcltk::tclvalue(pdfname.var) == "") {
+          completefilename <- list.files(tcltk::tclvalue(pdffolder.var),
+                                         pattern = tcltk::tclvalue(pdfname.var),
+                                         full.names = TRUE, recursive = TRUE)[1]
+          tcltk::tclvalue(pdfname.var) <- renamefile(completefilename = completefilename,
+                                                     checkfor = c("!_"), replacewith = "x_")
+          tcltk::tclvalue(fullpdfname.var) <- paste(dirname(completefilename),
+                                                    tcltk::tclvalue(pdfname.var), sep = "/")
+        }
+      }
+    }
+    l9.xmarkfile.but <- tcltk2::tk2button(l9, text = "x mark file",
+                                          width = 11, command = xmarkfile, state = "disabled",
+                                          underline = "0")
+  
+    unmarkfile <- function() {
+      if (tcltk::tclvalue(mark.var) == "Mark analysis file only" ||
+          tcltk::tclvalue(mark.var) == "Mark analysis file & PDF") {
+        ## Rename analysisfile
+        filename <- tcltk::tclvalue(filename.var)
+        searchfilename <- gsub("+", "[+]", filename,
+                               fixed = TRUE)
+        fullfilename <- list.files(tcltk::tclvalue(analysis.folder_location.var),
+                                   pattern = searchfilename, full.names = TRUE,
+                                   recursive = TRUE)[1]
+        tcltk::tclvalue(filename.var) <- renamefile(completefilename = fullfilename,
+                                                    checkfor = c("!_", "x_"), replacewith = "")
+        ## change filename also in jumpto.var
+        numb <- gsub("-.*", "", tcltk::tclvalue(jumpto.var))
+        PDE.globals$jumpto.list[as.numeric(numb)] <- paste0(numb, "-",
+                                                                          tcltk::tclvalue(filename.var))
+        tcltk::tclvalue(jumpto.var) <- paste0(numb, "-",
+                                              tcltk::tclvalue(filename.var))
+        if (length(PDE.globals$jumpto.list) > 1) {
+          tcltk::tkconfigure(l5.jumpto.cb, values = PDE.globals$jumpto.list)
+        } else {
+          tcltk::tkconfigure(l5.jumpto.cb, values = tcltk::as.tclObj(PDE.globals$jumpto.list,
+                                                                     drop = FALSE))
+        }
+  
+      }
+      if (tcltk::tclvalue(mark.var) == "Mark PDF file only" ||
+          tcltk::tclvalue(mark.var) == "Mark analysis file & PDF") {
+        ## Rename PDF file
+        if (!tcltk::tclvalue(pdfname.var) == "") {
+          completefilename <- list.files(tcltk::tclvalue(pdffolder.var),
+                                         pattern = tcltk::tclvalue(pdfname.var),
+                                         full.names = TRUE, recursive = TRUE)[1]
+          tcltk::tclvalue(pdfname.var) <- renamefile(completefilename = completefilename,
+                                                     checkfor = c("x_", "!_"), replacewith = "")
+          tcltk::tclvalue(fullpdfname.var) <- paste(dirname(completefilename),
+                                                    tcltk::tclvalue(pdfname.var), sep = "/")
+        }
+      }
+    }
+    l9.unmarkfile.but <- tcltk2::tk2button(l9, text = "Unmark file",
+                                           width = 11, command = unmarkfile, state = "disabled",
+                                           underline = "0")
+  
+    ## functions --------------------------------------------------
+    fill.table <- function(table, analysis.file_location) {
+      included.columns <- !(colnames(table) %in% "search.word.loc_total")
+      if (tcltk::tclvalue(txtcontent.only.var) == "1") {
+        included.columns <- (colnames(table) %in% "txtcontent")
+      }
+      table <- table[, included.columns]
+      ## clear table
+      tcltk::tkdelete(l8.analysis.file.table, 0, "end")
+  
+      ## change the header
+      tcltk::tclvalue(filename.var) <- as.character(basename(analysis.file_location))
+      tcltk::tkwm.title(ttreader, paste0("PDE reader - ",tcltk::tclvalue(filename.var)))
+  
+      if (tcltk::tclvalue(txtcontent.only.var) == "0") {
+        ## fill the header
+        columnhead <- NULL
+        for (c in 2:(ncol(table))) {
+          columnhead <- paste0(columnhead, "\" 0 \"",
+                               colnames(table)[c])
+        }
+        tcltk::tkconfigure(l8.analysis.file.table, columns = paste0("1 \"",
+                                                                    colnames(table)[1], columnhead, "\""))
+  
+        ## make columns editable and wrap
+        for (c in 0:(ncol(table) - 1)) {
+          tcltk::tcl(l8.analysis.file.table, "columnconfigure",
+                     c, editable = 1)
+          tcltk::tcl(l8.analysis.file.table, "columnconfigure",
+                     c, wrap = tcltk::tclvalue(wrap.var))
+        }
+  
+        ## fill table
+        for (r in 1:nrow(table)) {
+          rowlist <- NULL
+          for (c in 1:ncol(table)) {
+            rowlist <- c(rowlist, as.character(table[r,
+                                                     c]))
+          }
+          tcltk::tkinsert(l8.analysis.file.table, "end",
+                          rowlist)
+        }
+  
+        tcltk::tclvalue(columnnumber.var) <- ncol(table)
+  
+      } else {
+        ## fill the header
+        tcltk::tkconfigure(l8.analysis.file.table, columns = paste0("1 \"",
+                                                                    "txtcontent", "\""))
+        ## make columns editable and wrap
+        tcltk::tcl(l8.analysis.file.table, "columnconfigure",
+                   0, editable = 1)
+        tcltk::tcl(l8.analysis.file.table, "columnconfigure",
+                   0, wrap = tcltk::tclvalue(wrap.var))
+  
+        ## fill table
+        for (r in 1:length(table)) {
+          tcltk::tkinsert(l8.analysis.file.table, "end",
+                          as.character(c(table[r],"")))
+        }
+        tcltk::tclvalue(columnnumber.var) <- 1
+      }
+  
+      ## add mark option to combobox
+      if (PDE.globals$mark.list[1] == "") {
         if (!tcltk::tclvalue(pdffolder.var) == "") {
-          load.pdffolder(tcltk::tclvalue(pdffolder.var))
+          PDE.globals$mark.list <- c("Mark analysis file only",
+                                     "Mark PDF file only", "Mark analysis file & PDF")
+        } else {
+          PDE.globals$mark.list <- c("Mark analysis file only")
+        }
+        tcltk::tkconfigure(l9.mark.cb, values = tcltk::as.tclObj(PDE.globals$mark.list,
+                                                                 drop = FALSE))
+        tcltk::tclvalue(mark.var) = PDE.globals$mark.list[1]
+        tcltk::tkconfigure(l9.flagfile.but, state = "normal")
+        tcltk::tkconfigure(l9.xmarkfile.but, state = "normal")
+        tcltk::tkconfigure(l9.unmarkfile.but, state = "normal")
+      }
+  
+    }
+  
+    ## combobox list -------------------------------------------------------
+  
+    l5.jumpto.cb <- tcltk2::tk2combobox(l5, textvariable = jumpto.var,
+                                        values = PDE.globals$jumpto.list, width = 30, state = "readonly")
+  
+    ## onchange combobox
+    tcltk::tkbind(l5.jumpto.cb, "<<ComboboxSelected>>",
+                  function() {
+                    numb = gsub("-.*", "", tcltk::tclvalue(jumpto.var))
+                    pos <- as.numeric(numb)
+                    loc <- PDE.globals$tables.masterlist[["analysis.file_location"]][[pos]]
+                    res <- try(PDE.globals$tables.masterlist[["values_table"]][[pos]], silent = TRUE)
+                    if (class(res) != "try-error" && !is.null(res)) {
+                      tab <- PDE.globals$tables.masterlist[["values_table"]][[pos]]
+                      loc <- PDE.globals$tables.masterlist[["analysis.file_location"]][[pos]]
+                      ## highlight search words if highlighting is on
+                      hightlighted.tab <- markwords(tab,
+                                                    loc, pos)
+                      ## update display of sentences
+                      display.values_table <- adjust.sent.display(hightlighted.tab)
+  
+                      fill.table(table = display.values_table,
+                                 analysis.file_location = loc)
+                      ## match PDF files if pdffolder was chosen
+                      if (!tcltk::tclvalue(pdffolder.var) == "") {
+                        load.pdffolder(tcltk::tclvalue(pdffolder.var))
+                      }
+                    } else {
+                      filename <- gsub("^[^-]*-", "", tcltk::tclvalue(jumpto.var))
+                      searchfilename <- gsub("+", "[+]", filename,
+                                             fixed = TRUE)
+                      ## find the file in the folder
+                      fullfilename <- list.files(tcltk::tclvalue(analysis.folder_location.var),
+                                                 pattern = searchfilename, full.names = TRUE,
+                                                 recursive = TRUE)[1]
+                      fullfilename <- gsub("\\\\", "/", fullfilename)
+                      open.analysis.file(analysis.file_location = fullfilename)
+                    }
+                  })
+  
+    l9.mark.cb <- tcltk2::tk2combobox(l9, textvariable = mark.var,
+                                      values = PDE.globals$mark.list, width = 20, state = "readonly")
+  
+  
+    fill.folder.infos <- function(table, analysis.file_location) {
+      filename <- as.character(basename(analysis.file_location))
+      
+      ## add file to jumpto list if it is not already in there
+      if (!(any(grepl(filename, PDE.globals$jumpto.list, fixed = TRUE)))) {
+        if (PDE.globals$jumpto.list[1] == "") {
+          PDE.globals$jumpto.list <- paste((length(PDE.globals$jumpto.list)),
+                                           filename, sep = "-")
+          analysis.file_location <- gsub("\\\\", "/", analysis.file_location)
+          pos <- 1
+          PDE.globals$tables.masterlist[["analysis.file_location"]][pos] <- list(analysis.file_location)
+        } else {
+          analysis.file_location <- gsub("\\\\", "/", analysis.file_location)
+          pos <- length(PDE.globals$jumpto.list) + 1
+          PDE.globals$tables.masterlist[["analysis.file_location"]][pos] <- list(analysis.file_location)
+          PDE.globals$jumpto.list <- c(PDE.globals$jumpto.list, paste(pos, filename, sep = "-"))
+        }
+        if (length(PDE.globals$jumpto.list) > 1) {
+          tcltk::tkconfigure(l5.jumpto.cb, values = PDE.globals$jumpto.list)
+        } else {
+          tcltk::tkconfigure(l5.jumpto.cb, values = tcltk::as.tclObj(PDE.globals$jumpto.list,
+                                                                     drop = FALSE))
+        }
+      } else {
+        pos <- grep(filename, PDE.globals$jumpto.list, fixed = TRUE)[1]
+      }
+      
+      if (!is.null(dim(table))) {
+        ## add value_table to masterlist of tables if not
+        ## already in there
+        res <- try(PDE.globals$tables.masterlist[["values_table"]][[pos]], silent = TRUE)
+        if (class(res) == "try-error") {
+          PDE.globals$tables.masterlist[["values_table"]][pos] <- list(table)
+          PDE.globals$tables.masterlist[["markedtables"]][pos][[1]][["tsvfile"]] <- list()
+          PDE.globals$tables.masterlist[["markedtables"]][pos][[1]][["table"]] <- list()
+          # PDE.globals$tables.masterlist[["woabbrev_values_table"]][pos] <- list()
+          PDE.globals$tables.masterlist[["woabbrev_markedtables"]][pos][[1]][["tsvfile"]] <- list()
+          PDE.globals$tables.masterlist[["woabbrev_markedtables"]][pos][[1]][["table"]] <- list()
+        } else if (is.null(PDE.globals$tables.masterlist[["values_table"]][[pos]])) {
+          PDE.globals$tables.masterlist[["values_table"]][pos] <- list(table)
+          PDE.globals$tables.masterlist[["markedtables"]][pos][[1]][["tsvfile"]] <- list()
+          PDE.globals$tables.masterlist[["markedtables"]][pos][[1]][["table"]] <- list()
+          # PDE.globals$tables.masterlist[["woabbrev_values_table"]][pos] <- list()
+          PDE.globals$tables.masterlist[["woabbrev_markedtables"]][pos][[1]][["tsvfile"]] <- list()
+          PDE.globals$tables.masterlist[["woabbrev_markedtables"]][pos][[1]][["table"]] <- list()
+        }
+        ## make folder structure
+      } else {
+        # PDE.globals$tables.masterlist[["values_table"]][pos] <- list()
+        PDE.globals$tables.masterlist[["markedtables"]][pos][[1]][["tsvfile"]] <- list()
+        PDE.globals$tables.masterlist[["markedtables"]][pos][[1]][["table"]] <- list()
+        # PDE.globals$tables.masterlist[["woabbrev_values_table"]][pos] <- list()
+        PDE.globals$tables.masterlist[["woabbrev_markedtables"]][pos][[1]][["tsvfile"]] <- list()
+        PDE.globals$tables.masterlist[["woabbrev_markedtables"]][pos][[1]][["table"]] <- list()
+      }
+      
+    }
+  
+    searchfolder <- function(analysis.folder_location) {
+      analysis.tsv.files <- list.files(analysis.folder_location,
+                                       pattern = ".*(txt\\+-).*\\.tsv", full.names = TRUE,
+                                       recursive = TRUE)
+      analysis.csv.files <- list.files(analysis.folder_location,
+                                       pattern = ".*(txt\\+-).*\\.csv$", full.names = TRUE,
+                                       recursive = TRUE)
+      analysis.files <- c(analysis.tsv.files, analysis.csv.files)
+      return(analysis.files)
+    }
+  
+    smaller.font <- function() {
+      newfontsize <- as.integer(tcltk::tkfont.actual("TkDefaultFont",
+                                                     "-size")) - 1
+      tcltk::tkfont.configure("TkDefaultFont", size = newfontsize)
+      tcltk::tclvalue(fontsize.var) = newfontsize
+    }
+    l6.smaller.font.but <- tcltk2::tk2button(l6, text = "-",
+                                             command = smaller.font, width = 2)
+  
+    default.font <- function() {
+      tcltk::tkfont.configure("TkDefaultFont", size = tcltk::tclvalue(defaultfontsize.var))
+      tcltk::tclvalue(fontsize.var) <- tcltk::tclvalue(defaultfontsize.var)
+    }
+    l6.default.font.but <- tcltk2::tk2button(l6, text = "o",
+                                             command = default.font, width = 2)
+  
+    larger.font <- function() {
+      newfontsize <- as.integer(tcltk::tkfont.actual("TkDefaultFont",
+                                                     "-size")) + 1
+      tcltk::tkfont.configure("TkDefaultFont", size = newfontsize)
+      tcltk::tclvalue(fontsize.var) <- newfontsize
+    }
+    l6.larger.font.but <- tcltk2::tk2button(l6, text = "+",
+                                            command = larger.font, width = 2)
+  
+    adjust.sent.display <- function(input_table){
+      output_table <- input_table
+      if (as.numeric(tcltk::tclvalue(sent.count.indicator.var)) == 0){
+        return(input_table)
+      } else {
+        for (r in 1:nrow(input_table)){
+          ## evaluate sentence break positions
+          search.word.pos <- as.numeric(gsub("_.*","",input_table[r,"search.word.loc_total"]))
+          sent.number <- as.numeric(gsub(".*_","",input_table[r,"search.word.loc_total"]))
+          sent.count.indicator <- as.numeric(tcltk::tclvalue(sent.count.indicator.var))
+          period.pos <- c(1,gregexpr("\\. [0-9A-Z]",input_table[r,"txtcontent"])[[1]],
+                          nchar(input_table[r,"txtcontent"]))
+  
+          ##adjust front of the sentences
+          ## if there are enough sentences in the front to be removed
+          ## --> (search.word.pos + sent.count.indicator) > 0
+          if ((search.word.pos + sent.count.indicator) > 0){
+            start.new.txt <- period.pos[search.word.pos + sent.count.indicator + 1]
+  
+            ## if all sentences in the front are to be removed
+            ## --> (search.word.pos + sent.count.indicator) <= 0
+          } else if ((search.word.pos + sent.count.indicator) <= 0){
+            start.new.txt <- period.pos[search.word.pos]
+          }
+  
+          ##adjust end of the sentences
+          ## if there are enough sentences in the end to be removed
+          ## --> (search.word.pos + sent.count.indicator) > 0
+          if ((sent.number - search.word.pos + sent.count.indicator) > 0){
+            end.new.txt <- period.pos[sent.number + sent.count.indicator + 1]
+  
+            ## if all sentences in the end are to be removed
+            ## --> (search.word.pos + sent.count.indicator) <= 0
+          } else if ((sent.number - search.word.pos + sent.count.indicator) <= 0){
+            end.new.txt <- period.pos[search.word.pos + 1]
+          }
+  
+          output_table[r,"txtcontent"] <- substr(input_table[r,"txtcontent"],(start.new.txt+2),end.new.txt)
+        } ## end for (r in 1:nrow(input_table)){
+        return(output_table)
+      } ## end if removal counter == 0
+    }
+  
+    ## radiobuttons -----------------------------------------------------
+    changewrapping <- function() {
+      if (!tcltk::tclvalue(columnnumber.var) == "0") {
+        for (c in 0:(as.integer(tcltk::tclvalue(columnnumber.var)) - 1)) {
+          tcltk::tcl(l8.analysis.file.table, "columnconfigure",
+                     c, wrap = tcltk::tclvalue(wrap.var))
         }
       }
     }
-  }
-
-  l1.save.memory.but <- tcltk2::tk2button(l1, text = "Save memory to file",
-                                          command = save.memory)
-  l1.load.memory.but <- tcltk2::tk2button(l1, text = "Load memory from file",
-                                          command = load.memory)
-
-  markwords <- function(table, analysis.file_location, pos) {
-    analysis.file_location <- gsub("\\\\", "/",
-                                   analysis.file_location)
-    ## mark only if table is present, mark is ON, and
-    ## search words are present
-    if (!is.null(dim(table)) &&
-        tcltk::tclvalue(tsv.onoff.var) == "on" &&
-        !(length(tcltk::tclvalue(search.words.var)) == 0)) {
-      ## if abbreviations are not collapsed (regular)
-      if (tcltk::tclvalue(collapse.abbrev.var) == "0"){
-        ## check position of TSV file (integer(0) when not found)
-        tsvpos <- grep(tcltk::tclvalue(tsvfile.var), 
-                       PDE.globals$tables.masterlist[["markedtables"]][[pos]][["tsvfile"]],
-                       fixed = TRUE)
-        ## if TSV file is not found --> search for it
-        if (length(tsvpos) == 0) {
-          ## get a list of search words
-          if (length(grep(";", tcltk::tclvalue(search.words.var))) > 0) {
-            search.for <- strsplit(tcltk::tclvalue(search.words.var),
-                                   ";")[[1]]
-          } else {
-            search.for <- tcltk::tclvalue(search.words.var)
-          }
-          newtable <- table
-          ## for each search word
-          for (w in 1:length(search.for)) {
-            ## first separate by column to prevent faults in
-            ## gsub then lapply
-            for (c in 1:ncol(newtable)) {
-              newtable[, c] <- list(lapply(newtable[, c], function(x) {
-                gsub(search.for[w],
-                     paste0("\U2588\U25B6", regmatches(x, 
-                                                       regexpr(search.for[w], x, 
-                                                        ignore.case = as.logical(tcltk::tclvalue(ignore.case.sw.var)))),
-                            "\U25C0\U2588"), x, ignore.case = as.logical(tcltk::tclvalue(ignore.case.sw.var)))
-              }))
-            }
-          }
-          tsvnum <- length(PDE.globals$tables.masterlist[["markedtables"]][[pos]][["tsvfile"]])
-          PDE.globals$tables.masterlist[["markedtables"]][[pos]][["tsvfile"]][(tsvnum + 1)] <- list(tcltk::tclvalue(tsvfile.var))
-          PDE.globals$tables.masterlist[["markedtables"]][[pos]][["table"]][(tsvnum + 1)] <- list(newtable)
-        } else {
-          ## if marked table was found
-          newtable <- PDE.globals$tables.masterlist[["markedtables"]][[pos]][["table"]][[tsvpos]]
-        }
-        return(newtable)
-        ## if mark is on and abbreviations should be collapsed as well
-      } else {
-        ## check position of TSV file (integer(0) when not found)
-        tsvpos <- grep(tcltk::tclvalue(tsvfile.var), 
-                       PDE.globals$tables.masterlist[["woabbrev_markedtables"]][[pos]][["tsvfile"]],
-                       fixed = TRUE)
-        ## if TSV file is not found
-        if (length(tsvpos) == 0) {
-          ## get a list of search words
-          if (length(grep(";", tcltk::tclvalue(search.words.var))) > 0) {
-            search.for <- strsplit(tcltk::tclvalue(search.words.var),
-                                   ";")[[1]]
-          } else {
-            search.for <- tcltk::tclvalue(search.words.var)
-          }
-          newtable <- table
-          ## for each search word
-          for (w in 1:length(search.for)) {
-            ## first separate by column to prevent faults in
-            ## gsub then lapply
-            for (c in 1:ncol(newtable)) {
-              newtable[, c] <- list(lapply(newtable[, c], function(x) {
-                gsub(search.for[w],
-                     paste0("\U2588\U25B6", regmatches(x, 
-                                                       regexpr(search.for[w], x, 
-                                                    ignore.case = as.logical(tcltk::tclvalue(ignore.case.sw.var)))),
-                            "\U25C0\U2588"), x, ignore.case = as.logical(tcltk::tclvalue(ignore.case.sw.var)))
-              }))
-              ## replace abbreviations
-              newtable[, c] <- list(lapply(newtable[, c], function(x) {
-                sub(" \\(","",paste0(gsub("^.*\\$\\*","",
-                                          paste0(" (",strsplit(as.character(x)," \\(")[[1]])),collapse = ""))
-              }))
-            }
-          }
-          ## add the newtable to the PDE.globals$tables.masterlist
-          ## check position of TSV file
-          tsvnum <- length(PDE.globals$tables.masterlist[["woabbrev_markedtables"]][[pos]][["tsvfile"]])
-          PDE.globals$tables.masterlist[["woabbrev_markedtables"]][[pos]][["tsvfile"]][(tsvnum + 1)] <- list(tcltk::tclvalue(tsvfile.var))
-          PDE.globals$tables.masterlist[["woabbrev_markedtables"]][[pos]][["table"]][(tsvnum + 1)] <- list(newtable)
-        } else {
-          ## if marked table was found
-          newtable <- PDE.globals$tables.masterlist[["woabbrev_markedtables"]][[pos]][["table"]][[tsvpos]]
-        }
-        return(newtable)
-      }
-      ## if mark is OFF but abbreviations should be collapsed
-    } else if(!is.null(dim(table)) &&
-              tcltk::tclvalue(tsv.onoff.var) == "off" &&
-              !(length(tcltk::tclvalue(search.words.var)) == 0)) {
-      ## if abbreviations should be collapsed
-      if (tcltk::tclvalue(collapse.abbrev.var) == "1"){
-        ## test if woabbrev_values_table already exists
-        res <- try(PDE.globals$tables.masterlist[["woabbrev_values_table"]][[pos]], silent = TRUE)
-        if (class(res) != "try-error" && !is.null(res)) {
-          ## check position of TSV file (if table was skipped it becomes NA)
-          newtable <- PDE.globals$tables.masterlist[["woabbrev_values_table"]][[pos]]
-          if (is.null(newtable)) newtable <- NA
-        } else {
-          newtable <- NA
-        }
-        ## if newtable is empty (woabbrev_values_table does not exist)
-        if (is.na(newtable)) {
-          ## overwrite newtable with regular values table
-          newtable <- table
-          ## first separate by column to prevent faults in
-          ## gsub then lapply
-          for (c in 1:ncol(newtable)) {
-            ## replace abbreviations
-            newtable[, c] <- list(lapply(newtable[, c], function(x) {
-              sub(" \\(","",paste0(gsub("^.*\\$\\*","",paste0(" (",strsplit(as.character(x)," \\(")[[1]])),collapse = ""))
-            }))
-          }
-          PDE.globals$tables.masterlist[["woabbrev_values_table"]][pos] <- list(newtable)
-        } else {
-          ## return newtable
-        }
-        return(newtable)
-        ## if neither mark was on nor abbreviations should be collapsed
-      } else {
-        return(table)
-      }
-      ## if table was not intact
-    } else {
-      return(table)
-    }
-  }
-
-
-  load.loadtsv <- function(loadfile) {
-    if (loadfile == "%loadfile") {
-      tsvfile <- tcltk::tk_choose.files(default = tcltk::tclvalue(tsvfile.var),
-                                                             caption = "Choose the TSV file",
-                                                             multi = FALSE)
-      if (length(tsvfile) > 0) {
-        tcltk::tclvalue(tsvfile.var) <- tsvfile
-      } else {
-        tcltk::tclvalue(tsvfile.var) <- ""
-      }
-    }
-
-    ## enable extract table if TSV file is chosen
-    if (!(tcltk::tclvalue(tsvfile.var) == "") && file.exists(tcltk::tclvalue(fullpdfname.var))) {
-      tcltk::tkconfigure(l4.extract.table.but, state = "normal")
-    }
-    
-    if (!(tcltk::tclvalue(tsvfile.var) == "")) {
-      tsv_table <- utils::read.table(tcltk::tclvalue(tsvfile.var),
-                                     sep = "\t", header = TRUE, quote = "\"",
-                                     stringsAsFactors = FALSE)
-      ## search word
-      search.wds <- as.character(tsv_table[(grep("search.words",
-                                                 tsv_table[, "variable"])), "value"])
-      ## search word case sensitive
-      ic.sw <- as.character(tsv_table[(grep("ignore.case.sw",
-                                            tsv_table[, "variable"])), "value"])
-      ## look if search words were found
-      if (!(length(search.wds) == 0)) {
-        tcltk::tclvalue(search.words.var) = search.wds
-        tcltk::tkconfigure(l2.tsv.onoff.but, state = "normal")
-        tcltk::tkconfigure(l2.tsv.loadall.but, state = "normal")
-      } else {
-        tcltk::tkmessageBox(title = "Error", type = "ok",
-                            icon = "error", message = "Check for correct TSV file. No search words were found in file.")
-        tcltk::tkconfigure(l2.tsv.onoff.but, state = "disabled")
-        tcltk::tkconfigure(l2.tsv.loadall.but, state = "disabled")
-      }
-      ## look if search word ignore case
-      if (!(length(ic.sw) == 0)) {
-        tcltk::tclvalue(ignore.case.sw.var) <- ic.sw
-      } else {
-        tcltk::tclvalue(ignore.case.sw.var) <- "FALSE"
-      }
-      ## reload table (marking is in open.analysis.file
-      ## script)
+  
+    l6.wrap.rb <- tcltk::tkradiobutton(l6, variable = wrap.var,
+                                       value = "1", background = "#05F2C7", command = changewrapping)
+    l6.no.wrap.rb <- tcltk::tkradiobutton(l6, variable = wrap.var,
+                                          value = "0", background = "#05F2C7", command = changewrapping)
+  
+    ## checkbuttons -----------------------------------------------------
+    change.txtcontent.only <- function() {
+      ##save scroll position
+      save.scroll.pos <- as.character(tcltk::tkyview(l8.analysis.file.table))[1]
+      ## reload the table
       if (!(tcltk::tclvalue(jumpto.var) == "")) {
         filename <- gsub("^[^-]*-", "", tcltk::tclvalue(jumpto.var))
         searchfilename <- gsub("+", "[+]", filename,
@@ -6965,926 +6658,1250 @@ PDE_reader_i <- function(verbose=TRUE) {
                                    recursive = TRUE)[1]
         open.analysis.file(analysis.file_location = fullfilename)
       } else {
-        markwords("", "",0)
+        markwords("", "", 0)
       }
-      ##change from off to on for marking
-      analysis.folder_location <- tcltk::tclvalue(analysis.folder_location.var)
-      if (!is.na(analysis.folder_location) &&
-          analysis.folder_location != "" &&
-          tcltk::tclvalue(tsv.onoff.var) == "off" &&
-          !(length(search.wds) == 0) &&
-          !(loadfile == "not")){
-        tsv.onoff()
-      }
-    } ## end if TSV file was chosen
-  }
-
-  tsv.onoff <- function() {
-    ##save scroll position
-    save.scroll.pos <- as.character(tcltk::tkyview(l8.analysis.file.table))[1]
-    ## reverse button
-    if (tcltk::tclvalue(tsv.onoff.var) == "on") {
-      tcltk::tclvalue(tsv.onoff.var) <- "off"
-    } else {
-      tcltk::tclvalue(tsv.onoff.var) <- "on"
+      ## reset scroll position
+      tcltk::tkyview.moveto(l8.analysis.file.table,save.scroll.pos)
     }
-    tcltk::tkconfigure(l2.tsv.onoff.but, text = tcltk::tclvalue(tsv.onoff.var))
-    ## start marking
-    load.loadtsv(loadfile = "not")
-    ## reset scroll position
-    tcltk::tkyview.moveto(l8.analysis.file.table,save.scroll.pos)
-  }
-
-  tsv.loadall <- function() {
-    analysis.files <- PDE.globals$tables.masterlist[["analysis.file_location"]]
-    if (length(analysis.files) > 0) {
-      analysis.files <- gsub("\\\\", "/", analysis.files)
-      tcltk::tclvalue(tsv.onoff.var) <- "on"
-      for (pos in 1:length(analysis.files)) {
-        ## update progressbar
-        tcltk::tclvalue(progress.var) <- as.character(round(((pos -
-                                                                1)/length(analysis.files) * 100),
-                                                            digits = 0))
-        tcltk::tkconfigure(l1.progress.bar.pb, value = as.numeric(tcltk::tclvalue(progress.var)))
-        tcltk::tkconfigure(l1.progress.label, text = paste0(tcltk::tclvalue(progress.var),
-                                                            "%"))
-        tcltk::tcl("update")
-
-        ## load values table
-        res <- try(PDE.globals$tables.masterlist[["values_table"]][[pos]], silent = TRUE)
-        if (class(res) != "try-error" && !is.null(res)) {
-            values_table <- PDE.globals$tables.masterlist[["values_table"]][[pos]]
-            if (is.null(values_table)) {
-              if (grepl("\\.csv$", analysis.files[pos])) {
-                values_table <- read.problemtable(analysis.files[pos],
-                                                  header = TRUE, quote = "\"",
-                                                  sep = ",")
-              } else if (grepl("\\.tsv$", analysis.files[pos])) {
-                values_table <- read.problemtable(analysis.files[pos],
-                                                  sep = "\t", header = TRUE, quote = "\"")
+  
+    l7.txtcontent.only.cb <- tcltk::tkcheckbutton(l7, variable = txtcontent.only.var, 
+                                                  text = "show txtcontent only",
+                                                  state = "normal", background = "#05F2C7", 
+                                                  command = change.txtcontent.only)
+  
+    change.collapse.abbrev <- function() {
+      ##save scroll position
+      save.scroll.pos <- as.character(tcltk::tkyview(l8.analysis.file.table))[1]
+      ## reload the table
+      if (!(tcltk::tclvalue(jumpto.var) == "")) {
+        filename <- gsub("^[^-]*-", "", tcltk::tclvalue(jumpto.var))
+        searchfilename <- gsub("+", "[+]", filename,
+                               fixed = TRUE)
+        fullfilename <- list.files(tcltk::tclvalue(analysis.folder_location.var),
+                                   pattern = searchfilename, full.names = TRUE,
+                                   recursive = TRUE)[1]
+        open.analysis.file(analysis.file_location = fullfilename)
+      } else {
+        markwords("", "", 0)
+      }
+      ## reset scroll position
+      tcltk::tkyview.moveto(l8.analysis.file.table,save.scroll.pos)
+    }
+  
+    l7.collapse.abbrev.cb <- tcltk::tkcheckbutton(l7, variable = collapse.abbrev.var, 
+                                                  text = "show original text (abbrev. collapsed)",
+                                                  state = "normal", background = "#05F2C7", 
+                                                  command = change.collapse.abbrev)
+  
+    ## buttons 2 -----------------------------------------------------------------
+  
+    save.memory <- function() {
+      todays.date <- format(Sys.Date(), "%Y-%m-%d")
+      PDE_parameters_filename <- paste0(todays.date,
+                                            "_", "memory.RData")
+      savefilelocation <- tcltk::tclvalue(tcltk::tkgetSaveFile(initialfile = PDE_parameters_filename,
+                                               defaultextension = ".RData", 
+                                               filetypes = "{ {RData Files} {.RData} } { {All Files} * }"))
+      if (!savefilelocation == ""){
+        jumpto.saved <-  tcltk::tclvalue(jumpto.var)
+        pdffolder.saved <- tcltk::tclvalue(pdffolder.var)
+        tsvfile.saved <- tcltk::tclvalue(tsvfile.var)
+        analysis.folder_location.saved <- tcltk::tclvalue(analysis.folder_location.var)
+        PDE.globals.jumpto.list <- PDE.globals$jumpto.list
+        PDE.globals.mark.list <- PDE.globals$mark.list
+        PDE.globals.tables.masterlist <- PDE.globals$tables.masterlist
+  
+        save("PDE.globals.jumpto.list", "PDE.globals.mark.list", "PDE.globals.tables.masterlist",
+             "jumpto.saved", "pdffolder.saved", "tsvfile.saved", 
+             "analysis.folder_location.saved", file = paste(savefilelocation,
+                                                       collapse = " "))
+      }
+    }
+  
+    load.memory <- function() {
+      ## reset loaded variables
+      PDE.globals.jumpto.list <-NULL
+      PDE.globals.mark.list <- NULL
+      PDE.globals.tables.masterlist <- NULL
+      tsvfile.saved <- NULL
+      analysis.folder_location.saved <- NULL
+      jumpto.saved <- NULL
+      pdffolder.saved <- NULL
+      
+      todays.date <- format(Sys.Date(), "%Y-%m-%d")
+      PDE_parameters_filename <- paste0(todays.date,
+                                            "_", "memory.RData")
+      openfilelocation <- tcltk::tclvalue(tcltk::tkgetOpenFile(initialfile = PDE_parameters_filename,
+                                               defaultextension = ".RData", 
+                                               filetypes = "{ {RData Files} {.RData} } { {All Files} * }"))
+      if (!openfilelocation == ""){
+        load(file = paste(openfilelocation, collapse = " "))
+  
+        ## test if PDE.globals was loaded
+        if (is.null(PDE.globals.tables.masterlist)) {
+           PDE.globals$jumpto.list <- PDE.globals.jumpto.list
+           ## update marklist
+           PDE.globals$mark.list <- PDE.globals.mark.list
+           if (PDE.globals$mark.list != ""){
+              tcltk::tkconfigure(l9.mark.cb, values = tcltk::as.tclObj(PDE.globals$mark.list,
+                                                                    drop = FALSE))
+              tcltk::tclvalue(mark.var) <- PDE.globals$mark.list[1]
+              tcltk::tkconfigure(l9.flagfile.but, state = "normal")
+              tcltk::tkconfigure(l9.xmarkfile.but, state = "normal")
+              tcltk::tkconfigure(l9.unmarkfile.but, state = "normal")
+           }
+           ##
+           PDE.globals$tables.masterlist <- PDE.globals.tables.masterlist
+          
+          ## fill in tsv file
+          tcltk::tclvalue(tsvfile.var) <- tsvfile.saved
+          load.loadtsv(loadfile = "not")
+          
+          ## set the analysis.folder_location
+          tcltk::tclvalue(analysis.folder_location.var) <- analysis.folder_location.saved
+          
+          ## fill in jumpto.list
+          tcltk::tclvalue(jumpto.var) <- jumpto.saved
+          numb = gsub("-.*", "", tcltk::tclvalue(jumpto.var))
+          pos <- as.numeric(numb)
+          tcltk::tkconfigure(l5.jumpto.cb, values = PDE.globals$jumpto.list)
+          if (is.na(pos)) pos <- 1
+          ## load tables
+          tab <- PDE.globals$tables.masterlist[["values_table"]][[pos]]
+          loc <- PDE.globals$tables.masterlist[["analysis.file_location"]][[pos]]
+          ## highlight search words if highlighting is on
+          hightlighted.tab <- markwords(tab,
+                                        loc, pos)
+          ## update display of sentences
+          display.values_table <- adjust.sent.display(hightlighted.tab)
+          
+          fill.table(table = display.values_table,
+                     analysis.file_location = loc)
+          tcltk::tclvalue(pdffolder.var) <- pdffolder.saved
+          ## match PDF files if pdffolder was chosen
+          if (!tcltk::tclvalue(pdffolder.var) == "") {
+            load.pdffolder(tcltk::tclvalue(pdffolder.var))
+          }
+        }
+      }
+    }
+  
+    l1.save.memory.but <- tcltk2::tk2button(l1, text = "Save memory to file",
+                                            command = save.memory)
+    l1.load.memory.but <- tcltk2::tk2button(l1, text = "Load memory from file",
+                                            command = load.memory)
+  
+    markwords <- function(table, analysis.file_location, pos) {
+      analysis.file_location <- gsub("\\\\", "/",
+                                     analysis.file_location)
+      ## mark only if table is present, mark is ON, and
+      ## search words are present
+      if (!is.null(dim(table)) &&
+          tcltk::tclvalue(tsv.onoff.var) == "on" &&
+          !(length(tcltk::tclvalue(search.words.var)) == 0)) {
+        ## if abbreviations are not collapsed (regular)
+        if (tcltk::tclvalue(collapse.abbrev.var) == "0"){
+          ## check position of TSV file (integer(0) when not found)
+          tsvpos <- grep(tcltk::tclvalue(tsvfile.var), 
+                         PDE.globals$tables.masterlist[["markedtables"]][[pos]][["tsvfile"]],
+                         fixed = TRUE)
+          ## if TSV file is not found --> search for it
+          if (length(tsvpos) == 0) {
+            ## get a list of search words
+            if (length(grep(";", tcltk::tclvalue(search.words.var))) > 0) {
+              search.for <- strsplit(tcltk::tclvalue(search.words.var),
+                                     ";")[[1]]
+            } else {
+              search.for <- tcltk::tclvalue(search.words.var)
+            }
+            newtable <- table
+            ## for each search word
+            for (w in 1:length(search.for)) {
+              ## first separate by column to prevent faults in
+              ## gsub then lapply
+              for (c in 1:ncol(newtable)) {
+                newtable[, c] <- list(lapply(newtable[, c], function(x) {
+                  gsub(search.for[w],
+                       paste0("\U2588\U25B6", regmatches(x, 
+                                                         regexpr(search.for[w], x, 
+                                                          ignore.case = as.logical(tcltk::tclvalue(ignore.case.sw.var)))),
+                              "\U25C0\U2588"), x, ignore.case = as.logical(tcltk::tclvalue(ignore.case.sw.var)))
+                }))
               }
             }
+            tsvnum <- length(PDE.globals$tables.masterlist[["markedtables"]][[pos]][["tsvfile"]])
+            PDE.globals$tables.masterlist[["markedtables"]][[pos]][["tsvfile"]][(tsvnum + 1)] <- list(tcltk::tclvalue(tsvfile.var))
+            PDE.globals$tables.masterlist[["markedtables"]][[pos]][["table"]][(tsvnum + 1)] <- list(newtable)
+          } else {
+            ## if marked table was found
+            newtable <- PDE.globals$tables.masterlist[["markedtables"]][[pos]][["table"]][[tsvpos]]
+          }
+          return(newtable)
+          ## if mark is on and abbreviations should be collapsed as well
         } else {
-          if (grepl("\\.csv$", analysis.files[pos])) {
-            values_table <- read.problemtable(analysis.files[pos],
-                                              header = TRUE, quote = "\"",
-                                              sep = ",")
-          } else if (grepl("\\.tsv$", analysis.files[pos])) {
-            values_table <- read.problemtable(analysis.files[pos],
-                                              sep = "\t", header = TRUE, quote = "\"")
+          ## check position of TSV file (integer(0) when not found)
+          tsvpos <- grep(tcltk::tclvalue(tsvfile.var), 
+                         PDE.globals$tables.masterlist[["woabbrev_markedtables"]][[pos]][["tsvfile"]],
+                         fixed = TRUE)
+          ## if TSV file is not found
+          if (length(tsvpos) == 0) {
+            ## get a list of search words
+            if (length(grep(";", tcltk::tclvalue(search.words.var))) > 0) {
+              search.for <- strsplit(tcltk::tclvalue(search.words.var),
+                                     ";")[[1]]
+            } else {
+              search.for <- tcltk::tclvalue(search.words.var)
+            }
+            newtable <- table
+            ## for each search word
+            for (w in 1:length(search.for)) {
+              ## first separate by column to prevent faults in
+              ## gsub then lapply
+              for (c in 1:ncol(newtable)) {
+                newtable[, c] <- list(lapply(newtable[, c], function(x) {
+                  gsub(search.for[w],
+                       paste0("\U2588\U25B6", regmatches(x, 
+                                                         regexpr(search.for[w], x, 
+                                                      ignore.case = as.logical(tcltk::tclvalue(ignore.case.sw.var)))),
+                              "\U25C0\U2588"), x, ignore.case = as.logical(tcltk::tclvalue(ignore.case.sw.var)))
+                }))
+                ## replace abbreviations
+                newtable[, c] <- list(lapply(newtable[, c], function(x) {
+                  sub(" \\(","",paste0(gsub("^.*\\$\\*","",
+                                            paste0(" (",strsplit(as.character(x)," \\(")[[1]])),collapse = ""))
+                }))
+              }
+            }
+            ## add the newtable to the PDE.globals$tables.masterlist
+            ## check position of TSV file
+            tsvnum <- length(PDE.globals$tables.masterlist[["woabbrev_markedtables"]][[pos]][["tsvfile"]])
+            PDE.globals$tables.masterlist[["woabbrev_markedtables"]][[pos]][["tsvfile"]][(tsvnum + 1)] <- list(tcltk::tclvalue(tsvfile.var))
+            PDE.globals$tables.masterlist[["woabbrev_markedtables"]][[pos]][["table"]][(tsvnum + 1)] <- list(newtable)
+          } else {
+            ## if marked table was found
+            newtable <- PDE.globals$tables.masterlist[["woabbrev_markedtables"]][[pos]][["table"]][[tsvpos]]
           }
+          return(newtable)
         }
-        ## fill infos for all
-        fill.folder.infos(values_table, analysis.files[pos])
-        highlighted.values_table <- markwords(values_table,
-                                              analysis.files[pos], pos)
-      }
-      ## update progressbar
-      tcltk::tkconfigure(l1.progress.bar.pb, value = 100)
-      tcltk::tkconfigure(l1.progress.label, text = "complete")
-      tcltk::tkfocus(ttreader)
-      tcltk::tkraise(ttreader)
-      tcltk::tcl("update")
-      tcltk::tclvalue(tsv.onoff.var) <- "off"
-    }
-  }
-
-  l2.loadtsv.but <- tcltk2::tk2button(l2, text = "Load TSV file (for search word highlighting)",
-                                      command = load.loadtsv)
-
-  l2.tsv.loadall.but <- tcltk2::tk2button(l2, text = "load all",
-                                          command = tsv.loadall, state = "disabled",
-                                          width = 8)
-
-  l2.tsv.onoff.but <- tcltk2::tk2button(l2, text = tcltk::tclvalue(tsv.onoff.var),
-                                        command = tsv.onoff, state = "disabled", width = 3)
-
-  resetformnopdf <- function() {
-    return("")
-    tcltk::tkconfigure(l5.jumpto.cb, values = "")
-    tcltk::tclvalue(filename.var) <- ""
-    PDE.globals$jumpto.list <- ""
-    tcltk::tclvalue(jumpto.var) <- ""
-    l6.analysis.file.table <- NULL
-    PDE.globals$tables.masterlist <- NULL
-    tcltk::tclvalue(analysis.folder_location.var) <- ""
-  }
-
-  resetform <- function() {
-    tcltk::tclvalue(filename.var) <- ""
-    tcltk::tkwm.title(ttreader, "PDE reader")
-    tcltk::tclvalue(pdffolder.var) <- ""
-    tcltk::tclvalue(fullpdfname.var) <- ""
-    tcltk::tclvalue(pdfname.var) <- ""
-    tcltk::tclvalue(pdfnumber.var) <- ""
-    tcltk::tclvalue(tsvfile.var) <- ""
-    tcltk::tkconfigure(l4.openpdf.but, state = "disabled")
-    tcltk::tkconfigure(l4.extract.table.but, state = "disabled")
-    tcltk::tkconfigure(l2.tsv.onoff.but, state = "disabled")
-    tcltk::tkconfigure(l2.tsv.loadall.but, state = "disabled")
-    PDE.globals$jumpto.list <- ""
-    tcltk::tclvalue(jumpto.var) <- ""
-    tcltk::tkconfigure(l5.jumpto.cb, values = PDE.globals$jumpto.list)
-    PDE.globals$mark.list <- ""
-    tcltk::tkconfigure(l9.mark.cb, values = PDE.globals$mark.list)
-    tcltk::tkconfigure(l9.flagfile.but, state = "disabled")
-    tcltk::tkconfigure(l9.xmarkfile.but, state = "disabled")
-    tcltk::tkconfigure(l9.unmarkfile.but, state = "disabled")
-    tcltk::tclvalue(mark.var) <- ""
-    l6.analysis.file.table <- NULL
-    tcltk::tclvalue(columnnumber.var) <- "0"
-    PDE.globals$tables.masterlist <- NULL
-    tcltk::tclvalue(analysis.folder_location.var) <- ""
-    tcltk::tclvalue(wrap.var) <- "1"
-    tcltk::tclvalue(progress.var) <- "0"
-    tcltk::tkconfigure(l8.analysis.file.table, columns = "")
-    tcltk::tkfont.configure("TkDefaultFont", size = tcltk::tclvalue(defaultfontsize.var))
-    tcltk::tclvalue(hotkey.mode.var) <- "standard"
-  }
-  l1.reset.but <- tcltk2::tk2button(l1, text = "Reset form",
-                                    command = resetform)
-
-
-  ## line2
-  load.pdffolder <- function(pdffolder) {
-    if (length(pdffolder) == 0 || pdffolder == "%pdffolder") {
-      tcltk::tclvalue(pdffolder.var) <- tcltk::tk_choose.dir(default = tcltk::tclvalue(pdffolder.var),
-                                                             caption = "Choose folder with PDF files")
-    }
-    ## search pdf folder for matching PDF files
-    if (!tcltk::tclvalue(jumpto.var) == "") {
-      tsv.filename <- gsub("^[^-]*-", "", tcltk::tclvalue(jumpto.var))
-      txtstart <- regexpr("_txt+-", tsv.filename,
-                          fixed = TRUE)
-      if (substr(tsv.filename,1,2) == "!_" ||
-          substr(tsv.filename,1,2) == "x_"){
-        pdfnamestart <- 3
+        ## if mark is OFF but abbreviations should be collapsed
+      } else if(!is.null(dim(table)) &&
+                tcltk::tclvalue(tsv.onoff.var) == "off" &&
+                !(length(tcltk::tclvalue(search.words.var)) == 0)) {
+        ## if abbreviations should be collapsed
+        if (tcltk::tclvalue(collapse.abbrev.var) == "1"){
+          ## test if woabbrev_values_table already exists
+          res <- try(PDE.globals$tables.masterlist[["woabbrev_values_table"]][[pos]], silent = TRUE)
+          if (class(res) != "try-error" && !is.null(res)) {
+            ## check position of TSV file (if table was skipped it becomes NA)
+            newtable <- PDE.globals$tables.masterlist[["woabbrev_values_table"]][[pos]]
+            if (is.null(newtable)) newtable <- NA
+          } else {
+            newtable <- NA
+          }
+          ## if newtable is empty (woabbrev_values_table does not exist)
+          if (is.na(newtable)) {
+            ## overwrite newtable with regular values table
+            newtable <- table
+            ## first separate by column to prevent faults in
+            ## gsub then lapply
+            for (c in 1:ncol(newtable)) {
+              ## replace abbreviations
+              newtable[, c] <- list(lapply(newtable[, c], function(x) {
+                sub(" \\(","",paste0(gsub("^.*\\$\\*","",paste0(" (",strsplit(as.character(x)," \\(")[[1]])),collapse = ""))
+              }))
+            }
+            PDE.globals$tables.masterlist[["woabbrev_values_table"]][pos] <- list(newtable)
+          } else {
+            ## return newtable
+          }
+          return(newtable)
+          ## if neither mark was on nor abbreviations should be collapsed
+        } else {
+          return(table)
+        }
+        ## if table was not intact
       } else {
-        pdfnamestart <- 1
+        return(table)
       }
-      pdfname <- paste0(substr(tsv.filename,
-                               pdfnamestart, (txtstart - 1)),
-                        ".pdf")
-
-      ## find pdf
-      pdfs <- list.files(tcltk::tclvalue(pdffolder.var),
-                         pattern = "*.pdf", full.names = TRUE,
-                         recursive = TRUE)
-      if (any(grepl(pdfname, pdfs, fixed = TRUE))) {
-        tcltk::tclvalue(pdfname.var) <- basename(grep(pdfname,
-                                                      pdfs, fixed = TRUE, value = TRUE)[1])
-        tcltk::tclvalue(fullpdfname.var) <- grep(pdfname,
-                                                 pdfs, fixed = TRUE, value = TRUE)[1]
-        tcltk::tkconfigure(l4.openpdf.but, state = "normal")
-        ## enable extract table if TSV file is chosen
-        if (!(tcltk::tclvalue(tsvfile.var) == "")) {
+    }
+  
+  
+    load.loadtsv <- function(loadfile) {
+      if (loadfile == "%loadfile") {
+        tsvfile <- tcltk::tk_choose.files(default = tcltk::tclvalue(tsvfile.var),
+                                                               caption = "Choose the TSV file",
+                                                               multi = FALSE)
+        if (length(tsvfile) > 0) {
+          tcltk::tclvalue(tsvfile.var) <- tsvfile
+        } else {
+          tcltk::tclvalue(tsvfile.var) <- ""
+        }
+      }
+  
+      ## enable extract table if TSV file is chosen
+      if (!(tcltk::tclvalue(tsvfile.var) == "") && file.exists(tcltk::tclvalue(fullpdfname.var))) {
+        tcltk::tkconfigure(l4.extract.table.but, state = "normal")
+      }
+      
+      if (!(tcltk::tclvalue(tsvfile.var) == "")) {
+        tsv_table <- utils::read.table(tcltk::tclvalue(tsvfile.var),
+                                       sep = "\t", header = TRUE, quote = "\"",
+                                       stringsAsFactors = FALSE)
+        ## search word
+        search.wds <- as.character(tsv_table[(grep("search.words",
+                                                   tsv_table[, "variable"])), "value"])
+        ## search word case sensitive
+        ic.sw <- as.character(tsv_table[(grep("ignore.case.sw",
+                                              tsv_table[, "variable"])), "value"])
+        ## look if search words were found
+        if (!(length(search.wds) == 0)) {
+          tcltk::tclvalue(search.words.var) = search.wds
+          tcltk::tkconfigure(l2.tsv.onoff.but, state = "normal")
+          tcltk::tkconfigure(l2.tsv.loadall.but, state = "normal")
+        } else {
+          tcltk::tkmessageBox(title = "Error", type = "ok",
+                              icon = "error", message = "Check for correct TSV file. No search words were found in file.")
+          tcltk::tkconfigure(l2.tsv.onoff.but, state = "disabled")
+          tcltk::tkconfigure(l2.tsv.loadall.but, state = "disabled")
+        }
+        ## look if search word ignore case
+        if (!(length(ic.sw) == 0)) {
+          tcltk::tclvalue(ignore.case.sw.var) <- ic.sw
+        } else {
+          tcltk::tclvalue(ignore.case.sw.var) <- "FALSE"
+        }
+        ## reload table (marking is in open.analysis.file
+        ## script)
+        if (!(tcltk::tclvalue(jumpto.var) == "")) {
+          filename <- gsub("^[^-]*-", "", tcltk::tclvalue(jumpto.var))
+          searchfilename <- gsub("+", "[+]", filename,
+                                 fixed = TRUE)
+          fullfilename <- list.files(tcltk::tclvalue(analysis.folder_location.var),
+                                     pattern = searchfilename, full.names = TRUE,
+                                     recursive = TRUE)[1]
+          open.analysis.file(analysis.file_location = fullfilename)
+        } else {
+          markwords("", "",0)
+        }
+        ##change from off to on for marking
+        analysis.folder_location <- tcltk::tclvalue(analysis.folder_location.var)
+        if (!is.na(analysis.folder_location) &&
+            analysis.folder_location != "" &&
+            tcltk::tclvalue(tsv.onoff.var) == "off" &&
+            !(length(search.wds) == 0) &&
+            !(loadfile == "not")){
+          tsv.onoff()
+        }
+      } ## end if TSV file was chosen
+    }
+  
+    tsv.onoff <- function() {
+      ##save scroll position
+      save.scroll.pos <- as.character(tcltk::tkyview(l8.analysis.file.table))[1]
+      ## reverse button
+      if (tcltk::tclvalue(tsv.onoff.var) == "on") {
+        tcltk::tclvalue(tsv.onoff.var) <- "off"
+      } else {
+        tcltk::tclvalue(tsv.onoff.var) <- "on"
+      }
+      tcltk::tkconfigure(l2.tsv.onoff.but, text = tcltk::tclvalue(tsv.onoff.var))
+      ## start marking
+      load.loadtsv(loadfile = "not")
+      ## reset scroll position
+      tcltk::tkyview.moveto(l8.analysis.file.table,save.scroll.pos)
+    }
+  
+    tsv.loadall <- function() {
+      analysis.files <- PDE.globals$tables.masterlist[["analysis.file_location"]]
+      if (length(analysis.files) > 0) {
+        analysis.files <- gsub("\\\\", "/", analysis.files)
+        tcltk::tclvalue(tsv.onoff.var) <- "on"
+        for (pos in 1:length(analysis.files)) {
+          ## update progressbar
+          tcltk::tclvalue(progress.var) <- as.character(round(((pos -
+                                                                  1)/length(analysis.files) * 100),
+                                                              digits = 0))
+          tcltk::tkconfigure(l1.progress.bar.pb, value = as.numeric(tcltk::tclvalue(progress.var)))
+          tcltk::tkconfigure(l1.progress.label, text = paste0(tcltk::tclvalue(progress.var),
+                                                              "%"))
+          tcltk::tcl("update")
+  
+          ## load values table
+          res <- try(PDE.globals$tables.masterlist[["values_table"]][[pos]], silent = TRUE)
+          if (class(res) != "try-error" && !is.null(res)) {
+              values_table <- PDE.globals$tables.masterlist[["values_table"]][[pos]]
+              if (is.null(values_table)) {
+                if (grepl("\\.csv$", analysis.files[pos])) {
+                  values_table <- read.problemtable(analysis.files[pos],
+                                                    header = TRUE, quote = "\"",
+                                                    sep = ",")
+                } else if (grepl("\\.tsv$", analysis.files[pos])) {
+                  values_table <- read.problemtable(analysis.files[pos],
+                                                    sep = "\t", header = TRUE, quote = "\"")
+                }
+              }
+          } else {
+            if (grepl("\\.csv$", analysis.files[pos])) {
+              values_table <- read.problemtable(analysis.files[pos],
+                                                header = TRUE, quote = "\"",
+                                                sep = ",")
+            } else if (grepl("\\.tsv$", analysis.files[pos])) {
+              values_table <- read.problemtable(analysis.files[pos],
+                                                sep = "\t", header = TRUE, quote = "\"")
+            }
+          }
+          ## fill infos for all
+          fill.folder.infos(values_table, analysis.files[pos])
+          highlighted.values_table <- markwords(values_table,
+                                                analysis.files[pos], pos)
+        }
+        ## update progressbar
+        tcltk::tkconfigure(l1.progress.bar.pb, value = 100)
+        tcltk::tkconfigure(l1.progress.label, text = "complete")
+        tcltk::tkfocus(ttreader)
+        tcltk::tkraise(ttreader)
+        tcltk::tcl("update")
+        tcltk::tclvalue(tsv.onoff.var) <- "off"
+      }
+    }
+  
+    l2.loadtsv.but <- tcltk2::tk2button(l2, text = "Load TSV file (for search word highlighting)",
+                                        command = load.loadtsv)
+  
+    l2.tsv.loadall.but <- tcltk2::tk2button(l2, text = "load all",
+                                            command = tsv.loadall, state = "disabled",
+                                            width = 8)
+  
+    l2.tsv.onoff.but <- tcltk2::tk2button(l2, text = tcltk::tclvalue(tsv.onoff.var),
+                                          command = tsv.onoff, state = "disabled", width = 3)
+  
+    resetformnopdf <- function() {
+      return("")
+      tcltk::tkconfigure(l5.jumpto.cb, values = "")
+      tcltk::tclvalue(filename.var) <- ""
+      PDE.globals$jumpto.list <- ""
+      tcltk::tclvalue(jumpto.var) <- ""
+      l6.analysis.file.table <- NULL
+      PDE.globals$tables.masterlist <- NULL
+      tcltk::tclvalue(analysis.folder_location.var) <- ""
+    }
+  
+    resetform <- function() {
+      tcltk::tclvalue(filename.var) <- ""
+      tcltk::tkwm.title(ttreader, "PDE reader")
+      tcltk::tclvalue(pdffolder.var) <- ""
+      tcltk::tclvalue(fullpdfname.var) <- ""
+      tcltk::tclvalue(pdfname.var) <- ""
+      tcltk::tclvalue(pdfnumber.var) <- ""
+      tcltk::tclvalue(tsvfile.var) <- ""
+      tcltk::tkconfigure(l4.openpdf.but, state = "disabled")
+      tcltk::tkconfigure(l4.extract.table.but, state = "disabled")
+      tcltk::tkconfigure(l2.tsv.onoff.but, state = "disabled")
+      tcltk::tkconfigure(l2.tsv.loadall.but, state = "disabled")
+      PDE.globals$jumpto.list <- ""
+      tcltk::tclvalue(jumpto.var) <- ""
+      tcltk::tkconfigure(l5.jumpto.cb, values = PDE.globals$jumpto.list)
+      PDE.globals$mark.list <- ""
+      tcltk::tkconfigure(l9.mark.cb, values = PDE.globals$mark.list)
+      tcltk::tkconfigure(l9.flagfile.but, state = "disabled")
+      tcltk::tkconfigure(l9.xmarkfile.but, state = "disabled")
+      tcltk::tkconfigure(l9.unmarkfile.but, state = "disabled")
+      tcltk::tclvalue(mark.var) <- ""
+      l6.analysis.file.table <- NULL
+      tcltk::tclvalue(columnnumber.var) <- "0"
+      PDE.globals$tables.masterlist <- NULL
+      tcltk::tclvalue(analysis.folder_location.var) <- ""
+      tcltk::tclvalue(wrap.var) <- "1"
+      tcltk::tclvalue(progress.var) <- "0"
+      tcltk::tkconfigure(l8.analysis.file.table, columns = "")
+      tcltk::tkfont.configure("TkDefaultFont", size = tcltk::tclvalue(defaultfontsize.var))
+      tcltk::tclvalue(hotkey.mode.var) <- "standard"
+    }
+    l1.reset.but <- tcltk2::tk2button(l1, text = "Reset form",
+                                      command = resetform)
+  
+  
+    ## line2
+    load.pdffolder <- function(pdffolder) {
+      if (length(pdffolder) == 0 || pdffolder == "%pdffolder") {
+        tcltk::tclvalue(pdffolder.var) <- tcltk::tk_choose.dir(default = tcltk::tclvalue(pdffolder.var),
+                                                               caption = "Choose folder with PDF files")
+      }
+      ## search pdf folder for matching PDF files
+      if (!tcltk::tclvalue(jumpto.var) == "") {
+        tsv.filename <- gsub("^[^-]*-", "", tcltk::tclvalue(jumpto.var))
+        txtstart <- regexpr("_txt+-", tsv.filename,
+                            fixed = TRUE)
+        if (substr(tsv.filename,1,2) == "!_" ||
+            substr(tsv.filename,1,2) == "x_"){
+          pdfnamestart <- 3
+        } else {
+          pdfnamestart <- 1
+        }
+        pdfname <- paste0(substr(tsv.filename,
+                                 pdfnamestart, (txtstart - 1)),
+                          ".pdf")
+  
+        ## find pdf
+        pdfs <- list.files(tcltk::tclvalue(pdffolder.var),
+                           pattern = "*.pdf", full.names = TRUE,
+                           recursive = TRUE)
+        if (any(grepl(pdfname, pdfs, fixed = TRUE))) {
+          tcltk::tclvalue(pdfname.var) <- basename(grep(pdfname,
+                                                        pdfs, fixed = TRUE, value = TRUE)[1])
+          tcltk::tclvalue(fullpdfname.var) <- grep(pdfname,
+                                                   pdfs, fixed = TRUE, value = TRUE)[1]
+          tcltk::tkconfigure(l4.openpdf.but, state = "normal")
+          ## enable extract table if TSV file is chosen
+          if (!(tcltk::tclvalue(tsvfile.var) == "")) {
+            tcltk::tkconfigure(l4.extract.table.but,
+                               state = "normal")
+          }
+          if (!tcltk::tclvalue(jumpto.var) == "") {
+            if (!length(PDE.globals$mark.list) == 3) {
+              PDE.globals$mark.list <- c("Mark analysis file only",
+                                         "Mark PDF file only", "Mark analysis file & PDF")
+              tcltk::tkconfigure(l9.mark.cb, values = tcltk::as.tclObj(PDE.globals$mark.list,
+                                                                       drop = FALSE))
+              tcltk::tclvalue(mark.var) <- PDE.globals$mark.list[1]
+            }
+          }
+        } else {
           tcltk::tkconfigure(l4.extract.table.but,
-                             state = "normal")
+                             state = "disabled")
+          tcltk::tclvalue(pdfname.var) <- ""
+          tcltk::tclvalue(fullpdfname.var) <- ""
         }
-        if (!tcltk::tclvalue(jumpto.var) == "") {
-          if (!length(PDE.globals$mark.list) == 3) {
-            PDE.globals$mark.list <- c("Mark analysis file only",
-                                       "Mark PDF file only", "Mark analysis file & PDF")
-            tcltk::tkconfigure(l9.mark.cb, values = tcltk::as.tclObj(PDE.globals$mark.list,
-                                                                     drop = FALSE))
-            tcltk::tclvalue(mark.var) <- PDE.globals$mark.list[1]
-          }
-        }
-      } else {
-        tcltk::tkconfigure(l4.extract.table.but,
-                           state = "disabled")
-        tcltk::tclvalue(pdfname.var) <- ""
-        tcltk::tclvalue(fullpdfname.var) <- ""
       }
     }
-  }
-  l3.loadpdffolder.but <- tcltk2::tk2button(l3, text = "Load PDF folder",
-                                            command = load.pdffolder)
-
-  ## line4
-  openpdf <- function() {
-    if (!tcltk::tclvalue(pdfname.var) == "")
-      system(paste0("open ", "\"", tcltk::tclvalue(fullpdfname.var),
-                    "\""))
-  }
-  l4.openpdf.but <- tcltk2::tk2button(l4, text = "Open current PDF",
-                                      command = openpdf, state = "disabled", underline = "0")
-
-  extract_table <- function() {
-    if (!(tcltk::tclvalue(tsvfile.var) == "") && file.exists(tcltk::tclvalue(fullpdfname.var))) {
-      tsv_table <- utils::read.table(tcltk::tclvalue(tsvfile.var),
-                                     sep = "\t", header = TRUE, quote = "\"",
-                                     stringsAsFactors = FALSE)
-
-      ## set required variables
-      pdf <- tcltk::tclvalue(fullpdfname.var)
-      whattoextr <- "tab"
-      ## choose folder
-      outputdir.created <- FALSE
-      outputdir <- paste0(tcltk::tclvalue(analysis.folder_location.var),
-                          "/extracted_tables")
-      if (!exists(outputdir)){
-        dir.create(outputdir, showWarnings = FALSE)
-        outputdir.created <- TRUE
-      }
-      outputfolder <- tcltk::tk_choose.dir(default = outputdir,
-                                          caption = "Choose the outputfolder for the extracted tables.")
-      if (outputdir != outputfolder && outputdir.created == TRUE) {
-        unlink(outputdir, recursive = TRUE)
-      }
-
-      ##continue when correct output folder was chosen
-      if (!is.na(outputfolder) && outputfolder != "") {
-        if (!exists(outputfolder)){
-          dir.create(outputfolder,showWarnings = FALSE)
-        }
-        context <- 0
-        dev <- as.numeric(tsv_table[(grep("dev",
-                                          tsv_table[, "variable"])), "value"])
-        filter.for <- ""
-        ic.fw <- TRUE
-        filter.word.times <- 0
-        table.heading.for <- ""
-        ic.th <- TRUE
-        search.for <- ""
-        ic.sw <- TRUE
-        eval.abbrevs <- FALSE
-        wtl <- FALSE
-        write.tab.doc.file <- TRUE
-        write.txt.doc.file <- FALSE
-        exp.nondetc.tabs <- TRUE
-        out.table.format <- as.character(tsv_table[(grep("out.table.format",
-                                                         tsv_table[, "variable"])), "value"])
-        delete <- TRUE
-        tablelines <- .PDE_extr_data_from_pdf(pdf = pdf,
-                                              whattoextr = whattoextr, 
-                                              out = outputfolder, context = context,
-                                              dev = dev, filter.words = filter.for,
-                                              ignore.case.fw = ic.fw, filter.word.times = filter.word.times,
-                                              table.heading.words = table.heading.for,
-                                              ignore.case.th = ic.th, search.words = search.for,
-                                              ignore.case.sw = ic.sw, eval.abbrevs = eval.abbrevs,
-                                              write.table.locations = wtl,
-                                              write.tab.doc.file = write.tab.doc.file,
-                                              write.txt.doc.file = write.txt.doc.file,
-                                              exp.nondetc.tabs = exp.nondetc.tabs,
-                                              out.table.format = out.table.format,
-                                              delete = delete, verbose = verbose)
-
-        ## open folder
-        system(paste0("open ", "\"", tcltk::tclvalue(analysis.folder_location.var),
+    l3.loadpdffolder.but <- tcltk2::tk2button(l3, text = "Load PDF folder",
+                                              command = load.pdffolder)
+  
+    ## line4
+    openpdf <- function() {
+      if (!tcltk::tclvalue(pdfname.var) == "")
+        system(paste0("open ", "\"", tcltk::tclvalue(fullpdfname.var),
                       "\""))
+    }
+    l4.openpdf.but <- tcltk2::tk2button(l4, text = "Open current PDF",
+                                        command = openpdf, state = "disabled", underline = "0")
+  
+    extract_table <- function() {
+      if (!(tcltk::tclvalue(tsvfile.var) == "") && file.exists(tcltk::tclvalue(fullpdfname.var))) {
+        tsv_table <- utils::read.table(tcltk::tclvalue(tsvfile.var),
+                                       sep = "\t", header = TRUE, quote = "\"",
+                                       stringsAsFactors = FALSE)
+  
+        ## set required variables
+        pdf <- tcltk::tclvalue(fullpdfname.var)
+        whattoextr <- "tab"
+        ## choose folder
+        outputdir.created <- FALSE
+        outputdir <- paste0(tcltk::tclvalue(analysis.folder_location.var),
+                            "/extracted_tables")
+        if (!exists(outputdir)){
+          dir.create(outputdir, showWarnings = FALSE)
+          outputdir.created <- TRUE
+        }
+        outputfolder <- tcltk::tk_choose.dir(default = outputdir,
+                                            caption = "Choose the outputfolder for the extracted tables.")
+        if (outputdir != outputfolder && outputdir.created == TRUE) {
+          unlink(outputdir, recursive = TRUE)
+        }
+  
+        ##continue when correct output folder was chosen
+        if (!is.na(outputfolder) && outputfolder != "") {
+          if (!exists(outputfolder)){
+            dir.create(outputfolder,showWarnings = FALSE)
+          }
+          context <- 0
+          dev <- as.numeric(tsv_table[(grep("dev",
+                                            tsv_table[, "variable"])), "value"])
+          filter.for <- ""
+          ic.fw <- TRUE
+          filter.word.times <- 0
+          table.heading.for <- ""
+          ic.th <- TRUE
+          search.for <- ""
+          ic.sw <- TRUE
+          eval.abbrevs <- FALSE
+          wtl <- FALSE
+          write.tab.doc.file <- TRUE
+          write.txt.doc.file <- FALSE
+          exp.nondetc.tabs <- TRUE
+          out.table.format <- as.character(tsv_table[(grep("out.table.format",
+                                                           tsv_table[, "variable"])), "value"])
+          delete <- TRUE
+          tablelines <- .PDE_extr_data_from_pdf(pdf = pdf,
+                                                whattoextr = whattoextr, 
+                                                out = outputfolder, context = context,
+                                                dev = dev, filter.words = filter.for,
+                                                ignore.case.fw = ic.fw, filter.word.times = filter.word.times,
+                                                table.heading.words = table.heading.for,
+                                                ignore.case.th = ic.th, search.words = search.for,
+                                                ignore.case.sw = ic.sw, eval.abbrevs = eval.abbrevs,
+                                                write.table.locations = wtl,
+                                                write.tab.doc.file = write.tab.doc.file,
+                                                write.txt.doc.file = write.txt.doc.file,
+                                                exp.nondetc.tabs = exp.nondetc.tabs,
+                                                out.table.format = out.table.format,
+                                                delete = delete, verbose = verbose)
+  
+          ## open folder
+          system(paste0("open ", "\"", tcltk::tclvalue(analysis.folder_location.var),
+                        "\""))
+        } else {
+          out_msg <- c(out_msg, "Please choose a correct output folder.")
+          if (verbose) cat(utils::tail(out_msg,1), sep="\n")
+        }
       } else {
-        out_msg <- c(out_msg, "Please choose a correct output folder.")
+        out_msg <- c(out_msg, "Please choose a TSV file and the PDF folder.")
         if (verbose) cat(utils::tail(out_msg,1), sep="\n")
       }
-    } else {
-      out_msg <- c(out_msg, "Please choose a TSV file and the PDF folder.")
-      if (verbose) cat(utils::tail(out_msg,1), sep="\n")
     }
-  }
-  l4.extract.table.but <- tcltk2::tk2button(l4, text = "Extract tables",
-                                            command = extract_table, state = "disabled")
-
-
-  ## line 1 open analysis file
-  open.analysis.file <- function(analysis.file_location = NULL) {
-    values_table <- NULL
-    if (length(analysis.file_location) == 0 ||
-        grepl("%", analysis.file_location)) {
-      analysis.file_location <- tcltk::tk_choose.files(default = tcltk::tclvalue(analysis.folder_location.var),
-                                                       caption = "Choose the analysis file",
-                                                       multi = FALSE)
-    }
-    filename <- as.character(basename(analysis.file_location))
-    ## if no file was selected do nothing
-    if (length(analysis.file_location) == 0) {
-    ## if correct file (with txt+-) was chosen
-    } else if ((analysis.file_location != "") && (grepl("txt+-",
-                                                 filename, fixed = TRUE))) {
-
-      ## if a new folder is loaded, reset form
-      if (!dirname(analysis.file_location) ==
-          tcltk::tclvalue(analysis.folder_location.var)) {
-        PDE.globals$jumpto.list <- resetformnopdf()
-        
-        ## fill infos for all files in folder
-        tcltk::tclvalue(analysis.folder_location.var) <- dirname(analysis.file_location)
-        
-        analysis.files <- searchfolder(tcltk::tclvalue(analysis.folder_location.var))
-        for (f in 1:length(analysis.files)) {
-          fill.folder.infos(NA, analysis.files[f])
+    l4.extract.table.but <- tcltk2::tk2button(l4, text = "Extract tables",
+                                              command = extract_table, state = "disabled")
+  
+  
+    ## line 1 open analysis file
+    open.analysis.file <- function(analysis.file_location = NULL) {
+      values_table <- NULL
+      if (length(analysis.file_location) == 0 ||
+          grepl("%", analysis.file_location)) {
+        analysis.file_location <- tcltk::tk_choose.files(default = tcltk::tclvalue(analysis.folder_location.var),
+                                                         caption = "Choose the analysis file",
+                                                         multi = FALSE)
+      }
+      filename <- as.character(basename(analysis.file_location))
+      ## if no file was selected do nothing
+      if (length(analysis.file_location) == 0) {
+      ## if correct file (with txt+-) was chosen
+      } else if ((analysis.file_location != "") && (grepl("txt+-",
+                                                   filename, fixed = TRUE))) {
+  
+        ## if a new folder is loaded, reset form
+        if (!dirname(analysis.file_location) ==
+            tcltk::tclvalue(analysis.folder_location.var)) {
+          PDE.globals$jumpto.list <- resetformnopdf()
+          
+          ## fill infos for all files in folder
+          tcltk::tclvalue(analysis.folder_location.var) <- dirname(analysis.file_location)
+          
+          analysis.files <- searchfolder(tcltk::tclvalue(analysis.folder_location.var))
+          for (f in 1:length(analysis.files)) {
+            fill.folder.infos(NA, analysis.files[f])
+          }
+          ## update the list
+          tcltk::tkconfigure(l5.jumpto.cb, values = PDE.globals$jumpto.list)
         }
-        ## update the list
-        tcltk::tkconfigure(l5.jumpto.cb, values = PDE.globals$jumpto.list)
-      }
-      
-      ## read in the table
-      if (grepl("\\.csv$", analysis.file_location)) {
-        values_table <- read.problemtable(analysis.file_location,
-                                          header = TRUE, quote = "\"", sep = ",")
-      } else if (grepl("\\.tsv$", analysis.file_location)) {
-        values_table <- read.problemtable(analysis.file_location,
-                                          sep = "\t", header = TRUE, quote = "\"")
-      }
-      
-      ## fill form for chosen file
-      fill.folder.infos(values_table, analysis.file_location)
-      
-      numb = gsub("-.*", "", tcltk::tclvalue(jumpto.var))
-      pos <- as.numeric(numb)
-      
-      ## highlight search words if highlighting is on
-      highlighted.values_table <- markwords(values_table,
-                                            analysis.file_location, 
-                                            pos)
-      ## update display of sentences
-      display.values_table <- adjust.sent.display(highlighted.values_table)
-
-      fill.table(display.values_table, analysis.file_location)
-
-
-      tcltk::tclvalue(jumpto.var) <- grep(filename, PDE.globals$jumpto.list,
-                                          value = TRUE, fixed = TRUE)
-
-      ## match PDF files if pdffolder was chosen
-      if (!tcltk::tclvalue(pdffolder.var) == "") {
-        load.pdffolder(tcltk::tclvalue(pdffolder.var))
-      }
-
-    } else {
-      tcltk::tkmessageBox(title = "Error", type = "ok",
-                          icon = "error", message = "No accepted analysis file was chosen.")
-    }
-
-    ## enable extract table if TSV file is chosen
-    if (!(tcltk::tclvalue(tsvfile.var) == "") && file.exists(tcltk::tclvalue(fullpdfname.var))) {
-      tcltk::tkconfigure(l4.extract.table.but, state = "normal")
-    }
-
-  }
-  l1.open.analysis.file.but <- tcltk2::tk2button(l1, text = "Open analysis file",
-                                                 command = open.analysis.file)
-
-  ## open analysis folder
-  load.analysis.folder <- function() {
-    analysis.folder_location <- tcltk::tk_choose.dir(default = tcltk::tclvalue(analysis.folder_location.var),
-                                                     caption = "Choose analysis folder with the results form the PDE analyzer")
-    if (!is.na(analysis.folder_location) && analysis.folder_location !=
-        "") {
-      ## if a new folder is loaded, reset form
-      if (!analysis.folder_location == tcltk::tclvalue(analysis.folder_location.var)) {
-        PDE.globals$jumpto.list <- resetformnopdf()
-      }
-      tcltk::tclvalue(analysis.folder_location.var) <- analysis.folder_location
-
-      analysis.files <- searchfolder(tcltk::tclvalue(analysis.folder_location.var))
-      for (f in 1:length(analysis.files)) {
-        ## update progressbar
-        tcltk::tclvalue(progress.var) <- as.character(round(((f -
-                                                                1)/length(analysis.files) * 100),
-                                                            digits = 0))
-        tcltk::tkconfigure(l1.progress.bar.pb, value = as.numeric(tcltk::tclvalue(progress.var)))
-        tcltk::tkconfigure(l1.progress.label, text = paste0(tcltk::tclvalue(progress.var),
-                                                            "%"))
-        tcltk::tcl("update")
-        ## load files
-        if (grepl("\\.csv$", analysis.files[f])) {
-          values_table <- read.problemtable(analysis.files[f],
+        
+        ## read in the table
+        if (grepl("\\.csv$", analysis.file_location)) {
+          values_table <- read.problemtable(analysis.file_location,
                                             header = TRUE, quote = "\"", sep = ",")
-        } else if (grepl("\\.tsv$", analysis.files[f])) {
-          values_table <- read.problemtable(analysis.files[f],
+        } else if (grepl("\\.tsv$", analysis.file_location)) {
+          values_table <- read.problemtable(analysis.file_location,
                                             sep = "\t", header = TRUE, quote = "\"")
         }
-        ## fill infos for all
-        fill.folder.infos(values_table, analysis.files[f])
-
-        ## fill the form for the first file
-        if (f == 1) {
-          ## highlight search words if highlighting is on
-          highlighted.values_table = markwords(values_table,
-                                               analysis.files[1], 1)
-          ## update display of sentences
-          display.values_table <- adjust.sent.display(highlighted.values_table)
-
-          fill.table(display.values_table, analysis.files[1])
-
-          tcltk::tclvalue(jumpto.var) <- grep(basename(analysis.files[1]),
-                                              PDE.globals$jumpto.list, value = TRUE, fixed = TRUE)
-
-          ## match PDF files if pdffolder was chosen
-          if (!tcltk::tclvalue(pdffolder.var) == "") {
-            load.pdffolder(tcltk::tclvalue(pdffolder.var))
-          }
-        }
-      }
-      ## update progressbar
-      tcltk::tkconfigure(l1.progress.bar.pb, value = 100)
-      tcltk::tkconfigure(l1.progress.label, text = "complete")
-      tcltk::tcl("update")
-      tcltk::tkfocus(ttreader)
-      tcltk::tkraise(ttreader)
-
-      ## update the list
-      tcltk::tkconfigure(l5.jumpto.cb, values = PDE.globals$jumpto.list)
-    } else {
-      tcltk::tkmessageBox(title = "Error", type = "ok",
-                          icon = "error", message = "No analysis folder was chosen.")
-    }
-
-    ## enable extract table if TSV file is chosen
-    if (!(tcltk::tclvalue(tsvfile.var) == "") && file.exists(tcltk::tclvalue(fullpdfname.var))) {
-      tcltk::tkconfigure(l4.extract.table.but, state = "normal")
-    }
-
-  }
-  l1.load.analysis.folder.but <- tcltk2::tk2button(l1, text = "Load analysis folder",
-                                                   command = load.analysis.folder)
-
-  ## line 5
-  previous.file <- function() {
-    if (!tcltk::tclvalue(jumpto.var) == "") {
-      numb = gsub("-.*", "", tcltk::tclvalue(jumpto.var))
-      pos <- as.numeric(numb)
-      ## if the pos is at least at position 2
-      if (pos > 1){
-        tcltk::tclvalue(jumpto.var) <- PDE.globals$jumpto.list[pos - 1]
-      }
-      ## if there are saved tables in the masterlist
-      if (!is.null(PDE.globals$tables.masterlist)) {
+        
+        ## fill form for chosen file
+        fill.folder.infos(values_table, analysis.file_location)
+        
         numb = gsub("-.*", "", tcltk::tclvalue(jumpto.var))
         pos <- as.numeric(numb)
-        ## test if table exists
-        res <- try(PDE.globals$tables.masterlist[["values_table"]][[pos]],silent = TRUE)
-        if (class(res) != "try-error" && !is.null(res)) {
-          tab <- PDE.globals$tables.masterlist[["values_table"]][[pos]]
-          loc <- PDE.globals$tables.masterlist[["analysis.file_location"]][[pos]]
-          ## highlight search words if highlighting is on
-          hightlighted.tab <- markwords(tab,
-                                        loc, pos)
-          ## update display of sentences
-          display.values_table <- adjust.sent.display(hightlighted.tab)
-
-          fill.table(table = display.values_table,
-                     analysis.file_location = loc)
-          ## match PDF files if pdffolder was chosen
-          if (!tcltk::tclvalue(pdffolder.var) == "") {
-            load.pdffolder(tcltk::tclvalue(pdffolder.var))
+        
+        ## highlight search words if highlighting is on
+        highlighted.values_table <- markwords(values_table,
+                                              analysis.file_location, 
+                                              pos)
+        ## update display of sentences
+        display.values_table <- adjust.sent.display(highlighted.values_table)
+  
+        fill.table(display.values_table, analysis.file_location)
+  
+  
+        tcltk::tclvalue(jumpto.var) <- grep(filename, PDE.globals$jumpto.list,
+                                            value = TRUE, fixed = TRUE)
+  
+        ## match PDF files if pdffolder was chosen
+        if (!tcltk::tclvalue(pdffolder.var) == "") {
+          load.pdffolder(tcltk::tclvalue(pdffolder.var))
+        }
+  
+      } else {
+        tcltk::tkmessageBox(title = "Error", type = "ok",
+                            icon = "error", message = "No accepted analysis file was chosen.")
+      }
+  
+      ## enable extract table if TSV file is chosen
+      if (!(tcltk::tclvalue(tsvfile.var) == "") && file.exists(tcltk::tclvalue(fullpdfname.var))) {
+        tcltk::tkconfigure(l4.extract.table.but, state = "normal")
+      }
+  
+    }
+    l1.open.analysis.file.but <- tcltk2::tk2button(l1, text = "Open analysis file",
+                                                   command = open.analysis.file)
+  
+    ## open analysis folder
+    load.analysis.folder <- function() {
+      analysis.folder_location <- tcltk::tk_choose.dir(default = tcltk::tclvalue(analysis.folder_location.var),
+                                                       caption = "Choose analysis folder with the results form the PDE analyzer")
+      if (!is.na(analysis.folder_location) && analysis.folder_location !=
+          "") {
+        ## if a new folder is loaded, reset form
+        if (!analysis.folder_location == tcltk::tclvalue(analysis.folder_location.var)) {
+          PDE.globals$jumpto.list <- resetformnopdf()
+        }
+        tcltk::tclvalue(analysis.folder_location.var) <- analysis.folder_location
+  
+        analysis.files <- searchfolder(tcltk::tclvalue(analysis.folder_location.var))
+        for (f in 1:length(analysis.files)) {
+          ## update progressbar
+          tcltk::tclvalue(progress.var) <- as.character(round(((f -
+                                                                  1)/length(analysis.files) * 100),
+                                                              digits = 0))
+          tcltk::tkconfigure(l1.progress.bar.pb, value = as.numeric(tcltk::tclvalue(progress.var)))
+          tcltk::tkconfigure(l1.progress.label, text = paste0(tcltk::tclvalue(progress.var),
+                                                              "%"))
+          tcltk::tcl("update")
+          ## load files
+          if (grepl("\\.csv$", analysis.files[f])) {
+            values_table <- read.problemtable(analysis.files[f],
+                                              header = TRUE, quote = "\"", sep = ",")
+          } else if (grepl("\\.tsv$", analysis.files[f])) {
+            values_table <- read.problemtable(analysis.files[f],
+                                              sep = "\t", header = TRUE, quote = "\"")
+          }
+          ## fill infos for all
+          fill.folder.infos(values_table, analysis.files[f])
+  
+          ## fill the form for the first file
+          if (f == 1) {
+            ## highlight search words if highlighting is on
+            highlighted.values_table = markwords(values_table,
+                                                 analysis.files[1], 1)
+            ## update display of sentences
+            display.values_table <- adjust.sent.display(highlighted.values_table)
+  
+            fill.table(display.values_table, analysis.files[1])
+  
+            tcltk::tclvalue(jumpto.var) <- grep(basename(analysis.files[1]),
+                                                PDE.globals$jumpto.list, value = TRUE, fixed = TRUE)
+  
+            ## match PDF files if pdffolder was chosen
+            if (!tcltk::tclvalue(pdffolder.var) == "") {
+              load.pdffolder(tcltk::tclvalue(pdffolder.var))
+            }
+          }
+        }
+        ## update progressbar
+        tcltk::tkconfigure(l1.progress.bar.pb, value = 100)
+        tcltk::tkconfigure(l1.progress.label, text = "complete")
+        tcltk::tcl("update")
+        tcltk::tkfocus(ttreader)
+        tcltk::tkraise(ttreader)
+  
+        ## update the list
+        tcltk::tkconfigure(l5.jumpto.cb, values = PDE.globals$jumpto.list)
+      } else {
+        tcltk::tkmessageBox(title = "Error", type = "ok",
+                            icon = "error", message = "No analysis folder was chosen.")
+      }
+  
+      ## enable extract table if TSV file is chosen
+      if (!(tcltk::tclvalue(tsvfile.var) == "") && file.exists(tcltk::tclvalue(fullpdfname.var))) {
+        tcltk::tkconfigure(l4.extract.table.but, state = "normal")
+      }
+  
+    }
+    l1.load.analysis.folder.but <- tcltk2::tk2button(l1, text = "Load analysis folder",
+                                                     command = load.analysis.folder)
+  
+    ## line 5
+    previous.file <- function() {
+      if (!tcltk::tclvalue(jumpto.var) == "") {
+        numb = gsub("-.*", "", tcltk::tclvalue(jumpto.var))
+        pos <- as.numeric(numb)
+        ## if the pos is at least at position 2
+        if (pos > 1){
+          tcltk::tclvalue(jumpto.var) <- PDE.globals$jumpto.list[pos - 1]
+        }
+        ## if there are saved tables in the masterlist
+        if (!is.null(PDE.globals$tables.masterlist)) {
+          numb = gsub("-.*", "", tcltk::tclvalue(jumpto.var))
+          pos <- as.numeric(numb)
+          ## test if table exists
+          res <- try(PDE.globals$tables.masterlist[["values_table"]][[pos]],silent = TRUE)
+          if (class(res) != "try-error" && !is.null(res)) {
+            tab <- PDE.globals$tables.masterlist[["values_table"]][[pos]]
+            loc <- PDE.globals$tables.masterlist[["analysis.file_location"]][[pos]]
+            ## highlight search words if highlighting is on
+            hightlighted.tab <- markwords(tab,
+                                          loc, pos)
+            ## update display of sentences
+            display.values_table <- adjust.sent.display(hightlighted.tab)
+  
+            fill.table(table = display.values_table,
+                       analysis.file_location = loc)
+            ## match PDF files if pdffolder was chosen
+            if (!tcltk::tclvalue(pdffolder.var) == "") {
+              load.pdffolder(tcltk::tclvalue(pdffolder.var))
+            }
+          } else {
+            loc <- PDE.globals$tables.masterlist[["analysis.file_location"]][[pos]]
+            open.analysis.file(analysis.file_location = loc)
           }
         } else {
-          loc <- PDE.globals$tables.masterlist[["analysis.file_location"]][[pos]]
-          open.analysis.file(analysis.file_location = loc)
+          filename <- gsub("^[^-]*-", "", tcltk::tclvalue(jumpto.var))
+          searchfilename <- gsub("+", "[+]", filename,
+                                 fixed = TRUE)
+          ## find the file in the folder
+          fullfilename <- list.files(tcltk::tclvalue(analysis.folder_location.var),
+                                     pattern = searchfilename, full.names = TRUE,
+                                     recursive = TRUE)[1]
+          fullfilename <- gsub("\\\\", "/", fullfilename)
+          open.analysis.file(analysis.file_location = fullfilename)
         }
+      }
+    }
+    l9.prev.but <- tcltk2::tk2button(l9, text = "Prev", width = 4,
+                                     command = previous.file, underline = "0")
+  
+    next.file <- function() {
+  
+      if (!tcltk::tclvalue(jumpto.var) == "") {
+        
+        numb = gsub("-.*", "", tcltk::tclvalue(jumpto.var))
+        pos <- as.numeric(numb)
+        ## if the pos smaller than the list
+        if (pos < length(PDE.globals$jumpto.list)){
+          tcltk::tclvalue(jumpto.var) <- PDE.globals$jumpto.list[(pos + 1)]
+        }
+        if (!is.null(PDE.globals$tables.masterlist)) {
+          numb = gsub("-.*", "", tcltk::tclvalue(jumpto.var))
+          pos <- as.numeric(numb)
+          ## test if table exists
+          res <- try(PDE.globals$tables.masterlist[["values_table"]][[pos]],silent = TRUE)
+          if (class(res) != "try-error" && !is.null(res)) {
+            tab <- PDE.globals$tables.masterlist[["values_table"]][[pos]]
+            loc <- PDE.globals$tables.masterlist[["analysis.file_location"]][[pos]]
+            ## highlight search words if highlighting is on
+            hightlighted.tab <- markwords(tab,
+                                          loc, pos)
+            ## update display of sentences
+            display.values_table <- adjust.sent.display(hightlighted.tab)
+  
+            fill.table(table = display.values_table,
+                       analysis.file_location = loc)
+            ## match PDF files if pdffolder was chosen
+            if (!tcltk::tclvalue(pdffolder.var) == "") {
+              load.pdffolder(tcltk::tclvalue(pdffolder.var))
+            }
+          } else {
+            loc <- PDE.globals$tables.masterlist[["analysis.file_location"]][[pos]]
+            open.analysis.file(analysis.file_location = loc)
+          }
+        } else {
+          filename <- gsub("^[^-]*-", "", tcltk::tclvalue(jumpto.var))
+          searchfilename <- gsub("+", "[+]", filename,
+                                 fixed = TRUE)
+          ## find the file in the folder
+          fullfilename <- list.files(tcltk::tclvalue(analysis.folder_location.var),
+                                     pattern = searchfilename, full.names = TRUE,
+                                     recursive = TRUE)[1]
+          fullfilename <- gsub("\\\\", "/", fullfilename)
+          open.analysis.file(analysis.file_location = fullfilename)
+  
+        }
+      }
+    }
+    l9.next.but <- tcltk2::tk2button(l9, text = "Next", width = 4,
+                                     command = next.file, underline = "0")
+  
+    show.more.sentences <- function() {
+      ##save scroll position
+      save.scroll.pos <- as.character(tcltk::tkyview(l8.analysis.file.table))[1]
+      ## subtract a value
+      if ((as.numeric(tcltk::tclvalue(sent.count.indicator.var)) + 1) > 0){
+        tcltk::tclvalue(sent.count.indicator.var) <- "0"
+        msg <- paste("Maximum number of sentences to be displayed is reached.",
+                     "No more sentences are available in the analysis file for display")
+        tcltk::tkmessageBox(title = "Sentence display",
+                            type = "ok", icon = "warning",
+                            message = msg)
       } else {
+        tcltk::tclvalue(sent.count.indicator.var) <- as.numeric(tcltk::tclvalue(sent.count.indicator.var)) + 1
+      }
+  
+      ## reload the table
+      if (!(tcltk::tclvalue(jumpto.var) == "")) {
         filename <- gsub("^[^-]*-", "", tcltk::tclvalue(jumpto.var))
         searchfilename <- gsub("+", "[+]", filename,
                                fixed = TRUE)
-        ## find the file in the folder
         fullfilename <- list.files(tcltk::tclvalue(analysis.folder_location.var),
                                    pattern = searchfilename, full.names = TRUE,
                                    recursive = TRUE)[1]
-        fullfilename <- gsub("\\\\", "/", fullfilename)
         open.analysis.file(analysis.file_location = fullfilename)
-      }
-    }
-  }
-  l9.prev.but <- tcltk2::tk2button(l9, text = "Prev", width = 4,
-                                   command = previous.file, underline = "0")
-
-  next.file <- function() {
-
-    if (!tcltk::tclvalue(jumpto.var) == "") {
-      
-      numb = gsub("-.*", "", tcltk::tclvalue(jumpto.var))
-      pos <- as.numeric(numb)
-      ## if the pos smaller than the list
-      if (pos < length(PDE.globals$jumpto.list)){
-        tcltk::tclvalue(jumpto.var) <- PDE.globals$jumpto.list[(pos + 1)]
-      }
-      if (!is.null(PDE.globals$tables.masterlist)) {
-        numb = gsub("-.*", "", tcltk::tclvalue(jumpto.var))
-        pos <- as.numeric(numb)
-        ## test if table exists
-        res <- try(PDE.globals$tables.masterlist[["values_table"]][[pos]],silent = TRUE)
-        if (class(res) != "try-error" && !is.null(res)) {
-          tab <- PDE.globals$tables.masterlist[["values_table"]][[pos]]
-          loc <- PDE.globals$tables.masterlist[["analysis.file_location"]][[pos]]
-          ## highlight search words if highlighting is on
-          hightlighted.tab <- markwords(tab,
-                                        loc, pos)
-          ## update display of sentences
-          display.values_table <- adjust.sent.display(hightlighted.tab)
-
-          fill.table(table = display.values_table,
-                     analysis.file_location = loc)
-          ## match PDF files if pdffolder was chosen
-          if (!tcltk::tclvalue(pdffolder.var) == "") {
-            load.pdffolder(tcltk::tclvalue(pdffolder.var))
-          }
-        } else {
-          loc <- PDE.globals$tables.masterlist[["analysis.file_location"]][[pos]]
-          open.analysis.file(analysis.file_location = loc)
-        }
       } else {
-        filename <- gsub("^[^-]*-", "", tcltk::tclvalue(jumpto.var))
-        searchfilename <- gsub("+", "[+]", filename,
-                               fixed = TRUE)
-        ## find the file in the folder
-        fullfilename <- list.files(tcltk::tclvalue(analysis.folder_location.var),
-                                   pattern = searchfilename, full.names = TRUE,
-                                   recursive = TRUE)[1]
-        fullfilename <- gsub("\\\\", "/", fullfilename)
-        open.analysis.file(analysis.file_location = fullfilename)
-
+        markwords("", "", 0)
       }
+      ## reset scroll position
+      tcltk::tkyview.moveto(l8.analysis.file.table,save.scroll.pos)
     }
-  }
-  l9.next.but <- tcltk2::tk2button(l9, text = "Next", width = 4,
-                                   command = next.file, underline = "0")
-
-  show.more.sentences <- function() {
-    ##save scroll position
-    save.scroll.pos <- as.character(tcltk::tkyview(l8.analysis.file.table))[1]
-    ## subtract a value
-    if ((as.numeric(tcltk::tclvalue(sent.count.indicator.var)) + 1) > 0){
+    l7.show.more.sentences.but  <- tcltk2::tk2button(l7, text = "+",
+                                                     command = show.more.sentences, width = 2)
+  
+    default.sentences <- function() {
+      ##save scroll position
+      save.scroll.pos <- as.character(tcltk::tkyview(l8.analysis.file.table))[1]
+      ## subtract a value
       tcltk::tclvalue(sent.count.indicator.var) <- "0"
-      msg <- paste("Maximum number of sentences to be displayed is reached.",
-                   "No more sentences are available in the analysis file for display")
-      tcltk::tkmessageBox(title = "Sentence display",
-                          type = "ok", icon = "warning",
-                          message = msg)
-    } else {
-      tcltk::tclvalue(sent.count.indicator.var) <- as.numeric(tcltk::tclvalue(sent.count.indicator.var)) + 1
+  
+      ## reload the table
+      if (!(tcltk::tclvalue(jumpto.var) == "")) {
+        filename <- gsub("^[^-]*-", "", tcltk::tclvalue(jumpto.var))
+        searchfilename <- gsub("+", "[+]", filename,
+                               fixed = TRUE)
+        fullfilename <- list.files(tcltk::tclvalue(analysis.folder_location.var),
+                                   pattern = searchfilename, full.names = TRUE,
+                                   recursive = TRUE)[1]
+        open.analysis.file(analysis.file_location = fullfilename)
+      } else {
+        markwords("", "", 0)
+      }
+      ## reset scroll position
+      tcltk::tkyview.moveto(l8.analysis.file.table,save.scroll.pos)
     }
-
-    ## reload the table
-    if (!(tcltk::tclvalue(jumpto.var) == "")) {
-      filename <- gsub("^[^-]*-", "", tcltk::tclvalue(jumpto.var))
-      searchfilename <- gsub("+", "[+]", filename,
-                             fixed = TRUE)
-      fullfilename <- list.files(tcltk::tclvalue(analysis.folder_location.var),
-                                 pattern = searchfilename, full.names = TRUE,
-                                 recursive = TRUE)[1]
-      open.analysis.file(analysis.file_location = fullfilename)
-    } else {
-      markwords("", "", 0)
+    l7.default.sentences.but <- tcltk2::tk2button(l7, text = "o",
+                                                  command = default.sentences, width = 2)
+  
+    show.less.sentences <- function() {
+      ##save scroll position
+      save.scroll.pos <- as.character(tcltk::tkyview(l8.analysis.file.table))[1]
+      ## subtract a value
+      tcltk::tclvalue(sent.count.indicator.var) <- as.numeric(tcltk::tclvalue(sent.count.indicator.var)) - 1
+  
+      ## reload the table
+      if (!(tcltk::tclvalue(jumpto.var) == "")) {
+        filename <- gsub("^[^-]*-", "", tcltk::tclvalue(jumpto.var))
+        searchfilename <- gsub("+", "[+]", filename,
+                               fixed = TRUE)
+        fullfilename <- list.files(tcltk::tclvalue(analysis.folder_location.var),
+                                   pattern = searchfilename, full.names = TRUE,
+                                   recursive = TRUE)[1]
+        open.analysis.file(analysis.file_location = fullfilename)
+      } else {
+        markwords("", "", 0)
+      }
+      ## reset scroll position
+      tcltk::tkyview.moveto(l8.analysis.file.table,save.scroll.pos)
     }
-    ## reset scroll position
-    tcltk::tkyview.moveto(l8.analysis.file.table,save.scroll.pos)
-  }
-  l7.show.more.sentences.but  <- tcltk2::tk2button(l7, text = "+",
-                                                   command = show.more.sentences, width = 2)
-
-  default.sentences <- function() {
-    ##save scroll position
-    save.scroll.pos <- as.character(tcltk::tkyview(l8.analysis.file.table))[1]
-    ## subtract a value
-    tcltk::tclvalue(sent.count.indicator.var) <- "0"
-
-    ## reload the table
-    if (!(tcltk::tclvalue(jumpto.var) == "")) {
-      filename <- gsub("^[^-]*-", "", tcltk::tclvalue(jumpto.var))
-      searchfilename <- gsub("+", "[+]", filename,
-                             fixed = TRUE)
-      fullfilename <- list.files(tcltk::tclvalue(analysis.folder_location.var),
-                                 pattern = searchfilename, full.names = TRUE,
-                                 recursive = TRUE)[1]
-      open.analysis.file(analysis.file_location = fullfilename)
-    } else {
-      markwords("", "", 0)
+    l7.show.less.sentences.but  <- tcltk2::tk2button(l7, text = "-",
+                                                     command = show.less.sentences, width = 2)
+  
+    ## set hotkeys ---------------------------------------------------
+  
+    tcltk::tkbind(ttreader, "<p>", function() previous.file())
+    tcltk::tkbind(ttreader, "<Left>", function() previous.file())
+    tcltk::tkbind(ttreader, "<Up>", function() tcltk::tkyview.scroll(l8.analysis.file.table,
+                                                                     -1, "unit"))
+    tcltk::tkbind(ttreader, "<n>", function() next.file())
+    tcltk::tkbind(ttreader, "<Right>", function() next.file())
+    tcltk::tkbind(ttreader, "<Down>", function() tcltk::tkyview.scroll(l8.analysis.file.table,
+                                                                       1, "unit"))
+    tcltk::tkbind(ttreader, "<f>", function() {
+      if (!tcltk::tclvalue(mark.var) == "") flagfile()
+    })
+    tcltk::tkbind(ttreader, "<space>", function() {
+      if (!tcltk::tclvalue(mark.var) == "") xmarkfile()
+    })
+    tcltk::tkbind(ttreader, "<x>", function() {
+      if (!tcltk::tclvalue(mark.var) == "") xmarkfile()
+    })
+    tcltk::tkbind(ttreader, "<u>", function() {
+      if (!tcltk::tclvalue(mark.var) == "") unmarkfile()
+    })
+    tcltk::tkbind(ttreader, "<o>", function() {
+      if (!tcltk::tclvalue(pdfname.var) == "") openpdf()
+    })
+  
+    change.hotkey.mode <- function() {
+  
+      if (tcltk::tclvalue(hotkey.mode.var) == "standard") {
+        ## change to onehand
+        tcltk::tclvalue(hotkey.mode.var) <- "one hand"
+        ## change underlines
+        tcltk::tkconfigure(l9.prev.but, underline = NA)
+        tcltk::tkconfigure(l9.xmarkfile.but, underline = NA)
+        tcltk::tkconfigure(l9.next.but, underline = NA)
+        ## set no hotkeys
+        tcltk::tkbind(ttreader, "<p>", function() { })
+        tcltk::tkbind(ttreader, "<Left>", function() { })
+        tcltk::tkbind(ttreader, "<Up>", function() { })
+        tcltk::tkbind(ttreader, "<n>", function() { })
+        tcltk::tkbind(ttreader, "<Right>", function() { })
+        tcltk::tkbind(ttreader, "<Down>", function() { })
+        tcltk::tkbind(ttreader, "<x>", function() { })
+        ## set one hand hotkeys right hand
+        tcltk::tkbind(ttreader, "<j>", function() previous.file())
+        tcltk::tkbind(ttreader, "<i>", function() tcltk::tkyview.scroll(l8.analysis.file.table,
+                                                                        -1, "unit"))
+        tcltk::tkbind(ttreader, "<l>", function() next.file())
+        tcltk::tkbind(ttreader, "<k>", function() tcltk::tkyview.scroll(l8.analysis.file.table,
+                                                                        1, "unit"))
+        tcltk::tkbind(ttreader, "<space>", function() {
+          if (!tcltk::tclvalue(mark.var) == "") xmarkfile()
+        })
+        tcltk::tkbind(ttreader, "<h>", function() {
+          if (!tcltk::tclvalue(mark.var) == "") flagfile()
+        })
+        tcltk::tkbind(ttreader, "<u>", function() {
+          if (!tcltk::tclvalue(mark.var) == "") unmarkfile()
+        })
+        tcltk::tkbind(ttreader, "<o>", function() {
+          if (!tcltk::tclvalue(pdfname.var) == "") openpdf()
+        })
+        ## set one hand hotkeys left hand
+        tcltk::tkbind(ttreader, "<a>", function() previous.file())
+        tcltk::tkbind(ttreader, "<w>", function() tcltk::tkyview.scroll(l8.analysis.file.table,
+                                                                        -1, "unit"))
+        tcltk::tkbind(ttreader, "<d>", function() next.file())
+        tcltk::tkbind(ttreader, "<s>", function() tcltk::tkyview.scroll(l8.analysis.file.table,
+                                                                        1, "unit"))
+        tcltk::tkbind(ttreader, "<space>", function() {
+          if (!tcltk::tclvalue(mark.var) == "") xmarkfile()
+        })
+        tcltk::tkbind(ttreader, "<f>", function() {
+          if (!tcltk::tclvalue(mark.var) == "") flagfile()
+        })
+        tcltk::tkbind(ttreader, "<e>", function() {
+          if (!tcltk::tclvalue(mark.var) == "") unmarkfile()
+        })
+        tcltk::tkbind(ttreader, "<q>", function() {
+          if (!tcltk::tclvalue(pdfname.var) == "") openpdf()
+        })
+      } else if (tcltk::tclvalue(hotkey.mode.var) == "one hand") {
+        ## change to onehand
+        tcltk::tclvalue(hotkey.mode.var) <- "oh + std"
+        ## change underlines
+        tcltk::tkconfigure(l4.openpdf.but, underline = "0")
+        tcltk::tkconfigure(l9.prev.but, underline = "0")
+        tcltk::tkconfigure(l9.flagfile.but, underline = "0")
+        tcltk::tkconfigure(l9.xmarkfile.but, underline = "0")
+        tcltk::tkconfigure(l9.unmarkfile.but, underline = "0")
+        tcltk::tkconfigure(l9.next.but, underline = "0")
+        ## set standard hotkeys
+        tcltk::tkbind(ttreader, "<p>", function() previous.file())
+        tcltk::tkbind(ttreader, "<Left>", function() previous.file())
+        tcltk::tkbind(ttreader, "<Up>", function() tcltk::tkyview.scroll(l8.analysis.file.table,
+                                                                         -1, "unit"))
+        tcltk::tkbind(ttreader, "<n>", function() next.file())
+        tcltk::tkbind(ttreader, "<Right>", function() next.file())
+        tcltk::tkbind(ttreader, "<Down>", function() tcltk::tkyview.scroll(l8.analysis.file.table,
+                                                                           1, "unit"))
+        tcltk::tkbind(ttreader, "<x>", function() {
+          if (!tcltk::tclvalue(mark.var) == "") xmarkfile()
+        })
+        ## set one hand hotkeys right hand
+        tcltk::tkbind(ttreader, "<j>", function() previous.file())
+        tcltk::tkbind(ttreader, "<i>", function() tcltk::tkyview.scroll(l8.analysis.file.table,
+                                                                        -1, "unit"))
+        tcltk::tkbind(ttreader, "<l>", function() next.file())
+        tcltk::tkbind(ttreader, "<k>", function() tcltk::tkyview.scroll(l8.analysis.file.table,
+                                                                        1, "unit"))
+        tcltk::tkbind(ttreader, "<space>", function() {
+          if (!tcltk::tclvalue(mark.var) == "") xmarkfile()
+        })
+        tcltk::tkbind(ttreader, "<h>", function() {
+          if (!tcltk::tclvalue(mark.var) == "") flagfile()
+        })
+        tcltk::tkbind(ttreader, "<u>", function() {
+          if (!tcltk::tclvalue(mark.var) == "") unmarkfile()
+        })
+        tcltk::tkbind(ttreader, "<o>", function() {
+          if (!tcltk::tclvalue(pdfname.var) == "") openpdf()
+        })
+        ## set one hand hotkeys left hand
+        tcltk::tkbind(ttreader, "<a>", function() previous.file())
+        tcltk::tkbind(ttreader, "<w>", function() tcltk::tkyview.scroll(l8.analysis.file.table,
+                                                                        -1, "unit"))
+        tcltk::tkbind(ttreader, "<d>", function() next.file())
+        tcltk::tkbind(ttreader, "<s>", function() tcltk::tkyview.scroll(l8.analysis.file.table,
+                                                                        1, "unit"))
+        tcltk::tkbind(ttreader, "<space>", function() {
+          if (!tcltk::tclvalue(mark.var) == "") xmarkfile()
+        })
+        tcltk::tkbind(ttreader, "<f>", function() {
+          if (!tcltk::tclvalue(mark.var) == "") flagfile()
+        })
+        tcltk::tkbind(ttreader, "<e>", function() {
+          if (!tcltk::tclvalue(mark.var) == "") unmarkfile()
+        })
+        tcltk::tkbind(ttreader, "<q>", function() {
+          if (!tcltk::tclvalue(pdfname.var) == "") openpdf()
+        })
+      } else if (tcltk::tclvalue(hotkey.mode.var) == "oh + std") {
+        ## change to onehand
+        tcltk::tclvalue(hotkey.mode.var) <- "no hotkey"
+        ## change underlines
+        tcltk::tkconfigure(l4.openpdf.but, underline = NA)
+        tcltk::tkconfigure(l9.prev.but, underline = NA)
+        tcltk::tkconfigure(l9.flagfile.but, underline = NA)
+        tcltk::tkconfigure(l9.xmarkfile.but, underline = NA)
+        tcltk::tkconfigure(l9.unmarkfile.but, underline = NA)
+        tcltk::tkconfigure(l9.next.but, underline = NA)
+        ## set no hotkeys
+        tcltk::tkbind(ttreader, "<p>", function() { })
+        tcltk::tkbind(ttreader, "<Left>", function() { })
+        tcltk::tkbind(ttreader, "<Up>", function() { })
+        tcltk::tkbind(ttreader, "<n>", function() { })
+        tcltk::tkbind(ttreader, "<Right>", function() { })
+        tcltk::tkbind(ttreader, "<Down>", function() { })
+        tcltk::tkbind(ttreader, "<f>", function() { })
+        tcltk::tkbind(ttreader, "<space>", function() { })
+        tcltk::tkbind(ttreader, "<x>", function() { })
+        tcltk::tkbind(ttreader, "<u>", function() { })
+        tcltk::tkbind(ttreader, "<o>", function() { })
+        ## reset one hand hotkeys right hand
+        tcltk::tkbind(ttreader, "<j>", function() { })
+        tcltk::tkbind(ttreader, "<i>", function() { })
+        tcltk::tkbind(ttreader, "<l>", function() { })
+        tcltk::tkbind(ttreader, "<k>", function() { })
+        tcltk::tkbind(ttreader, "<h>", function() { })
+        ## reset one hand hotkeys left hand
+        tcltk::tkbind(ttreader, "<a>", function() { })
+        tcltk::tkbind(ttreader, "<w>", function() { })
+        tcltk::tkbind(ttreader, "<d>", function() { })
+        tcltk::tkbind(ttreader, "<s>", function() { })
+        tcltk::tkbind(ttreader, "<e>", function() { })
+        tcltk::tkbind(ttreader, "<q>", function() { })
+      } else if (tcltk::tclvalue(hotkey.mode.var) == "no hotkey") {
+        ## change to onehand
+        tcltk::tclvalue(hotkey.mode.var) <- "standard"
+        ## change underlines
+        tcltk::tkconfigure(l4.openpdf.but, underline = "0")
+        tcltk::tkconfigure(l9.prev.but, underline = "0")
+        tcltk::tkconfigure(l9.flagfile.but, underline = "0")
+        tcltk::tkconfigure(l9.xmarkfile.but, underline = "0")
+        tcltk::tkconfigure(l9.unmarkfile.but, underline = "0")
+        tcltk::tkconfigure(l9.next.but, underline = "0")
+        ## set standard hotkeys
+        tcltk::tkbind(ttreader, "<p>", function() previous.file())
+        tcltk::tkbind(ttreader, "<Left>", function() previous.file())
+        tcltk::tkbind(ttreader, "<Up>", function() tcltk::tkyview.scroll(l8.analysis.file.table,
+                                                                         -1, "unit"))
+        tcltk::tkbind(ttreader, "<n>", function() next.file())
+        tcltk::tkbind(ttreader, "<Right>", function() next.file())
+        tcltk::tkbind(ttreader, "<Down>", function() tcltk::tkyview.scroll(l8.analysis.file.table,
+                                                                           1, "unit"))
+        tcltk::tkbind(ttreader, "<f>", function() {
+          if (!tcltk::tclvalue(mark.var) == "")
+            flagfile()
+        })
+        tcltk::tkbind(ttreader, "<space>", function() {
+          if (!tcltk::tclvalue(mark.var) == "")
+            xmarkfile()
+        })
+        tcltk::tkbind(ttreader, "<x>", function() {
+          if (!tcltk::tclvalue(mark.var) == "")
+            xmarkfile()
+        })
+        tcltk::tkbind(ttreader, "<u>", function() {
+          if (!tcltk::tclvalue(mark.var) == "")
+            unmarkfile()
+        })
+        tcltk::tkbind(ttreader, "<o>", function() {
+          if (!tcltk::tclvalue(pdfname.var) == "")
+            openpdf()
+        })
+      }
+      ## update button caption
+      tcltk::tkconfigure(l6.hotkey.but, text = tcltk::tclvalue(hotkey.mode.var))
     }
-    ## reset scroll position
-    tcltk::tkyview.moveto(l8.analysis.file.table,save.scroll.pos)
-  }
-  l7.default.sentences.but <- tcltk2::tk2button(l7, text = "o",
-                                                command = default.sentences, width = 2)
-
-  show.less.sentences <- function() {
-    ##save scroll position
-    save.scroll.pos <- as.character(tcltk::tkyview(l8.analysis.file.table))[1]
-    ## subtract a value
-    tcltk::tclvalue(sent.count.indicator.var) <- as.numeric(tcltk::tclvalue(sent.count.indicator.var)) - 1
-
-    ## reload the table
-    if (!(tcltk::tclvalue(jumpto.var) == "")) {
-      filename <- gsub("^[^-]*-", "", tcltk::tclvalue(jumpto.var))
-      searchfilename <- gsub("+", "[+]", filename,
-                             fixed = TRUE)
-      fullfilename <- list.files(tcltk::tclvalue(analysis.folder_location.var),
-                                 pattern = searchfilename, full.names = TRUE,
-                                 recursive = TRUE)[1]
-      open.analysis.file(analysis.file_location = fullfilename)
-    } else {
-      markwords("", "", 0)
-    }
-    ## reset scroll position
-    tcltk::tkyview.moveto(l8.analysis.file.table,save.scroll.pos)
-  }
-  l7.show.less.sentences.but  <- tcltk2::tk2button(l7, text = "-",
-                                                   command = show.less.sentences, width = 2)
-
-  ## set hotkeys ---------------------------------------------------
-
-  tcltk::tkbind(ttreader, "<p>", function() previous.file())
-  tcltk::tkbind(ttreader, "<Left>", function() previous.file())
-  tcltk::tkbind(ttreader, "<Up>", function() tcltk::tkyview.scroll(l8.analysis.file.table,
-                                                                   -1, "unit"))
-  tcltk::tkbind(ttreader, "<n>", function() next.file())
-  tcltk::tkbind(ttreader, "<Right>", function() next.file())
-  tcltk::tkbind(ttreader, "<Down>", function() tcltk::tkyview.scroll(l8.analysis.file.table,
-                                                                     1, "unit"))
-  tcltk::tkbind(ttreader, "<f>", function() {
-    if (!tcltk::tclvalue(mark.var) == "") flagfile()
-  })
-  tcltk::tkbind(ttreader, "<space>", function() {
-    if (!tcltk::tclvalue(mark.var) == "") xmarkfile()
-  })
-  tcltk::tkbind(ttreader, "<x>", function() {
-    if (!tcltk::tclvalue(mark.var) == "") xmarkfile()
-  })
-  tcltk::tkbind(ttreader, "<u>", function() {
-    if (!tcltk::tclvalue(mark.var) == "") unmarkfile()
-  })
-  tcltk::tkbind(ttreader, "<o>", function() {
-    if (!tcltk::tclvalue(pdfname.var) == "") openpdf()
-  })
-
-  change.hotkey.mode <- function() {
-
-    if (tcltk::tclvalue(hotkey.mode.var) == "standard") {
-      ## change to onehand
-      tcltk::tclvalue(hotkey.mode.var) <- "one hand"
-      ## change underlines
-      tcltk::tkconfigure(l9.prev.but, underline = NA)
-      tcltk::tkconfigure(l9.xmarkfile.but, underline = NA)
-      tcltk::tkconfigure(l9.next.but, underline = NA)
-      ## set no hotkeys
-      tcltk::tkbind(ttreader, "<p>", function() { })
-      tcltk::tkbind(ttreader, "<Left>", function() { })
-      tcltk::tkbind(ttreader, "<Up>", function() { })
-      tcltk::tkbind(ttreader, "<n>", function() { })
-      tcltk::tkbind(ttreader, "<Right>", function() { })
-      tcltk::tkbind(ttreader, "<Down>", function() { })
-      tcltk::tkbind(ttreader, "<x>", function() { })
-      ## set one hand hotkeys right hand
-      tcltk::tkbind(ttreader, "<j>", function() previous.file())
-      tcltk::tkbind(ttreader, "<i>", function() tcltk::tkyview.scroll(l8.analysis.file.table,
-                                                                      -1, "unit"))
-      tcltk::tkbind(ttreader, "<l>", function() next.file())
-      tcltk::tkbind(ttreader, "<k>", function() tcltk::tkyview.scroll(l8.analysis.file.table,
-                                                                      1, "unit"))
-      tcltk::tkbind(ttreader, "<space>", function() {
-        if (!tcltk::tclvalue(mark.var) == "") xmarkfile()
-      })
-      tcltk::tkbind(ttreader, "<h>", function() {
-        if (!tcltk::tclvalue(mark.var) == "") flagfile()
-      })
-      tcltk::tkbind(ttreader, "<u>", function() {
-        if (!tcltk::tclvalue(mark.var) == "") unmarkfile()
-      })
-      tcltk::tkbind(ttreader, "<o>", function() {
-        if (!tcltk::tclvalue(pdfname.var) == "") openpdf()
-      })
-      ## set one hand hotkeys left hand
-      tcltk::tkbind(ttreader, "<a>", function() previous.file())
-      tcltk::tkbind(ttreader, "<w>", function() tcltk::tkyview.scroll(l8.analysis.file.table,
-                                                                      -1, "unit"))
-      tcltk::tkbind(ttreader, "<d>", function() next.file())
-      tcltk::tkbind(ttreader, "<s>", function() tcltk::tkyview.scroll(l8.analysis.file.table,
-                                                                      1, "unit"))
-      tcltk::tkbind(ttreader, "<space>", function() {
-        if (!tcltk::tclvalue(mark.var) == "") xmarkfile()
-      })
-      tcltk::tkbind(ttreader, "<f>", function() {
-        if (!tcltk::tclvalue(mark.var) == "") flagfile()
-      })
-      tcltk::tkbind(ttreader, "<e>", function() {
-        if (!tcltk::tclvalue(mark.var) == "") unmarkfile()
-      })
-      tcltk::tkbind(ttreader, "<q>", function() {
-        if (!tcltk::tclvalue(pdfname.var) == "") openpdf()
-      })
-    } else if (tcltk::tclvalue(hotkey.mode.var) == "one hand") {
-      ## change to onehand
-      tcltk::tclvalue(hotkey.mode.var) <- "oh + std"
-      ## change underlines
-      tcltk::tkconfigure(l4.openpdf.but, underline = "0")
-      tcltk::tkconfigure(l9.prev.but, underline = "0")
-      tcltk::tkconfigure(l9.flagfile.but, underline = "0")
-      tcltk::tkconfigure(l9.xmarkfile.but, underline = "0")
-      tcltk::tkconfigure(l9.unmarkfile.but, underline = "0")
-      tcltk::tkconfigure(l9.next.but, underline = "0")
-      ## set standard hotkeys
-      tcltk::tkbind(ttreader, "<p>", function() previous.file())
-      tcltk::tkbind(ttreader, "<Left>", function() previous.file())
-      tcltk::tkbind(ttreader, "<Up>", function() tcltk::tkyview.scroll(l8.analysis.file.table,
-                                                                       -1, "unit"))
-      tcltk::tkbind(ttreader, "<n>", function() next.file())
-      tcltk::tkbind(ttreader, "<Right>", function() next.file())
-      tcltk::tkbind(ttreader, "<Down>", function() tcltk::tkyview.scroll(l8.analysis.file.table,
-                                                                         1, "unit"))
-      tcltk::tkbind(ttreader, "<x>", function() {
-        if (!tcltk::tclvalue(mark.var) == "") xmarkfile()
-      })
-      ## set one hand hotkeys right hand
-      tcltk::tkbind(ttreader, "<j>", function() previous.file())
-      tcltk::tkbind(ttreader, "<i>", function() tcltk::tkyview.scroll(l8.analysis.file.table,
-                                                                      -1, "unit"))
-      tcltk::tkbind(ttreader, "<l>", function() next.file())
-      tcltk::tkbind(ttreader, "<k>", function() tcltk::tkyview.scroll(l8.analysis.file.table,
-                                                                      1, "unit"))
-      tcltk::tkbind(ttreader, "<space>", function() {
-        if (!tcltk::tclvalue(mark.var) == "") xmarkfile()
-      })
-      tcltk::tkbind(ttreader, "<h>", function() {
-        if (!tcltk::tclvalue(mark.var) == "") flagfile()
-      })
-      tcltk::tkbind(ttreader, "<u>", function() {
-        if (!tcltk::tclvalue(mark.var) == "") unmarkfile()
-      })
-      tcltk::tkbind(ttreader, "<o>", function() {
-        if (!tcltk::tclvalue(pdfname.var) == "") openpdf()
-      })
-      ## set one hand hotkeys left hand
-      tcltk::tkbind(ttreader, "<a>", function() previous.file())
-      tcltk::tkbind(ttreader, "<w>", function() tcltk::tkyview.scroll(l8.analysis.file.table,
-                                                                      -1, "unit"))
-      tcltk::tkbind(ttreader, "<d>", function() next.file())
-      tcltk::tkbind(ttreader, "<s>", function() tcltk::tkyview.scroll(l8.analysis.file.table,
-                                                                      1, "unit"))
-      tcltk::tkbind(ttreader, "<space>", function() {
-        if (!tcltk::tclvalue(mark.var) == "") xmarkfile()
-      })
-      tcltk::tkbind(ttreader, "<f>", function() {
-        if (!tcltk::tclvalue(mark.var) == "") flagfile()
-      })
-      tcltk::tkbind(ttreader, "<e>", function() {
-        if (!tcltk::tclvalue(mark.var) == "") unmarkfile()
-      })
-      tcltk::tkbind(ttreader, "<q>", function() {
-        if (!tcltk::tclvalue(pdfname.var) == "") openpdf()
-      })
-    } else if (tcltk::tclvalue(hotkey.mode.var) == "oh + std") {
-      ## change to onehand
-      tcltk::tclvalue(hotkey.mode.var) <- "no hotkey"
-      ## change underlines
-      tcltk::tkconfigure(l4.openpdf.but, underline = NA)
-      tcltk::tkconfigure(l9.prev.but, underline = NA)
-      tcltk::tkconfigure(l9.flagfile.but, underline = NA)
-      tcltk::tkconfigure(l9.xmarkfile.but, underline = NA)
-      tcltk::tkconfigure(l9.unmarkfile.but, underline = NA)
-      tcltk::tkconfigure(l9.next.but, underline = NA)
-      ## set no hotkeys
-      tcltk::tkbind(ttreader, "<p>", function() { })
-      tcltk::tkbind(ttreader, "<Left>", function() { })
-      tcltk::tkbind(ttreader, "<Up>", function() { })
-      tcltk::tkbind(ttreader, "<n>", function() { })
-      tcltk::tkbind(ttreader, "<Right>", function() { })
-      tcltk::tkbind(ttreader, "<Down>", function() { })
-      tcltk::tkbind(ttreader, "<f>", function() { })
-      tcltk::tkbind(ttreader, "<space>", function() { })
-      tcltk::tkbind(ttreader, "<x>", function() { })
-      tcltk::tkbind(ttreader, "<u>", function() { })
-      tcltk::tkbind(ttreader, "<o>", function() { })
-      ## reset one hand hotkeys right hand
-      tcltk::tkbind(ttreader, "<j>", function() { })
-      tcltk::tkbind(ttreader, "<i>", function() { })
-      tcltk::tkbind(ttreader, "<l>", function() { })
-      tcltk::tkbind(ttreader, "<k>", function() { })
-      tcltk::tkbind(ttreader, "<h>", function() { })
-      ## reset one hand hotkeys left hand
-      tcltk::tkbind(ttreader, "<a>", function() { })
-      tcltk::tkbind(ttreader, "<w>", function() { })
-      tcltk::tkbind(ttreader, "<d>", function() { })
-      tcltk::tkbind(ttreader, "<s>", function() { })
-      tcltk::tkbind(ttreader, "<e>", function() { })
-      tcltk::tkbind(ttreader, "<q>", function() { })
-    } else if (tcltk::tclvalue(hotkey.mode.var) == "no hotkey") {
-      ## change to onehand
-      tcltk::tclvalue(hotkey.mode.var) <- "standard"
-      ## change underlines
-      tcltk::tkconfigure(l4.openpdf.but, underline = "0")
-      tcltk::tkconfigure(l9.prev.but, underline = "0")
-      tcltk::tkconfigure(l9.flagfile.but, underline = "0")
-      tcltk::tkconfigure(l9.xmarkfile.but, underline = "0")
-      tcltk::tkconfigure(l9.unmarkfile.but, underline = "0")
-      tcltk::tkconfigure(l9.next.but, underline = "0")
-      ## set standard hotkeys
-      tcltk::tkbind(ttreader, "<p>", function() previous.file())
-      tcltk::tkbind(ttreader, "<Left>", function() previous.file())
-      tcltk::tkbind(ttreader, "<Up>", function() tcltk::tkyview.scroll(l8.analysis.file.table,
-                                                                       -1, "unit"))
-      tcltk::tkbind(ttreader, "<n>", function() next.file())
-      tcltk::tkbind(ttreader, "<Right>", function() next.file())
-      tcltk::tkbind(ttreader, "<Down>", function() tcltk::tkyview.scroll(l8.analysis.file.table,
-                                                                         1, "unit"))
-      tcltk::tkbind(ttreader, "<f>", function() {
-        if (!tcltk::tclvalue(mark.var) == "")
-          flagfile()
-      })
-      tcltk::tkbind(ttreader, "<space>", function() {
-        if (!tcltk::tclvalue(mark.var) == "")
-          xmarkfile()
-      })
-      tcltk::tkbind(ttreader, "<x>", function() {
-        if (!tcltk::tclvalue(mark.var) == "")
-          xmarkfile()
-      })
-      tcltk::tkbind(ttreader, "<u>", function() {
-        if (!tcltk::tclvalue(mark.var) == "")
-          unmarkfile()
-      })
-      tcltk::tkbind(ttreader, "<o>", function() {
-        if (!tcltk::tclvalue(pdfname.var) == "")
-          openpdf()
-      })
-    }
-    ## update button caption
-    tcltk::tkconfigure(l6.hotkey.but, text = tcltk::tclvalue(hotkey.mode.var))
-  }
-
-  l6.hotkey.but <- tcltk2::tk2button(l6, text = tcltk::tclvalue(hotkey.mode.var),
-                                     width = 8, command = change.hotkey.mode)
-
-  ## How the form looks --------------------------------------------
-
-  ## top ----------------------------------------------------------
-  tcltk::tkpack(l1.open.analysis.file.but, l1.load.analysis.folder.but,
-                l1.save.memory.but, l1.load.memory.but, side = "left",
-                pady = 2, padx = 2)
-  tcltk::tkpack(l1.progress.bar.pb, expand = TRUE, fill = "x",
-                side = "left", pady = 2, padx = 2)
-  tcltk::tkpack(l1.progress.label, l1.reset.but, side = "left",
-                pady = 2, padx = 2)
-  tcltk::tkpack(l2.tsv.onoff.but, side = "left", pady = 2,
-                padx = 5)
-  tcltk::tkpack(l2.tsv.loadall.but, side = "left", pady = 2,
-                padx = 0)
-  tcltk::tkpack(l2.loadtsv.entry, expand = TRUE, fill = "x",
-                side = "left", pady = 2, padx = 5)
-  tcltk::tkpack(l2.loadtsv.but, side = "left", pady = 2,
-                padx = 5)
-  tcltk::tkpack(l3.pdffolder.entry, expand = TRUE, fill = "x",
-                side = "left", pady = 2, padx = 5)
-  tcltk::tkpack(l3.loadpdffolder.but, side = "left", pady = 2,
-                padx = 5)
-  tcltk::tkpack(l4.pdfname.entry, expand = TRUE, fill = "x",
-                side = "left", pady = 2, padx = 5)
-  tcltk::tkpack(l4.openpdf.but, l4.extract.table.but,
-                side = "left", pady = 2, padx = 5)
-  tcltk::tkpack(l5.jumpto.label, side = "left", pady = 2,
-                padx = 5)
-  tcltk::tkpack(l5.jumpto.cb, expand = TRUE, fill = "x",
-                side = "left", pady = 2, padx = 5)
-  tcltk::tkpack(l1, l2, l3, l4, l5, side = "top",
-                anchor = "nw", fill = "x")
-  tcltk::tkpack(top, side = "top", fill = "x")
-
-  ## mid -------------------------------------------------
-  tcltk::tkpack(l6.caption.label, side = "left", pady = 2,
-                padx = 20, anchor = "nw")
-  tcltk::tkpack(l6.font.label, l6.smaller.font.but, l6.default.font.but,
-                l6.larger.font.but, side = "left", pady = 2)
-  tcltk::tkpack(l6.hotkey.mode.label, side = "left", padx = 5,
-                pady = 2)
-  tcltk::tkpack(l6.hotkey.but, side = "left", pady = 2)
-  tcltk::tkpack(l6.no.wrap.rb, l6.nowrap.label, l6.wrap.rb,
-                l6.wrap.label, side = "right", pady = 2)
-  tcltk::tkpack(l7.sentence.number.label, l7.show.less.sentences.but,
-                l7.default.sentences.but, l7.show.more.sentences.but,
-                l7.txtcontent.only.cb,
-                l7.collapse.abbrev.cb,
-                side = "left", pady = 2)
-  tcltk::tkpack(l8.analysis.file.table, side = "left", expand = TRUE,
-                fill = "both", pady = 2)
-  tcltk::tkpack(scroll.y, side = "left", fill = "y", pady = 2)
-  tcltk::tkpack(l6, l7, side = "top", fill = "both")
-  tcltk::tkpack(l8, side = "top", expand = TRUE, fill = "both")
-  tcltk::tkpack(mid, side = "top", expand = TRUE, fill = "both")
-
-  ## bottom -------------------------------------------------
-  tcltk::tkpack(l9.prev.but, expand = TRUE, fill = "x",
-                side = "left", pady = 2, padx = 5)
-  tcltk::tkpack(l9.mark.cb, l9.flagfile.but, l9.xmarkfile.but,
-                l9.unmarkfile.but, side = "left", pady = 2,
-                padx = 5)
-  tcltk::tkpack(l9.next.but, expand = TRUE, fill = "x",
-                side = "left", pady = 2, padx = 5)
-  tcltk::tkpack(l9, side = "top", anchor = "nw", fill = "x")
-
-  tcltk::tkpack(bot, side = "top", fill = "x")
-
-  tcltk::tkfocus(ttreader)
-  tcltk::tkraise(ttreader)
-  tcltk::tcl("update")
-
-  ## default font size --------------------------------------
-  current.font <- as.numeric(tcltk::tkfont.actual("TkDefaultFont",
-                                                  "-size"))
-  if (current.font < 2)
-    current.font <- 10
-  defaultfontsize.var <- tcltk::tclVar(current.font)
-  fontsize.var <- tcltk::tclVar(current.font)
-  tcltk::tkfocus(ttreader)
-  tcltk::tkraise(ttreader)
+  
+    l6.hotkey.but <- tcltk2::tk2button(l6, text = tcltk::tclvalue(hotkey.mode.var),
+                                       width = 8, command = change.hotkey.mode)
+  
+    ## How the form looks --------------------------------------------
+  
+    ## top ----------------------------------------------------------
+    tcltk::tkpack(l1.open.analysis.file.but, l1.load.analysis.folder.but,
+                  l1.save.memory.but, l1.load.memory.but, side = "left",
+                  pady = 2, padx = 2)
+    tcltk::tkpack(l1.progress.bar.pb, expand = TRUE, fill = "x",
+                  side = "left", pady = 2, padx = 2)
+    tcltk::tkpack(l1.progress.label, l1.reset.but, side = "left",
+                  pady = 2, padx = 2)
+    tcltk::tkpack(l2.tsv.onoff.but, side = "left", pady = 2,
+                  padx = 5)
+    tcltk::tkpack(l2.tsv.loadall.but, side = "left", pady = 2,
+                  padx = 0)
+    tcltk::tkpack(l2.loadtsv.entry, expand = TRUE, fill = "x",
+                  side = "left", pady = 2, padx = 5)
+    tcltk::tkpack(l2.loadtsv.but, side = "left", pady = 2,
+                  padx = 5)
+    tcltk::tkpack(l3.pdffolder.entry, expand = TRUE, fill = "x",
+                  side = "left", pady = 2, padx = 5)
+    tcltk::tkpack(l3.loadpdffolder.but, side = "left", pady = 2,
+                  padx = 5)
+    tcltk::tkpack(l4.pdfname.entry, expand = TRUE, fill = "x",
+                  side = "left", pady = 2, padx = 5)
+    tcltk::tkpack(l4.openpdf.but, l4.extract.table.but,
+                  side = "left", pady = 2, padx = 5)
+    tcltk::tkpack(l5.jumpto.label, side = "left", pady = 2,
+                  padx = 5)
+    tcltk::tkpack(l5.jumpto.cb, expand = TRUE, fill = "x",
+                  side = "left", pady = 2, padx = 5)
+    tcltk::tkpack(l1, l2, l3, l4, l5, side = "top",
+                  anchor = "nw", fill = "x")
+    tcltk::tkpack(top, side = "top", fill = "x")
+  
+    ## mid -------------------------------------------------
+    tcltk::tkpack(l6.caption.label, side = "left", pady = 2,
+                  padx = 20, anchor = "nw")
+    tcltk::tkpack(l6.font.label, l6.smaller.font.but, l6.default.font.but,
+                  l6.larger.font.but, side = "left", pady = 2)
+    tcltk::tkpack(l6.hotkey.mode.label, side = "left", padx = 5,
+                  pady = 2)
+    tcltk::tkpack(l6.hotkey.but, side = "left", pady = 2)
+    tcltk::tkpack(l6.no.wrap.rb, l6.nowrap.label, l6.wrap.rb,
+                  l6.wrap.label, side = "right", pady = 2)
+    tcltk::tkpack(l7.sentence.number.label, l7.show.less.sentences.but,
+                  l7.default.sentences.but, l7.show.more.sentences.but,
+                  l7.txtcontent.only.cb,
+                  l7.collapse.abbrev.cb,
+                  side = "left", pady = 2)
+    tcltk::tkpack(l8.analysis.file.table, side = "left", expand = TRUE,
+                  fill = "both", pady = 2)
+    tcltk::tkpack(scroll.y, side = "left", fill = "y", pady = 2)
+    tcltk::tkpack(l6, l7, side = "top", fill = "both")
+    tcltk::tkpack(l8, side = "top", expand = TRUE, fill = "both")
+    tcltk::tkpack(mid, side = "top", expand = TRUE, fill = "both")
+  
+    ## bottom -------------------------------------------------
+    tcltk::tkpack(l9.prev.but, expand = TRUE, fill = "x",
+                  side = "left", pady = 2, padx = 5)
+    tcltk::tkpack(l9.mark.cb, l9.flagfile.but, l9.xmarkfile.but,
+                  l9.unmarkfile.but, side = "left", pady = 2,
+                  padx = 5)
+    tcltk::tkpack(l9.next.but, expand = TRUE, fill = "x",
+                  side = "left", pady = 2, padx = 5)
+    tcltk::tkpack(l9, side = "top", anchor = "nw", fill = "x")
+  
+    tcltk::tkpack(bot, side = "top", fill = "x")
+  
+    tcltk::tkfocus(ttreader)
+    tcltk::tkraise(ttreader)
+    tcltk::tcl("update")
+  
+    ## default font size --------------------------------------
+    current.font <- as.numeric(tcltk::tkfont.actual("TkDefaultFont",
+                                                    "-size"))
+    if (current.font < 2)
+      current.font <- 10
+    defaultfontsize.var <- tcltk::tclVar(current.font)
+    fontsize.var <- tcltk::tclVar(current.font)
+    tcltk::tkfocus(ttreader)
+    tcltk::tkraise(ttreader)
+  } ## end tcltk test
 }

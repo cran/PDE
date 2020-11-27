@@ -1,3 +1,7 @@
+# PDE 1.1.2
+* Changed whereis command for Solaris OS again
+* Fixed tcltk issue for old mac versions
+
 # PDE 1.1.1
 * Changed whereis command for Solaris OS for PDE_check_Xpdf_install() function
 
