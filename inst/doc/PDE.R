@@ -1,17 +1,20 @@
 ## ---- out.width = "50%", fig.align = "center", echo = FALSE-------------------
-knitr::include_graphics("scrnshots/Screenshot_PDE_analyzer_user_interface_empty_mac.png")
+knitr::include_graphics("scrnshots/Screenshot_PDE_analyzer_user_interface_empty_linux.png")
 
 ## ---- out.width = "50%", fig.align = "center", echo = FALSE-------------------
-knitr::include_graphics("scrnshots/Screenshot_PDE_reader_user_interface_empty_linux.png")
-
-## ---- out.width = "75%", fig.align = "center", echo = FALSE-------------------
-knitr::include_graphics("scrnshots/Screenshot_PDE_analyzer_user_interface_empty_win.png")
+knitr::include_graphics("scrnshots/Screenshot_PDE_reader_user_interface_empty_mac.png")
 
 ## ---- out.width = "100%", fig.align = "center", echo = FALSE------------------
 knitr::include_graphics("scrnshots/Screenshot_PDE_analyzer_user_interface.choose_variables_empty.png")
 
 ## ---- out.width = "100%", fig.align = "center", echo = FALSE------------------
-knitr::include_graphics("scrnshots/Screenshot_PDE_analyzer_user_interface.input_output_empty.png")
+knitr::include_graphics("scrnshots/Screenshot_PDE_analyzer_user_interface_empty_win.png")
+
+## ---- out.width = "100%", fig.align = "center", echo = FALSE------------------
+knitr::include_graphics("scrnshots/Screenshot_PDE_analyzer_user_interface.search_words_empty.png")
+
+## ---- out.width = "100%", fig.align = "center", echo = FALSE------------------
+knitr::include_graphics("scrnshots/Screenshot_PDE_analyzer_user_interface.filter_words_empty.png")
 
 ## ---- out.width = "100%", fig.align = "center", echo = FALSE------------------
 knitr::include_graphics("scrnshots/Screenshot_PDE_analyzer_user_interface.parameters_empty.png")
@@ -35,7 +38,7 @@ knitr::include_graphics("scrnshots/Screenshot_PDE_reader_user_interface.browse_a
 knitr::include_graphics("scrnshots/Screenshot_PDE_analyzer_user_interface_MTX_example.png")
 
 ## ---- out.width = "100%", fig.align = "center", echo = FALSE------------------
-knitr::include_graphics("scrnshots/Screenshot_PDE_analyzer_user_interface.input_output_MTX_example.png")
+knitr::include_graphics("scrnshots/Screenshot_PDE_analyzer_user_interface_MTX_example.png")
 
 ## ---- out.width = "100%", fig.align = "center", echo = FALSE------------------
 knitr::include_graphics("scrnshots/Screenshot_PDE_analyzer_user_interface.parameters_MTX_example.png")

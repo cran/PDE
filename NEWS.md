@@ -1,3 +1,20 @@
+# PDE 1.2.1
+* Removed LazyLoad: true due to new policies concerning non-existing data path
+* changed https://rstudio.com/wp-content/uploads/2016/09/RegExCheatsheet.pdf to https://www.rstudio.com/wp-content/uploads/2016/09/RegExCheatsheet.pdf
+
+# PDE 1.2.0
+* Added tabs to easier navigate the PDE_analyzer_i() interface
+* Removed PDE_install_XpdfReader4.02()
+* Deprecated PDE_path() (use system.file(package = "PDE") instead)
+* changed standard settings to table extraction without search words
+* changed default exp.nondetc.tabs, write.tab.doc.file, and write.txt.doc.file to TRUE
+* Added remove_backref(x) function to process tables that have strings identified as 
+backreferences such \1 or \0 in their heading
+* added export of indicator file in the table folder if table was detected but could not be processed
+* fixed the interpretation of elements in HTML version of the PDF file, which do not have positional 
+(left & top) information
+* several other bug fixes
+
 # PDE 1.1.2
 * Changed whereis command for Solaris OS again
 * Fixed tcltk issue for old mac versions
