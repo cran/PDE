@@ -29,7 +29,7 @@ PDE_pdfs2txt_searchandfilter(
 \item{filter.words}{List of strings. The list of filter words. If not
 \code{NA} or \code{""} a hit will be counted every time a word from the list
 is detected in the article. Regex rules apply (see also
-\url{https://www.rstudio.com/wp-content/uploads/2016/09/RegExCheatsheet.pdf}).
+\url{https://github.com/rstudio/cheatsheets/raw/master/regex.pdf}).
  Default: \code{""}.}
 
 \item{ignore.case.fw}{Logical. Are the filter words case-sensitive (does
@@ -40,7 +40,7 @@ capitalization matter)? Default: \code{FALSE}.}
 
 \item{search.words}{List of strings. List of search words. Regex rules apply (see
 also
-\url{https://www.rstudio.com/wp-content/uploads/2016/09/RegExCheatsheet.pdf}).}
+\url{https://github.com/rstudio/cheatsheets/raw/master/regex.pdf}).}
 
 \item{ignore.case.sw}{Logical. Are the search words case-sensitive (does
 capitalization matter)? Default: \code{FALSE}.}

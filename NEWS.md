@@ -1,3 +1,9 @@
+# PDE 1.3.0
+* Updated link to xpdf tools 4.2.0
+* Corrected multibyte error for PDE_reader_i()
+* Added display of output table to PDE_analyzer_i()
+* Added dev_x and dev_y (new tsv format!)
+
 # PDE 1.2.1
 * Removed LazyLoad: true due to new policies concerning non-existing data path
 * changed https://rstudio.com/wp-content/uploads/2016/09/RegExCheatsheet.pdf to https://www.rstudio.com/wp-content/uploads/2016/09/RegExCheatsheet.pdf

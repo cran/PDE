@@ -24,8 +24,8 @@ Install the dependent packages
 install.packages("tcltk2")    # Install the dependent package tcltk2
 ```
 
-The package requires the Xpdf command line tools by Glyph & Cog, LLC. Please download and install the Xpdf command line tools from the following website onto your local disk: https://www.xpdfreader.com/download.html
-(https://www.xpdfreader.com/download.html). Alternatively, the following command can be used to install the correct Xpdf command line tools:  
+The package requires the Xpdf command line tools by Glyph & Cog, LLC. Please download and install the Xpdf command line tools 4.2 from the following website onto your local disk: https://github.com/erikstricker/PDE/tree/master/inst/examples/bin
+(https://github.com/erikstricker/PDE/tree/master/inst/examples/bin). Alternatively, the following command can be used to install the correct Xpdf command line tools:  
 
 ```R
 PDE_install_Xpdftools4.02()    # Download and install the Xpdf command line tools
@@ -246,8 +246,14 @@ Argument for `PDE_extr_data_from_pdfs()`: `table.heading.words`
 will be detected.  
 Argument for `PDE_extr_data_from_pdfs()`: `ignore.case.th`
 
-3. **Pixel deviation**: For some tables the heading is slightly indented which would make the algorithm assume it was a separated column. With the pixel deviation the size of indention which would be considered the same column can be adjusted.  
-Argument for `PDE_extr_data_from_pdfs()`: `dev`
+3. **Column pixel deviation**: For some tables the heading is slightly indented which would make the algorithm assume it was a separated column. With the column pixel deviation the size of indention which would be considered the same column can be adjusted.  
+Argument for `PDE_extr_data_from_pdfs()`: `dev_x`
+
+4. **Row pixel deviation**: For some tables elements even though in the same row can have slightly different vertical coordiates.
+With the row pixel deviation the variation of vertical coordinates which would be considered the same row can be adjusted. It can
+be either a number or set to dynamic detection [9999], in which case the font size is used to detect which words are in the same
+row.   
+Argument for `PDE_extr_data_from_pdfs()`: `dev_y`
 
 #### Documentation/Debugging:
 ```{r, out.width = "100%", fig.align = "center", echo = FALSE}
@@ -269,12 +275,12 @@ Argument for `PDE_extr_data_from_pdfs()`: `write.tab.doc.file`
 4. **Sentence documentation file?**: For "yes", if no search words were found in the sentences of a pdf, a file will be created with the PDF file name followed by "no.txt.w.search.words" in the `no_txt_w_sw` folder. If the PDF file is empty, a file will be created with the PDF file name followed by "non-readable" in the `nr` folder. Files that were filtered out using the filterwords will lead to the creation of a file with the PDF name followed by "no.txt.w.filter.words" in the `excl_by_fw` folder.  
 Argument for `PDE_extr_data_from_pdfs()`: `write.txt.doc.file`
 
-5. **Delete intermediate files**: The program generates a txt, keeplayouttxt and HTML
+5. **Keep intermediate files**: The program generates a txt, keeplayouttxt and HTML
 copy of the PDF file, which will be deleted if intermediate files deletion is chosen. In
 case, this option was chosen accidentally, the user has two options to delete the .txt and
 .html file. 1) Slow & easy option: Rerun the analysis with this option being yes. 2)
 Quick and slightly more complicated option: Open the file explorer and search for
-`*.txt` and `*.html` in the PDF folder. Then select all files and folders of the search result and press delete.   
+`*.txt` and `*.html` in the PDF folder. Then select all files and folders of the search result and press delete. Keeping the intermediate files will set the `delete` to `FALSE.`
 Argument for `PDE_extr_data_from_pdfs()`: `delete`
 
 ------------
@@ -504,9 +510,14 @@ for the example the field was left empty.
 
 2. **Table heading case sensitive**: Irrelevant, as table heading was left blank.
 
-3. **Pixel deviation**: Kept at standard value of 20. This ensured that despite the indentation each cell value still gets sorted in the correct column instead of creating additional columns.
+3. **Column pixel deviation**: Kept at standard value of 20. This ensured that despite the indentation each cell value still gets sorted in the correct column instead of creating additional columns.
 ```
 20 
+```
+
+4. **Row pixel deviation**: Kept at standard value of 9999, which indicates dynamic detection. Dynamic detection uses the font size used to detect which words are in the same row.
+```
+9999 
 ```
 
 4. **Filter words?**: For this analysis, filter words were used to only analyze articles with case-control data.
@@ -594,11 +605,11 @@ secured folder.
 yes
 ```
 
-5. **Delete intermediate files**: This option is primarly for debugging. Having access to
+5. **Keep intermediate files**: This option is primarly for debugging. Having access to
 the .txt and .html files will allow the identification of undetected tables/sentences or
-conversion issues.
+conversion issues.  
 ```
-yes
+no
 ```
 
 ```{r, out.width = "100%", fig.align = "center", echo = FALSE}

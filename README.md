@@ -37,10 +37,10 @@ Install the dependent packages
     install.packages("tcltk2")    # Install the dependent package tcltk2
 
 The package requires the Xpdf command line tools by Glyph & Cog, LLC.
-Please download and install the Xpdf command line tools from the
+Please download and install the Xpdf command line tools 4.2 from the
 following website onto your local disk:
-<a href="https://www.xpdfreader.com/download.html" class="uri">https://www.xpdfreader.com/download.html</a>
-(<a href="https://www.xpdfreader.com/download.html" class="uri">https://www.xpdfreader.com/download.html</a>).
+<a href="https://github.com/erikstricker/PDE/tree/master/inst/examples/bin" class="uri">https://github.com/erikstricker/PDE/tree/master/inst/examples/bin</a>
+(<a href="https://github.com/erikstricker/PDE/tree/master/inst/examples/bin" class="uri">https://github.com/erikstricker/PDE/tree/master/inst/examples/bin</a>).
 Alternatively, the following command can be used to install the correct
 Xpdf command line tools:
 
@@ -317,11 +317,19 @@ required files
     if “yes” was chosen only “HEADING” will be detected.  
     Argument for `PDE_extr_data_from_pdfs()`: `ignore.case.th`
 
-3.  **Pixel deviation**: For some tables the heading is slightly
+3.  **Column pixel deviation**: For some tables the heading is slightly
     indented which would make the algorithm assume it was a separated
-    column. With the pixel deviation the size of indention which would
-    be considered the same column can be adjusted.  
-    Argument for `PDE_extr_data_from_pdfs()`: `dev`
+    column. With the column pixel deviation the size of indention which
+    would be considered the same column can be adjusted.  
+    Argument for `PDE_extr_data_from_pdfs()`: `dev_x`
+
+4.  **Row pixel deviation**: For some tables elements even though in the
+    same row can have slightly different vertical coordiates. With the
+    row pixel deviation the variation of vertical coordinates which
+    would be considered the same row can be adjusted. It can be either a
+    number or set to dynamic detection \[9999\], in which case the font
+    size is used to detect which words are in the same row.  
+    Argument for `PDE_extr_data_from_pdfs()`: `dev_y`
 
 #### Documentation/Debugging:
 
@@ -366,7 +374,7 @@ required files
     “no.txt.w.filter.words” in the `excl_by_fw` folder.  
     Argument for `PDE_extr_data_from_pdfs()`: `write.txt.doc.file`
 
-5.  **Delete intermediate files**: The program generates a txt,
+5.  **Keep intermediate files**: The program generates a txt,
     keeplayouttxt and HTML copy of the PDF file, which will be deleted
     if intermediate files deletion is chosen. In case, this option was
     chosen accidentally, the user has two options to delete the .txt and
@@ -374,8 +382,9 @@ required files
     option being yes. 2) Quick and slightly more complicated option:
     Open the file explorer and search for `*.txt` and `*.html` in the
     PDF folder. Then select all files and folders of the search result
-    and press delete.  
-    Argument for `PDE_extr_data_from_pdfs()`: `delete`
+    and press delete. Keeping the intermediate files will set the
+    `delete` to `FALSE.` Argument for `PDE_extr_data_from_pdfs()`:
+    `delete`
 
 ------------------------------------------------------------------------
 
@@ -771,13 +780,21 @@ Shift to select multiple).
 1.  **Table heading case sensitive**: Irrelevant, as table heading was
     left blank.
 
-2.  **Pixel deviation**: Kept at standard value of 20. This ensured that
-    despite the indentation each cell value still gets sorted in the
-    correct column instead of creating additional columns.
+2.  **Column pixel deviation**: Kept at standard value of 20. This
+    ensured that despite the indentation each cell value still gets
+    sorted in the correct column instead of creating additional columns.
 
 <!-- -->
 
     20 
+
+1.  **Row pixel deviation**: Kept at standard value of 9999, which
+    indicates dynamic detection. Dynamic detection uses the font size
+    used to detect which words are in the same row.
+
+<!-- -->
+
+    9999 
 
 1.  **Filter words?**: For this analysis, filter words were used to only
     analyze articles with case-control data.
@@ -897,13 +914,14 @@ Shift to select multiple).
 
     yes
 
-1.  **Delete intermediate files**: This option is primarly for
-    debugging. Having access to the .txt and .html files will allow the
-    identification of undetected tables/sentences or conversion issues.
+1.  **Keep intermediate files**: This option is primarly for debugging.
+    Having access to the .txt and .html files will allow the
+    identification of undetected tables/sentences or conversion
+    issues.  
 
 <!-- -->
 
-    yes
+    no
 
 <img src="vignettes/scrnshots/Screenshot_PDE_analyzer_user_interface.start_MTX_example.png" width="100%" style="display: block; margin: auto;" />
 <center>
