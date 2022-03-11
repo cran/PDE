@@ -8,15 +8,18 @@ PDE_pdfs2txt_searchandfilter(
   pdfs,
   out = ".",
   filter.words = "",
+  regex.fw = TRUE,
   ignore.case.fw = FALSE,
   filter.word.times = 20,
   search.words,
+  regex.sw = TRUE,
   ignore.case.sw = FALSE,
   eval.abbrevs = TRUE,
   out.table.format = ".csv (WINDOWS-1252)",
   context = 0,
   write.txt.doc.file = TRUE,
   delete = TRUE,
+  cpy_mv = "nocpymv",
   verbose = TRUE
 )
 }
@@ -28,9 +31,12 @@ PDE_pdfs2txt_searchandfilter(
 
 \item{filter.words}{List of strings. The list of filter words. If not
 \code{NA} or \code{""} a hit will be counted every time a word from the list
-is detected in the article. Regex rules apply (see also
-\url{https://github.com/rstudio/cheatsheets/raw/master/regex.pdf}).
+is detected in the article.
  Default: \code{""}.}
+
+\item{regex.fw}{Logical. If TRUE filter words will follow the regex rules
+(see \url{https://github.com/erikstricker/PDE/blob/master/inst/examples/cheetsheets/regex.pdf}).
+ Default = \code{TRUE}.}
 
 \item{ignore.case.fw}{Logical. Are the filter words case-sensitive (does
 capitalization matter)? Default: \code{FALSE}.}
@@ -38,9 +44,11 @@ capitalization matter)? Default: \code{FALSE}.}
 \item{filter.word.times}{Numeric. The minimum number of hits described for
 \code{filter.words} for a paper to be further analyzed. Default: \code{20}.}
 
-\item{search.words}{List of strings. List of search words. Regex rules apply (see
-also
-\url{https://github.com/rstudio/cheatsheets/raw/master/regex.pdf}).}
+\item{search.words}{List of strings. List of search words.}
+
+\item{regex.sw}{Logical. If TRUE search words will follow the regex rules
+(see \url{https://github.com/erikstricker/PDE/blob/master/inst/examples/cheetsheets/regex.pdf}).
+ Default = \code{TRUE}.}
 
 \item{ignore.case.sw}{Logical. Are the search words case-sensitive (does
 capitalization matter)? Default: \code{FALSE}.}
@@ -72,6 +80,10 @@ a file will be created with the PDF filename followed by
 \strong{keeplayouttxt} and \strong{html} copies of the PDF file will be 
 deleted. Default: \code{TRUE}.}
 
+\item{cpy_mv}{String. Either "nocpymv", "cpy", or "mv". If filter words are used in the
+analyses, the processed PDF files will either be copied ("cpy") or moved ("mv") into the
+/pdf/ subfolder of the output folder. Default: \code{"nocpymv"}.}
+
 \item{verbose}{Logical. Indicates whether messages will be printed in the console. Default: \code{TRUE}.}
 }
 \description{
@@ -83,11 +95,13 @@ folder.
 ## Running a simple analysis with filter and search words to extract sentences
 if(PDE_check_Xpdf_install() == TRUE){
  outputtables <- PDE_pdfs2txt_searchandfilter(pdf = paste0(system.file(package = "PDE"),
-                                      "examples/Methotrexate/29973177_!.pdf"),
+                                      "/examples/Methotrexate/29973177_!.pdf"),
  out = paste0(system.file(package = "PDE"),"/examples/MTX_txt+-0/"),
  filter.words = strsplit("cohort;case-control;group;study population;study participants", ";")[[1]],
+ regex.fw = FALSE,
  ignore.case.fw = TRUE,
  search.words = strsplit("(M|m)ethotrexate;(T|t)rexal;(R|r)heumatrex;(O|o)trexup", ";")[[1]],
+ regex.sw = TRUE,
  ignore.case.sw = FALSE)
 }
 
@@ -95,17 +109,20 @@ if(PDE_check_Xpdf_install() == TRUE){
 ## extract sentences and obtain documentation files
 if(PDE_check_Xpdf_install() == TRUE){
  outputtables <- PDE_pdfs2txt_searchandfilter(pdf = paste0(system.file(package = "PDE"),
-                                       "examples/Methotrexate/29973177_!.pdf"),
+                                       "/examples/Methotrexate/29973177_!.pdf"),
  out = paste0(system.file(package = "PDE"),"/examples/MTX_txt+-1/"),
  context = 1,
  filter.words = strsplit("cohort;case-control;group;study population;study participants", ";")[[1]],
+ regex.fw = FALSE,
  ignore.case.fw = TRUE,
  filter.word.times = 20,
  search.words = strsplit("(M|m)ethotrexate;(T|t)rexal;(R|r)heumatrex;(O|o)trexup", ";")[[1]],
+ regex.sw = TRUE,
  ignore.case.sw = FALSE,
  eval.abbrevs = TRUE,
  out.table.format = ".csv (WINDOWS-1252)",
  write.txt.doc.file = TRUE,
+ cpy_mv = "nocpymv",
  delete = TRUE)
 }
 

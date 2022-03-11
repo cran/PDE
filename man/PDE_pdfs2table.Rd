@@ -27,7 +27,7 @@ PDE_pdfs2table(
 \item{table.heading.words}{List of strings. Different than standard (TABLE,
 TAB or table plus number) headings to be detected. Regex rules apply (see
 also
-\url{https://github.com/rstudio/cheatsheets/raw/master/regex.pdf}).
+\url{https://github.com/erikstricker/PDE/blob/master/inst/examples/cheetsheets/regex.pdf}).
  Default = \code{""}.}
 
 \item{ignore.case.th}{Logical. Are the additional table headings (see
@@ -73,14 +73,14 @@ file and writes output in the corresponding folder.
 ## Running a simple table extraction
 if(PDE_check_Xpdf_install() == TRUE){
 outputtables <- PDE_pdfs2table(pdf = paste0(system.file(package = "PDE"),
-                 "examples/Methotrexate/29973177_!.pdf"),
+                 "/examples/Methotrexate/29973177_!.pdf"),
  out = paste0(system.file(package = "PDE"),"/examples/29973177_tables/"))
 }
 
 ## Running a the same table extraction as above with all paramaters shown
 if(PDE_check_Xpdf_install() == TRUE){
  outputtables <- PDE_pdfs2table(pdf = paste0(system.file(package = "PDE"),
-                                 "examples/Methotrexate/29973177_!.pdf"),
+                                 "/examples/Methotrexate/29973177_!.pdf"),
  out = paste0(system.file(package = "PDE"),"/examples/29973177_tables/"),
  dev_x = 20,
  dev_y = 9999,

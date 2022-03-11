@@ -9,11 +9,13 @@
   whattoextr,
   out = ".",
   filter.words = "",
+  regex.fw = TRUE,
   ignore.case.fw = FALSE,
   filter.word.times = 20,
   table.heading.words = "",
   ignore.case.th = FALSE,
   search.words,
+  regex.sw = TRUE,
   ignore.case.sw = FALSE,
   eval.abbrevs = TRUE,
   out.table.format = ".csv (WINDOWS-1252)",
@@ -25,6 +27,7 @@
   write.tab.doc.file = TRUE,
   write.txt.doc.file = TRUE,
   delete = TRUE,
+  cpy_mv = "nocpymv",
   verbose = TRUE
 )
 }
@@ -42,9 +45,12 @@ require search words.}
 
 \item{filter.words}{List of strings. The list of filter words. If not
 \code{NA} or \code{""} a hit will be counted every time a word from the list
-is detected in the article. Regex rules apply (see also
-\url{https://github.com/rstudio/cheatsheets/raw/master/regex.pdf}).
+is detected in the article.
  Default: \code{""}.}
+
+\item{regex.fw}{Logical. If TRUE filter words will follow the regex rules
+(see \url{https://github.com/erikstricker/PDE/blob/master/inst/examples/cheetsheets/regex.pdf}).
+ Default = \code{TRUE}.}
 
 \item{ignore.case.fw}{Logical. Are the filter words case-sensitive (does
 capitalization matter)? Default: \code{FALSE}.}
@@ -55,7 +61,7 @@ capitalization matter)? Default: \code{FALSE}.}
 \item{table.heading.words}{List of strings. Different than standard (TABLE,
 TAB or table plus number) headings to be detected. Regex rules apply (see
 also
-\url{https://github.com/rstudio/cheatsheets/raw/master/regex.pdf}).
+\url{https://github.com/erikstricker/PDE/blob/master/inst/examples/cheetsheets/regex.pdf}).
  Default = \code{""}.}
 
 \item{ignore.case.th}{Logical. Are the additional table headings (see
@@ -63,9 +69,11 @@ also
 Default = \code{FALSE}.}
 
 \item{search.words}{List of strings. List of search words. To extract all
-tables from the PDF file leave \code{search.words = ""}. Regex rules apply (see
-also
-\url{https://github.com/rstudio/cheatsheets/raw/master/regex.pdf}).}
+tables from the PDF file leave \code{search.words = ""}.}
+
+\item{regex.sw}{Logical. If TRUE search words will follow the regex rules
+(see \url{https://github.com/erikstricker/PDE/blob/master/inst/examples/cheetsheets/regex.pdf}).
+ Default = \code{TRUE}.}
 
 \item{ignore.case.sw}{Logical. Are the search words case-sensitive (does
 capitalization matter)? Default: \code{FALSE}.}
@@ -119,6 +127,10 @@ a file will be created with the PDF filename followed by
 \strong{keeplayouttxt} and \strong{html} copies of the PDF file will be 
 deleted. Default: \code{TRUE}.}
 
+\item{cpy_mv}{String. Either "nocpymv", "cpy", or "mv". If filter words are used in the
+analyses, the processed PDF files will either be copied ("cpy") or moved ("mv") into the
+/pdf/ subfolder of the output folder. Default: \code{"nocpymv"}.}
+
 \item{verbose}{Logical. Indicates whether messages will be printed in the 
 console. Default: \code{TRUE}.}
 }
@@ -140,13 +152,15 @@ file and writes output in the corresponding folder.
 
 ## Running a simple analysis with filter and search words to extract sentences and tables
 if(PDE_check_Xpdf_install() == TRUE){
- outputtables <- .PDE_extr_data_from_pdf(pdf = "examples/Methotrexate/29973177_!.pdf",
+ outputtables <- .PDE_extr_data_from_pdf(pdf = "/examples/Methotrexate/29973177_!.pdf",
  whattoextr = "tabandtxt",
- out = paste0(system.file(package = "PDE"),"/examples/MTX_all_files+-0_test/"),
+ out = paste0(system.file(package = "PDE"),"/examples/MTX_output+-0_test/"),
  filter.words = strsplit("cohort;case-control;group;study population;study participants", ";")[[1]],
  ignore.case.fw = TRUE,
+ regex.fw = FALSE,
  search.words = strsplit("(M|m)ethotrexate;(T|t)rexal;(R|r)heumatrex;(O|o)trexup", ";")[[1]],
- ignore.case.sw = FALSE)
+ ignore.case.sw = FALSE,
+ regex.sw = TRUE)
 }
 
 ## Running an advanced analysis with filter and search words to
@@ -155,23 +169,26 @@ if(PDE_check_Xpdf_install() == TRUE){
  outputtables <- .PDE_extr_data_from_pdf(pdf = paste0(system.file(package = "PDE"),
                        "/examples/Methotrexate/29973177_!.pdf"),
  whattoextr = "tabandtxt",
- out = paste0(system.file(package = "PDE"),"/examples/MTX_all_files+-1_test/"),
+ out = paste0(system.file(package = "PDE"),"/examples/MTX_output+-1_test/"),
  context = 1,
  dev_x = 20,
  dev_y = 9999,
  filter.words = strsplit("cohort;case-control;group;study population;study participants", ";")[[1]],
  ignore.case.fw = TRUE,
+ regex.fw = FALSE,
  filter.word.times = 20,
  table.heading.words = "",
  ignore.case.th = FALSE,
  search.words = strsplit("(M|m)ethotrexate;(T|t)rexal;(R|r)heumatrex;(O|o)trexup", ";")[[1]],
  ignore.case.sw = FALSE,
+ regex.sw = TRUE,
  eval.abbrevs = TRUE,
  out.table.format = ".csv (WINDOWS-1252)",
  write.table.locations = TRUE,
  write.tab.doc.file = TRUE,
  write.txt.doc.file = TRUE,
  exp.nondetc.tabs = TRUE,
+ cpy_mv = "nocpymv",
  delete = TRUE)
 }
 

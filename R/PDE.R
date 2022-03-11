@@ -1,5 +1,5 @@
 ## PDE: Extract Sentences and Tables from PDF Files.
-## Copyright (C) 2020-2021  Erik Stricker
+## Copyright (C) 2020-2022  Erik Stricker
 ## 
 ## This program is free software: you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
@@ -12,7 +12,7 @@
 ## GNU General Public License for more details.
 ## You should have received a copy of the GNU General Public License
 ## along with this program.  If not, see <https://www.gnu.org/licenses/>.
- 
+
 #' PDE: Extract Tables and Sentences from PDF Files.
 #' 
 #' The package includes two main components: 1) The PDE analyzer performs the
@@ -30,7 +30,7 @@
 NULL
 #> NULL
 
-## 1.3.0
+## 1.4.0
 
 ## declare global variables
 PDE.globals <- new.env()
@@ -140,7 +140,7 @@ PDE_check_Xpdf_install <- function(sysname=NULL, verbose=TRUE){
     show_file_path_solaris <- function(filename){
       whereis_test <- suppressWarnings(tryCatch(system(paste0("/usr/ucb/whereis ",filename),
                                                        , intern = TRUE)[1], 
-                                                          error=function(err) NULL))
+                                                error=function(err) NULL))
       if (length(whereis_test) != 0) {
         whereis_output <- system(paste0("/usr/ucb/whereis ",filename), intern = TRUE)
         only_dirs <- sub("^ ","",sub(paste0("^",filename,":"),"",whereis_output))
@@ -188,7 +188,7 @@ PDE_check_Xpdf_install <- function(sysname=NULL, verbose=TRUE){
       stop("Unknown OS. Please set sysname option.")
     }
   }
-    
+  
   out <- TRUE
   files <- NULL
   
@@ -214,8 +214,8 @@ PDE_check_Xpdf_install <- function(sysname=NULL, verbose=TRUE){
     for (i in 1:length(pdftotext_location)){
       dir.create(dirname(keeplayouttxtpath))
       status <- suppressWarnings(system(paste0("\"", pdftotext_location[i], "\" \"", "-layout",
-                                                  "\" \"", pdfpath, "\" \"", keeplayouttxtpath,
-                                                  "\""), 
+                                               "\" \"", pdfpath, "\" \"", keeplayouttxtpath,
+                                               "\""), 
                                         wait = TRUE, ignore.stderr = TRUE, intern = TRUE))
       if (file.exists(keeplayouttxtpath)) {
         unlink(dirname(keeplayouttxtpath), recursive = TRUE)
@@ -232,8 +232,8 @@ PDE_check_Xpdf_install <- function(sysname=NULL, verbose=TRUE){
     for (i in 1:length(pdftohtml_location)){
       dir.create(dirname(htmlpath))
       status <- system(paste0("\"",pdftohtml_location[i],"\" \"", pdfpath,
-                  "\" \"", htmlpath, "\""), wait = TRUE,
-           ignore.stderr = TRUE, intern = TRUE)
+                              "\" \"", htmlpath, "\""), wait = TRUE,
+                       ignore.stderr = TRUE, intern = TRUE)
       if (dir.exists(htmlpath) && file.exists(paste0(htmlpath, "/index.html"))) {
         unlink(dirname(htmlpath), recursive = TRUE)
         pdftohtml_path <- pdftohtml_location[i]
@@ -249,10 +249,10 @@ PDE_check_Xpdf_install <- function(sysname=NULL, verbose=TRUE){
     for (i in 1:length(pdftopng_location)){
       dir.create(dirname(pngpath))
       status <- suppressWarnings(system(paste0("\"",pdftopng_location[i],"\" \"",
-                    "-f", "\" \"", 1, "\" \"", "-l",
-                    "\" \"", 1, "\" \"", pdfpath, "\" \"",
-                    pngpath,"\""),
-                    wait = TRUE, ignore.stderr = TRUE, intern = TRUE))
+                                               "-f", "\" \"", 1, "\" \"", "-l",
+                                               "\" \"", 1, "\" \"", pdfpath, "\" \"",
+                                               pngpath,"\""),
+                                        wait = TRUE, ignore.stderr = TRUE, intern = TRUE))
       if (file.exists(sub("test.png$","test.png-000001.png",pngpath))) {
         unlink(dirname(pngpath), recursive = TRUE)
         pdftopng_path <- pdftopng_location[i]
@@ -304,10 +304,10 @@ PDE_check_Xpdf_install <- function(sysname=NULL, verbose=TRUE){
       
     }
     
-  ## if one or more command line tools where not detected    
+    ## if one or more command line tools where not detected    
   } else {
     msg1 <- paste(" not detected. Please install the Xpdf command line tools again",
-                 "using PDE_install_Xpdftools4.02()")
+                  "using PDE_install_Xpdftools4.02()")
     
     if (length(files) == 1) {
       out.file <- files
@@ -499,9 +499,11 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
 #'  \code{"."}.
 #'@param filter.words List of strings. The list of filter words. If not
 #'  \code{NA} or \code{""} a hit will be counted every time a word from the list
-#'  is detected in the article. Regex rules apply (see also
-#'  \url{https://github.com/rstudio/cheatsheets/raw/master/regex.pdf}).
+#'  is detected in the article.
 #'   Default: \code{""}.
+#'@param regex.fw Logical. If TRUE filter words will follow the regex rules
+#' (see \url{https://github.com/erikstricker/PDE/blob/master/inst/examples/cheetsheets/regex.pdf}).
+#'  Default = \code{TRUE}.
 #'@param ignore.case.fw Logical. Are the filter words case-sensitive (does
 #'  capitalization matter)? Default: \code{FALSE}.
 #'@param filter.word.times Numeric. The minimum number of hits described for
@@ -509,15 +511,16 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
 #'@param table.heading.words List of strings. Different than standard (TABLE,
 #'  TAB or table plus number) headings to be detected. Regex rules apply (see
 #'  also
-#'  \url{https://github.com/rstudio/cheatsheets/raw/master/regex.pdf}).
+#'  \url{https://github.com/erikstricker/PDE/blob/master/inst/examples/cheetsheets/regex.pdf}).
 #'   Default = \code{""}.
 #'@param ignore.case.th Logical. Are the additional table headings (see
 #'  \code{table.heading.words}) case-sensitive (does capitalization matter)?
 #'  Default = \code{FALSE}.
 #'@param search.words List of strings. List of search words. To extract all
-#'  tables from the PDF file leave \code{search.words = ""}. Regex rules apply (see
-#'  also
-#'  \url{https://github.com/rstudio/cheatsheets/raw/master/regex.pdf}).
+#'  tables from the PDF file leave \code{search.words = ""}. 
+#'@param regex.sw Logical. If TRUE search words will follow the regex rules
+#' (see \url{https://github.com/erikstricker/PDE/blob/master/inst/examples/cheetsheets/regex.pdf}).
+#'  Default = \code{TRUE}.
 #'@param ignore.case.sw Logical. Are the search words case-sensitive (does
 #'  capitalization matter)? Default: \code{FALSE}.
 #'@param eval.abbrevs Logical. Should abbreviations for the search words be
@@ -559,6 +562,9 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
 #'@param delete Logical. If \code{TRUE}, the intermediate \strong{txt},
 #'  \strong{keeplayouttxt} and \strong{html} copies of the PDF file will be 
 #'  deleted. Default: \code{TRUE}.
+#'@param cpy_mv String. Either "nocpymv", "cpy", or "mv". If filter words are used in the
+#'  analyses, the processed PDF files will either be copied ("cpy") or moved ("mv") into the
+#'  /pdf/ subfolder of the output folder. Default: \code{"nocpymv"}.
 #'@param verbose Logical. Indicates whether messages will be printed in the 
 #'  console. Default: \code{TRUE}.
 #'
@@ -575,13 +581,15 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
 #'
 #'## Running a simple analysis with filter and search words to extract sentences and tables
 #'if(PDE_check_Xpdf_install() == TRUE){
-#'  outputtables <- .PDE_extr_data_from_pdf(pdf = "examples/Methotrexate/29973177_!.pdf",
+#'  outputtables <- .PDE_extr_data_from_pdf(pdf = "/examples/Methotrexate/29973177_!.pdf",
 #'  whattoextr = "tabandtxt",
-#'  out = paste0(system.file(package = "PDE"),"/examples/MTX_all_files+-0_test/"),
+#'  out = paste0(system.file(package = "PDE"),"/examples/MTX_output+-0_test/"),
 #'  filter.words = strsplit("cohort;case-control;group;study population;study participants", ";")[[1]],
 #'  ignore.case.fw = TRUE,
+#'  regex.fw = FALSE,
 #'  search.words = strsplit("(M|m)ethotrexate;(T|t)rexal;(R|r)heumatrex;(O|o)trexup", ";")[[1]],
-#'  ignore.case.sw = FALSE)
+#'  ignore.case.sw = FALSE,
+#'  regex.sw = TRUE)
 #'}
 #'
 #'## Running an advanced analysis with filter and search words to
@@ -590,23 +598,26 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
 #'  outputtables <- .PDE_extr_data_from_pdf(pdf = paste0(system.file(package = "PDE"),
 #'                        "/examples/Methotrexate/29973177_!.pdf"),
 #'  whattoextr = "tabandtxt",
-#'  out = paste0(system.file(package = "PDE"),"/examples/MTX_all_files+-1_test/"),
+#'  out = paste0(system.file(package = "PDE"),"/examples/MTX_output+-1_test/"),
 #'  context = 1,
 #'  dev_x = 20,
 #'  dev_y = 9999,
 #'  filter.words = strsplit("cohort;case-control;group;study population;study participants", ";")[[1]],
 #'  ignore.case.fw = TRUE,
+#'  regex.fw = FALSE,
 #'  filter.word.times = 20,
 #'  table.heading.words = "",
 #'  ignore.case.th = FALSE,
 #'  search.words = strsplit("(M|m)ethotrexate;(T|t)rexal;(R|r)heumatrex;(O|o)trexup", ";")[[1]],
 #'  ignore.case.sw = FALSE,
+#'  regex.sw = TRUE,
 #'  eval.abbrevs = TRUE,
 #'  out.table.format = ".csv (WINDOWS-1252)",
 #'  write.table.locations = TRUE,
 #'  write.tab.doc.file = TRUE,
 #'  write.txt.doc.file = TRUE,
 #'  exp.nondetc.tabs = TRUE,
+#'  cpy_mv = "nocpymv",
 #'  delete = TRUE)
 #'}
 #'
@@ -616,13 +627,52 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
 #'
 #'@export
 .PDE_extr_data_from_pdf <- function(pdf, whattoextr,
-                  out = ".", filter.words = "", ignore.case.fw = FALSE, filter.word.times = 20,
-                  table.heading.words = "", ignore.case.th = FALSE, search.words,
-                  ignore.case.sw = FALSE, eval.abbrevs = TRUE, out.table.format = ".csv (WINDOWS-1252)", 
-                  dev_x = 20, dev_y = 9999, context = 0,write.table.locations = FALSE, exp.nondetc.tabs = TRUE, 
-                  write.tab.doc.file = TRUE,write.txt.doc.file = TRUE, delete = TRUE, verbose = TRUE){
-
+                                    out = ".", filter.words = "", regex.fw = TRUE, ignore.case.fw = FALSE, filter.word.times = 20,
+                                    table.heading.words = "", ignore.case.th = FALSE, search.words, regex.sw = TRUE,
+                                    ignore.case.sw = FALSE, eval.abbrevs = TRUE, out.table.format = ".csv (WINDOWS-1252)", 
+                                    dev_x = 20, dev_y = 9999, context = 0,write.table.locations = FALSE, exp.nondetc.tabs = TRUE, 
+                                    write.tab.doc.file = TRUE,write.txt.doc.file = TRUE, delete = TRUE, cpy_mv = "nocpymv",
+                                    verbose = TRUE){
+  
   ## General functions -------------------------------------------
+  ## Added re.escape function in v1.4.0 to convert regex to non-regex
+  re.escape <- function(string){
+    vals <- c("\\\\", "\\[", "\\]", "\\(", "\\)", 
+              "\\{", "\\}", "\\^", "\\$","\\*", 
+              "\\+", "\\?", "\\.", "\\|")
+    replace.vals <- paste0("\\\\", vals)
+    for(i in seq_along(vals)){
+      string <- gsub(vals[i], replace.vals[i], string)
+    }
+    return(string)
+  }
+  
+  create_id_from_stringlist <- function(list_of_strings, char_len = 8){
+    list_of_ints <- NULL
+    for (string in list_of_strings){
+      final <- 20
+      numbers <- utf8ToInt(string) - utf8ToInt("a") + 1L
+      for (i in 2:length(numbers)){
+        final <- abs(round(mean(c(final, (numbers[[i-1]] %% numbers[[i]] + (numbers[[i]] * 10000))))))
+      } 
+      list_of_ints <- c(list_of_ints, final)
+    }
+    set.seed(round(mean(list_of_ints)))
+    n <- 1
+    pool <- c(letters, LETTERS, 0:9)
+    
+    res <- character(n) # pre-allocating vector is much faster than growing it
+    for(i in seq(n)){
+      this_res <- paste0(sample(pool, char_len, replace = TRUE), collapse = "")
+      while(this_res %in% res){ # if there was a duplicate, redo
+        this_res <- paste0(sample(pool, char_len, replace = TRUE), collapse = "")
+      }
+      res[i] <- this_res
+    }
+    return(res)
+    
+  }
+  
   readin_txt <- function(txtpath) {
     
     ## read in the txt file
@@ -630,10 +680,10 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
     txtcontent_from_txtpath_utf8 <- readLines(txtpath, warn = FALSE, encoding = "UTF-8")
     res_lat1 <- try(sum(nchar(txtcontent_from_txtpath_lat1)),silent = TRUE)
     res_utf8 <- try(sum(nchar(txtcontent_from_txtpath_utf8)),silent = TRUE)    
-    if (class(res_utf8) == "try-error"){
+    if (inherits(res_utf8,"try-error")){
       ## if utf8 throws an error
       txtcontent_from_txtpath <- txtcontent_from_txtpath_lat1
-    } else if (class(res_lat1) == "try-error"){
+    } else if (inherits(res_lat1,"try-error")){
       ## if latin1 throws an error
       txtcontent_from_txtpath <- txtcontent_from_txtpath_utf8
     } else {
@@ -645,7 +695,7 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
     for (r in 1:length(txtcontent_from_txtpath)){
       ## replace all fi
       res <- try(gsub(intToUtf8(0xFB01),"fi",txtcontent_from_txtpath[r], fixed = TRUE),silent = TRUE)
-      if (class(res) == "try-error"){
+      if (inherits(res,"try-error")){
         txtcontent_from_txtpath[r] <- iconv(txtcontent_from_txtpath[r], 'UTF-8', 'latin1', 'bit')
       }
       txtcontent_from_txtpath[r] <- gsub(intToUtf8(0xFB01),"fi",txtcontent_from_txtpath[r], fixed = TRUE)
@@ -654,12 +704,12 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
     
   }
   
-
+  
   page_splits <- function(txtcontent_to_split) {
-
+    
     ## split the content according to pages
     pagesplits <- grep("^\\f", txtcontent_to_split)
-
+    
     ## if there is only one page or no txtcontent_to_split
     if (length(pagesplits) > 1) {
       ## page split the line before
@@ -672,14 +722,14 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
     } else {
       splittxtcontent <- txtcontent_to_split
     }
-
+    
     return(splittxtcontent)
   }
-
+  
   find_similar_row <- function(originrow, targettablelines,
                                relative.match.col, output.for.originrow.only,
                                output.for.match, output.column.name) {
-
+    
     determine_similarity_1_vs_2 <- function(strings){
       ## determine similarity
       matches_fsr <- NULL
@@ -701,12 +751,12 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
       percent.match <- sum(matches_fsr, na.rm = TRUE)/length(strings[[1]])
       return(percent.match)
     }
-
+    
     ## set variables
     matchingrow <- NA
     matchpercent <- NULL
     targettablerow <- NULL
-
+    
     ## check every row in targettablelines
     for (targetrow in 1:nrow(targettablelines)) {
       ## skip lines that do not have matching pages
@@ -720,14 +770,14 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
       percent.match1 <- determine_similarity_1_vs_2(strings1)
       percent.match2 <- determine_similarity_1_vs_2(strings2)
       percent.match <- max(percent.match1,percent.match2)
-
+      
       if (percent.match > 0.8) {
         matchpercent <- rbind(matchpercent, c(originrow = 1,
                                               targetrow = targetrow,
                                               percent.match = percent.match))
       }
     }
-
+    
     ## if multiple tables were on the same page if no
     ## matching table is found
     if (is.null(matchpercent)) {
@@ -746,28 +796,28 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
       targettablelines[matchpercent[maxrow, "targetrow"], output.column.name] <- output.for.match
       targettablerow <- targettablelines[matchpercent[maxrow, "targetrow"],]
     }
-
+    
     return(list(originrow = originrow, targettablelines = targettablelines,
                 targettablerow = targettablerow))
   }
-
+  
   exp_nondetc_tabs <- function(input_table, pdfpath,
                                outputpath, detectinfile,
                                based.on.column, matches_end) {
     
     ## find all rows that match
     matched.rows <- grep(matches_end, input_table[, based.on.column])
-
+    
     ## find page from input_table
     pages <- input_table[matched.rows, "page"]
-
+    
     exp.pages <- unique(pages)
-
+    
     ## only start function if there are pages to export
     if (length(exp.pages) > 0) {
       dir.create(paste0(outputpath,"/tables"), showWarnings = FALSE)
       for (page in pages) {
-          system(paste0("\"",pdftopng_location,"\" \"",
+        system(paste0("\"",pdftopng_location,"\" \"",
                       "-f", "\" \"", page, "\" \"", "-l",
                       "\" \"", page, "\" \"", pdfpath, "\" \"",
                       outputpath, "/tables/", substr(basename(pdfpath),
@@ -777,7 +827,7 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
       }
     }
   }
-
+  
   test_if_abbrev_in_parantheses <- function(searchword, paragraph,ignore.case.sw) {
     output <- list(res = TRUE,"","","","")
     ## get the position of the search word in the paragraph
@@ -810,12 +860,12 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
         current_char_pos <- current_char_pos + 1
         current_char <- substr(paragraph, current_char_pos, current_char_pos)
       }
-
+      
       char_list <- char_list[!(char_list %in% c("(", ")","[", "]", "/",
                                                 "{","}","\\"))]
-
+      
       ext_searchword <- gsub("[^[:alnum:] ]","",ext_searchword)
-
+      
       ## test if letter description was found
       if (length(char_list) > 0){
         trunc_searchword <- ext_searchword
@@ -832,7 +882,7 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
             break
           }
         }
-
+        
         ## test if each word in extended searchword has letter in abbreviation
         list.of.words <- gsub("[^A-z]","",
                               strsplit(ext_searchword," ")[[1]])[!(gsub("[^A-z]","",
@@ -868,7 +918,7 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
         } else {
           output <- list(res = FALSE,"","","","")
         }
-
+        
         ## test if letters did match search word
         if (output[[1]]) {
           ## for plural search words
@@ -898,7 +948,7 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
     }
     return(output)
   }
-
+  
   test_if_abbrev_double_dots_or_equal <- function(searchword, paragraph, ignore.case.sw) {
     output <- list(res = TRUE,"","","","")
     ## get the position of the search word in the paragraph
@@ -924,10 +974,10 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
         current_char_pos <- current_char_pos - 1
         current_char <- substr(paragraph, current_char_pos, current_char_pos)
       }
-
+      
       char_list <- char_list[!(char_list %in% c("(", ")","[", "]", "/",
                                                 "{","}","\\"))]
-
+      
       ## test if letter description was found
       if (length(char_list) > 0){
         trunc_searchword <- gsub("[^[:alnum:] ]","",ext_searchword)
@@ -944,13 +994,13 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
             break
           }
         }
-
+        
         ## test if each word in extended searchword has letter in abbreviation
         list.of.words <- gsub("[^A-z]","",
                               strsplit(ext_searchword," ")[[1]])[!(gsub("[^A-z]","",
                                                                         strsplit(ext_searchword,
                                                                                  " ")[[1]]) %in% "")]
-
+        
         ## allow one slack
         if (length(list.of.words) - 1 <= length(char_list)){
           result <- TRUE
@@ -974,7 +1024,7 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
         } else {
           output <- list(res = FALSE,"","","","")
         }
-
+        
         ## test if letters did match search word
         if (output[[1]]) {
           ## for plural search words
@@ -1004,7 +1054,7 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
     }
     return(output)
   }
-
+  
   deletefile <- function(verbose=TRUE) {
     out_msg <- NULL
     
@@ -1030,7 +1080,7 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
     }
     return(out_msg)
   }
-
+  
   replace.html.entity <- function(input.with.html) {
     output.without.html <- input.with.html
     output.without.html <- gsub("&amp;","&",output.without.html)
@@ -1135,7 +1185,7 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
     output.without.html <- gsub(intToUtf8(0xFB01),"fi",output.without.html, fixed = TRUE)
     return(output.without.html)
   }
-
+  
   insert.html.entity <- function(input.without.html) {
     output.with.html <- input.without.html
     output.with.html <- gsub(intToUtf8(0x00C0),"&Agrave;",output.with.html)
@@ -1235,14 +1285,14 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
     output.with.html <- gsub(intToUtf8(0x007E),"&tilde;",output.with.html)
     return(output.with.html)
   }
-
+  
   update_progress_info <- function(print_message){
     if (length(PDE.globals$le.progress.textbox) > 0){
       ## add completion  info
       progress_info_length <- length(tcltk2::tk2list.get(PDE.globals$le.progress.textbox))
       if (progress_info_length > 3) {
         new_list <- tcltk2::tk2list.get(PDE.globals$le.progress.textbox)[!grepl("^$",
-                                                              tcltk2::tk2list.get(PDE.globals$le.progress.textbox))]
+                                                                                tcltk2::tk2list.get(PDE.globals$le.progress.textbox))]
       } else {
         new_list <- tcltk2::tk2list.get(PDE.globals$le.progress.textbox)
       }
@@ -1267,7 +1317,7 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
     }
     return(x)
   }
-
+  
   ## set all indicator variables ---------------------------
   integrity.indicator <- TRUE ## indicates if txt, keeplayouttxt and html copy of the PDF file are created correctly
   filterwords.go <- FALSE ## indicator if filter words were found or not set
@@ -1275,21 +1325,34 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
   nexti <- FALSE ## indicator for html table to be processed
   output_files <- NULL ## this is the output to return at the end
   out_msg <- NULL
-
+  sw_in_tab_counted <- FALSE
+  
+  ## set statics output -----------------------------------------
+  stat_output <- NULL
+  pdf_word_count <- 0
+  pdf_page_count <- 0
+  pdf_filterwords <- NULL
+  pdf_filterword_times <- NULL
+  pdf_filterword_total <- NULL
+  pdf_searchwords <- NULL
+  pdf_searchword_times <- NULL
+  pdf_searchword_total <- NULL
+  pdf_sentences_w_searchwords <- NULL
+  
   ## set the paths of the files ---------------------------------
   output <- NULL
   pdfpath <- pdf
   txtpath <- gsub(".pdf[^.pdf]*$", ".txt", pdfpath)
   keeplayouttxtpath <- gsub(".pdf[^.pdf]*$", "_keeplayout.txt",
                             pdfpath)
-
+  
   ## create the id and output dir ----------------------------------
   dir.create(out, showWarnings = FALSE)
   id <- sub("^(.*)\\..*$", "\\1", basename(txtpath))
   print_message <- paste0("Following file is processing: \'",id,".pdf\'")
   out_msg <- c(out_msg, print_message)
   if (verbose) cat(utils::tail(out_msg,1), sep="\n")
-
+  
   ## 1) Create txt and html copies of PDF file ---------------------------------------
   ## test of Xpdftools are installed
   xpdf_config_location <- paste0(system.file(package = "PDE"),"/bin/XPDF_DIR.config")
@@ -1307,7 +1370,7 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
     } else {
       install.test <- TRUE
     }
-      
+    
   } else {
     install.test <- PDE_check_Xpdf_install(verbose=verbose)
   }
@@ -1337,11 +1400,11 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
   update_progress_info(print_message)
   ## 2.1) Check txt and html file integrity ----------------------------------
   integrity.indicator <- TRUE
-
+  
   ## check if html was created (if pdf is secured)
   if (!dir.exists(htmlpath) || !file.exists(paste0(htmlpath, "/index.html"))) {
     ## export error and do not remove file change
-    print_message <- paste0(id, " is most likely secured and cannot be processed!")
+    print_message <- paste0("\'", id, ".pdf\' is most likely secured and cannot be processed!")
     out_msg <- c(out_msg, print_message)
     if (verbose) cat(utils::tail(out_msg,1), sep="\n")
     update_progress_info(print_message)
@@ -1349,6 +1412,27 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
     write(paste0(pdfpath, " is most likely secured and cannot be processed!"),
           file = paste0(out,"/secured/",id, "_is_secured.txt"))
     integrity.indicator <- FALSE
+    ## if cpymv is either cpy or mv and filterwords were used
+    if (cpy_mv == "cpy" && filter.words[1] != ""){
+      dir.create(paste0(out,"/pdfs"), showWarnings = FALSE)
+      dir.create(paste0(out,"/pdfs/secured"), showWarnings = FALSE)
+      file.copy(pdf, paste0(out,"/pdfs/secured"))
+      print_message <- paste0(basename(pdf),
+                              " was copied to \'", out,"/pdfs/secured\'.")
+      out_msg <- c(out_msg, print_message)
+      if (verbose) cat(utils::tail(out_msg,1), sep="\n")
+      update_progress_info(print_message)
+    } else if (cpy_mv == "mv" && filter.words[1] != ""){
+      dir.create(paste0(out,"/pdfs"), showWarnings = FALSE)
+      dir.create(paste0(out,"/pdfs/secured"), showWarnings = FALSE)
+      file.copy(pdf, paste0(out,"/pdfs/secured"))
+      unlink(pdf)
+      print_message <- paste0(basename(pdf),
+                              " was moved to \'", out,"/pdfs/secured\'.")
+      out_msg <- c(out_msg, print_message)
+      if (verbose) cat(utils::tail(out_msg,1), sep="\n")
+      update_progress_info(print_message)
+    }
     ## if html was created
   } else {
     ## read in the txt files
@@ -1359,7 +1443,7 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
     ## if the txt or html files have no content
     if (identical(indexcontent, "")) {
       ## export error and do not remove file change
-      print_message <- paste0(id, " is most likely secured and cannot be processed!")
+      print_message <- paste0("\'", id, ".pdf\' is most likely secured and cannot be processed!")
       out_msg <- c(out_msg, print_message)
       if (verbose) cat(utils::tail(out_msg,1), sep="\n")
       update_progress_info(print_message)
@@ -1367,9 +1451,30 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
       write(paste0(pdfpath, " is most likely secured and cannot be processed!"),
             file = paste0(out,"/secured/",id, "_is_secured.txt"))
       integrity.indicator <- FALSE
+      ## if cpymv is either cpy or mv and filterwords were used
+      if (cpy_mv == "cpy" && filter.words[1] != ""){
+        dir.create(paste0(out,"/pdfs"), showWarnings = FALSE)
+        dir.create(paste0(out,"/pdfs/secured"), showWarnings = FALSE)
+        file.copy(pdf, paste0(out,"/pdfs/secured"))
+        print_message <- paste0(basename(pdf),
+                                " was copied to \'", out,"/pdfs/secured\'.")
+        out_msg <- c(out_msg, print_message)
+        if (verbose) cat(utils::tail(out_msg,1), sep="\n")
+        update_progress_info(print_message)
+      } else if (cpy_mv == "mv" && filter.words[1] != ""){
+        dir.create(paste0(out,"/pdfs"), showWarnings = FALSE)
+        dir.create(paste0(out,"/pdfs/secured"), showWarnings = FALSE)
+        file.copy(pdf, paste0(out,"/pdfs/secured"))
+        unlink(pdf)
+        print_message <- paste0(basename(pdf),
+                                " was moved to \'", out,"/pdfs/secured\'.")
+        out_msg <- c(out_msg, print_message)
+        if (verbose) cat(utils::tail(out_msg,1), sep="\n")
+        update_progress_info(print_message)
+      }
     } else if (identical(txtcontent, "") || identical(keeplayouttxtcontent, "") ||
                identical(gsub("\f","",txtcontent), "") || identical(gsub("\f","",keeplayouttxtcontent), "")  ) {
-      print_message <- paste0(id, " most likely contains no text content or is a scanned document!")
+      print_message <- paste0("\'", id, ".pdf\' most likely contains no text content or is a scanned document!")
       out_msg <- c(out_msg, print_message)
       if (verbose) cat(utils::tail(out_msg,1), sep="\n")
       update_progress_info(print_message)
@@ -1377,6 +1482,27 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
       write(paste0(pdfpath, " most likely contains no text content or is a scanned document!"),
             file = paste0(out, "/nr/", id, "_non-readable.txt"))
       integrity.indicator <- FALSE
+      ## if cpymv is either cpy or mv and filterwords were used
+      if (cpy_mv == "cpy" && filter.words[1] != ""){
+        dir.create(paste0(out,"/pdfs"), showWarnings = FALSE)
+        dir.create(paste0(out,"/pdfs/nr"), showWarnings = FALSE)
+        file.copy(pdf, paste0(out,"/pdfs/nr"))
+        print_message <- paste0(basename(pdf),
+                                " was copied to \'", out,"/pdfs/nr\'.")
+        out_msg <- c(out_msg, print_message)
+        if (verbose) cat(utils::tail(out_msg,1), sep="\n")
+        update_progress_info(print_message)
+      } else if (cpy_mv == "mv" && filter.words[1] != ""){
+        dir.create(paste0(out,"/pdfs"), showWarnings = FALSE)
+        dir.create(paste0(out,"/pdfs/nr"), showWarnings = FALSE)
+        file.copy(pdf, paste0(out,"/pdfs/nr"))
+        unlink(pdf)
+        print_message <- paste0(basename(pdf),
+                                " was moved to \'", out,"/pdfs/nr\'.")
+        out_msg <- c(out_msg, print_message)
+        if (verbose) cat(utils::tail(out_msg,1), sep="\n")
+        update_progress_info(print_message)
+      }
       ## when txtcontent is there and html index was created
     } else {
       ## extract all the page names ##
@@ -1384,15 +1510,15 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
       for (line in indexcontent) {
         if (grepl("a href=\"", line)) pages <- c(pages,
                                                  substr(line, regexpr("a href=\"", line) + 8,
-                                                         regexpr("html", line) + 3))
+                                                        regexpr("html", line) + 3))
       }
-
+      
       ## read in the html file ##
       htmlcontent <- vector("list", length(pages))
       for (i in 1:length(pages)) {
         htmlpagecontent <- readLines(paste0(htmlpath,"/", pages[i]), encoding = "UTF-8", warn = FALSE)
         if (identical(htmlpagecontent, "")) {
-          print_message <- paste0(id, " most likely contains no text content or is a scanned in document!")
+          print_message <- paste0("\'", id, ".pdf\' most likely contains no text content or is a scanned in document!")
           out_msg <- c(out_msg, print_message)
           if (verbose) cat(utils::tail(out_msg,1), sep="\n")
           update_progress_info(print_message)
@@ -1400,13 +1526,34 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
           write(paste0(pdfpath, " most likely contains no text content or is a scanned in document!"),
                 file = paste0(out, "/nr/", id, "_non-readable.txt"))
           integrity.indicator <- FALSE
+          ## if cpymv is either cpy or mv and filterwords were used
+          if (cpy_mv == "cpy" && filter.words[1] != ""){
+            dir.create(paste0(out,"/pdfs"), showWarnings = FALSE)
+            dir.create(paste0(out,"/pdfs/nr"), showWarnings = FALSE)
+            file.copy(pdf, paste0(out,"/pdfs/nr"))
+            print_message <- paste0(basename(pdf),
+                                    " was copied to \'", out,"/pdfs/nr\'.")
+            out_msg <- c(out_msg, print_message)
+            if (verbose) cat(utils::tail(out_msg,1), sep="\n")
+            update_progress_info(print_message)
+          } else if (cpy_mv == "mv" && filter.words[1] != ""){
+            dir.create(paste0(out,"/pdfs"), showWarnings = FALSE)
+            dir.create(paste0(out,"/pdfs/nr"), showWarnings = FALSE)
+            file.copy(pdf, paste0(out,"/pdfs/nr"))
+            unlink(pdf)
+            print_message <- paste0(basename(pdf),
+                                    " was moved to \'", out,"/pdfs/nr\'.")
+            out_msg <- c(out_msg, print_message)
+            if (verbose) cat(utils::tail(out_msg,1), sep="\n")
+            update_progress_info(print_message)
+          }
           break
         }
         ## replace all fi
         lines_with_fi <- grep(intToUtf8(0xFB01),htmlpagecontent)
         for (line in lines_with_fi){
           res <- try(gsub(intToUtf8(0xFB01),"fi",htmlpagecontent[line], fixed = TRUE),silent = TRUE)
-          if (class(res) == "try-error"){
+          if (inherits(res,"try-error")){
             htmlpagecontent[line] <- iconv(htmlpagecontent[line], 'UTF-8', 'latin1', 'bit')
           }
           htmlpagecontent[line] <- gsub(intToUtf8(0xFB01),"fi",htmlpagecontent[line], fixed = TRUE)
@@ -1419,16 +1566,16 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
           for (ln in lines_with_ft){
             list_of_fts <- rbind(list_of_fts,
                                  cbind(ft=sub("\\{.*$","",substr(htmlpagecontent[ln],
-                                           regexpr("\\.ft",htmlpagecontent[ln])[1]+1,
-                                            nchar(htmlpagecontent[ln]))),
-                                 style=sub("\\}.*$","",sub("^.*\\{","",substr(htmlpagecontent[ln],
-                                                              regexpr("\\.ft",htmlpagecontent[ln])[1]+1,
-                                                              nchar(htmlpagecontent[ln]))))))
+                                                                 regexpr("\\.ft",htmlpagecontent[ln])[1]+1,
+                                                                 nchar(htmlpagecontent[ln]))),
+                                       style=sub("\\}.*$","",sub("^.*\\{","",substr(htmlpagecontent[ln],
+                                                                                    regexpr("\\.ft",htmlpagecontent[ln])[1]+1,
+                                                                                    nchar(htmlpagecontent[ln]))))))
           }
           ## replace each ft style in that page
           for (ft.numb in 1:nrow(list_of_fts)){
             htmlpagecontent <- gsub(paste0("\" class=\"",list_of_fts[ft.numb,1],"\""),
-                 paste0(";",list_of_fts[ft.numb,2],"\""),htmlpagecontent)
+                                    paste0(";",list_of_fts[ft.numb,2],"\""),htmlpagecontent)
           }
         }
         
@@ -1440,12 +1587,12 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
   if (integrity.indicator == TRUE) {
     ## if the file is only images or empty then don't process
     realcontent <- gsub("^\\f", "", paste(txtcontent,
-                                         collapse = ""))
+                                          collapse = ""))
     realcontent <- gsub("\t", "", realcontent)
     realcontent <- gsub(" ", "", realcontent)
     if (realcontent == "") {
       integrity.indicator <- FALSE
-      print_message <- paste0(id, ".pdf has no readable content")
+      print_message <- paste0("\'", id, ".pdf\' has no readable content")
       out_msg <- c(out_msg, print_message)
       if (verbose) cat(utils::tail(out_msg,1), sep="\n")
       update_progress_info(print_message)
@@ -1455,15 +1602,45 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
         write(paste0(pdfpath, " has no readable content in PDF file"),
               file = paste0(out, "/nr/", id, "_non-readable.txt"))
         integrity.indicator <- FALSE
+        ## if cpymv is either cpy or mv and filterwords were used
+        if (cpy_mv == "cpy" && filter.words[1] != ""){
+          dir.create(paste0(out,"/pdfs"), showWarnings = FALSE)
+          dir.create(paste0(out,"/pdfs/nr"), showWarnings = FALSE)
+          file.copy(pdf, paste0(out,"/pdfs/nr"))
+          print_message <- paste0(basename(pdf),
+                                  " was copied to \'", out,"/pdfs/nr\'.")
+          out_msg <- c(out_msg, print_message)
+          if (verbose) cat(utils::tail(out_msg,1), sep="\n")
+          update_progress_info(print_message)
+        } else if (cpy_mv == "mv" && filter.words[1] != ""){
+          dir.create(paste0(out,"/pdfs"), showWarnings = FALSE)
+          dir.create(paste0(out,"/pdfs/nr"), showWarnings = FALSE)
+          file.copy(pdf, paste0(out,"/pdfs/nr"))
+          unlink(pdf)
+          print_message <- paste0(basename(pdf),
+                                  " was moved to \'", out,"/pdfs/nr\'.")
+          out_msg <- c(out_msg, print_message)
+          if (verbose) cat(utils::tail(out_msg,1), sep="\n")
+          update_progress_info(print_message)
+        }
       }
     }
   }
-
+  
   ## if there was an issue with creating files
   if (integrity.indicator == FALSE) {
-    output_files <- NULL
+    pdf_word_count <- 0
+    pdf_page_count <- 0
+    stat_output <- data.frame(cbind(pdf_word_count = pdf_word_count,
+                                    pdf_page_count = pdf_page_count), check.names = FALSE)
+    rownames(stat_output) <- id
+    output_files$stat_output <- data.frame(stat_output, check.names = FALSE)
     ##if everything is ok
   } else {
+    ## determine word count of pdf file
+    pdf_word_count <- sum(sapply(gregexpr("[[:alpha:]]+", txtcontent), function(x) sum(x > 0)))
+    pdf_page_count <- length(htmlcontent)
+    
     ## 2.2) Check all the options chosen for PDE analyzer ------------------------------
     ## if general extraction (search words is undefined), then context <- 0
     if (search.words[1] == "" || search.words[1] == "*" ||
@@ -1479,6 +1656,12 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
       stop("ignore.case.sw: ignore.case.sw has to be either TRUE or FALSE")
     }
     if (is.na(filter.words[1])) filter.words <- ""
+    ## adjust filter.words with regex
+    if (regex.fw == FALSE){
+      for (fw_pos in 1:length(filter.words)){
+        filter.words[fw_pos] <- re.escape(filter.words[fw_pos])
+      }
+    }
     if (is.null(ncol(filter.words))) filter.words <- data.frame(words = filter.words,
                                                                 ignore.case.fw = ignore.case.fw)
     if (!is.numeric(filter.word.times)) {
@@ -1489,6 +1672,12 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
     }
     if (is.null(ncol(table.heading.words))) table.heading.words <- data.frame(words = table.heading.words,
                                                                               ignore.case.th = ignore.case.th)
+    ## adjust search.words with regex
+    if (regex.sw == FALSE){
+      for (sw_pos in 1:length(search.words)){
+        search.words[sw_pos] <- re.escape(search.words[sw_pos])
+      }
+    }
     if (is.null(ncol(search.words))) search.words <- data.frame(words = search.words,
                                                                 ignore.case.sw = ignore.case.sw)
     if (write.table.locations == FALSE) write.table.locations <- FALSE
@@ -1499,9 +1688,9 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
       stop("write.table.locations: has to be either TRUE or FALSE")
     }
     if (is.na(out.table.format)) {
-       out.table.format <- ".csv (WINDOWS-1252)"
+      out.table.format <- ".csv (WINDOWS-1252)"
     } else if (!(out.table.format %in% c(".csv (WINDOWS-1252)", ".csv (macintosh)", ".csv (UTF-8)", 
-                       ".tsv (WINDOWS-1252)",".tsv (macintosh)",".tsv (UTF-8)"))) {
+                                         ".tsv (WINDOWS-1252)",".tsv (macintosh)",".tsv (UTF-8)"))) {
       tcltk::tkmessageBox(title = "Warning",
                           type = "ok", icon = "warning",
                           message = paste("out.table.format: has to be either .csv (WINDOWS-1252), .csv (macintosh), .csv (UTF-8)",
@@ -1533,14 +1722,14 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
                           type = "ok", icon = "warning",
                           message = "dev_x: has to be a number")
       stop("dev_x: has to be a number")  ## deviation between cell positions, might 
-                                       ##have to be increased if words that should be in the same column
+      ##have to be increased if words that should be in the same column
     }
     if (!is.numeric(context)) {
       tcltk::tkmessageBox(title = "Warning",
                           type = "ok", icon = "warning",
                           message = "context: has to be a number")
       stop("context: has to be a number")  ## +/- context number of sentences 
-                                           ## before and after the search word was found will be put out
+      ## before and after the search word was found will be put out
     }
     if (write.tab.doc.file == FALSE) write.tab.doc.file <- FALSE
     else if (!write.tab.doc.file == TRUE) {
@@ -1557,7 +1746,7 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
       stop("write.txt.doc.file: has to be either TRUE or FALSE")
     }
   }
-
+  
   ## reset variables
   if (integrity.indicator == TRUE) {
     output <- NULL
@@ -1565,14 +1754,14 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
     keeplayouttxttablelines <- NULL
     txttablelines <- NULL
   }
-
+  
   ## 2.3) Make content ----------------------------------------
   if (integrity.indicator == TRUE) {
     content <- list(txtcontent, keeplayouttxtcontent)
-
+    
     ## make a variable only with the txt content
     txthtmlcontent <- htmlcontent
-
+    
     ## go through pages
     for (j in 1:length(txthtmlcontent)) {
       ## go through each html line
@@ -1581,7 +1770,7 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
         line <- txthtmlcontent[[j]][z]
         line.txthtmlcontent <- ""
         res <- try(utf8ToInt(line),silent = TRUE)
-        if (class(res) == "try-error") line <- iconv(line, 'UTF-8', 'latin1', 'byte')
+        if (inherits(res,"try-error")) line <- iconv(line, 'UTF-8', 'latin1', 'byte')
         ##replace different html formating
         line <- gsub("</p>","</span>",line)
         ## replace line break with space (not optimal but better for searching)
@@ -1605,11 +1794,11 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
       content[[(j+2)]] <- txthtmlcontent[[j]]
     }
   }
-
-
+  
+  
   ## 3) Evaluate for filter words ---------------------------------------
   list_of_abbrevs <- NULL
-
+  
   ## 3.1) Filter Search ---------------------------------------
   if (integrity.indicator == TRUE && !filter.words[1, "words"] == "") {
     word.txtline.fw <- NULL
@@ -1620,9 +1809,9 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
       detected_line <- grep(word, txtcontent, ignore.case = ignore.case.fw)
       word.txtline.fw <- c(word.txtline.fw,
                            detected_line)
-
+      
       ## 3.2) Replace abbreviations -----------------------------------------------------
-
+      
       if (eval.abbrevs == TRUE && length(word.txtline.fw) > 0){
         ## Check if any occurences (heading + text) of the
         ## filter word are defining and abbreviation
@@ -1666,9 +1855,9 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
                                                               abbrev)]]) - nchar(occur[[abbrev]])
                         ## correct for sub of abbrev definition e.g. methotrexate (MTX (methotrexate))
                         len_diff <- nchar(content[[c]][line]) - 
-                                    nchar(gsub(paste0("(",occur[[sub("abbrev","replacement",abbrev)]],")"),
-                                         paste0("(",occur[[abbrev]],")"),
-                                         content[[c]][line] , fixed = TRUE))
+                          nchar(gsub(paste0("(",occur[[sub("abbrev","replacement",abbrev)]],")"),
+                                     paste0("(",occur[[abbrev]],")"),
+                                     content[[c]][line] , fixed = TRUE))
                         add_pos <- add_pos - len_diff
                         content[[c]][line]  <- gsub(paste0("(",occur[[sub("abbrev","replacement",abbrev)]],")"),
                                                     paste0("(",occur[[abbrev]],")"),
@@ -1684,18 +1873,18 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
       } ## end replace abbreviations in content
     } ## end for each filter word
   } ## if (integrity.indicator == TRUE)
-
+  
   ## if filter word abbreviations were found replace the abbreviations in content
   if (eval.abbrevs == TRUE && integrity.indicator == TRUE &&
       !filter.words[i, "words"] == "" && !is.null(list_of_abbrevs)) {
     txtcontent <- content[[1]]
     keeplayouttxtcontent <- content[[2]]
-
+    
     ## html content per page
     for (pa in 3:length(content)) txthtmlcontent[[(pa-2)]] <- content[[pa]]
-
+    
   } ## end replace abbreviations
-
+  
   ## 3.3) Real filter Search ---------------------------------------
   if (integrity.indicator == TRUE) {
     word.txtline.fw <- NULL
@@ -1706,13 +1895,29 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
         ## search for lines with filter word in [txtcontent]
         word <- filter.words[i, "words"]
         ignore.case.fw <- filter.words[i, "ignore.case.fw"]
+        ## add filterwords to output
+        if (ignore.case.fw == TRUE){
+          ic <- "ic"
+        } else {
+          ic <- "nic"
+        }
+        if (regex.fw == TRUE){
+          reg <- "regex"
+        } else {
+          reg <- "nregex"
+        }
+        pdf_filterwords <- c(pdf_filterwords, paste0("FW_",ic,"_",reg,":",word))
         detected_line <- grep(word, txtcontent, ignore.case = ignore.case.fw)
         word.txtline.fw <- c(word.txtline.fw,
                              detected_line)
+        current_word.txtpos.fw <- NULL
         for (li in detected_line){
-          word.txtpos.fw <- c(word.txtpos.fw,
-                              gregexpr(word, txtcontent[li], ignore.case = ignore.case.fw)[[1]])
+          current_word.txtpos.fw <- c(current_word.txtpos.fw,
+                                      gregexpr(word, txtcontent[li], ignore.case = ignore.case.fw)[[1]])
         }
+        pdf_filterword_times <- c(pdf_filterword_times, length(current_word.txtpos.fw))
+        pdf_filterword_total <- sum(pdf_filterword_times)
+        word.txtpos.fw <- c(word.txtpos.fw,current_word.txtpos.fw)
       }
       if (length(word.txtpos.fw) > filter.word.times - 1) {
         filterwords.go <- TRUE
@@ -1721,6 +1926,29 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
         out_msg <- c(out_msg, print_message)
         if (verbose) cat(utils::tail(out_msg,1), sep="\n")
         update_progress_info(print_message)
+        
+        ## if cpymv is either cpy or mv
+        if (cpy_mv == "cpy"){
+          dir.create(paste0(out,"/pdfs"), showWarnings = FALSE)
+          dir.create(paste0(out,"/pdfs/incl_by_fw"), showWarnings = FALSE)
+          file.copy(pdf, paste0(out,"/pdfs/incl_by_fw"))
+          print_message <- paste0("\'",basename(pdf),
+                                  "\' was copied to \'", out,"/pdfs/incl_by_fw\'.")
+          out_msg <- c(out_msg, print_message)
+          if (verbose) cat(utils::tail(out_msg,1), sep="\n")
+          update_progress_info(print_message)
+        } else if (cpy_mv == "mv"){
+          dir.create(paste0(out,"/pdfs"), showWarnings = FALSE)
+          dir.create(paste0(out,"/pdfs/incl_by_fw"), showWarnings = FALSE)
+          file.copy(pdf, paste0(out,"/pdfs/incl_by_fw"))
+          unlink(pdf)
+          print_message <- paste0(basename(pdf),
+                                  " was moved to \'", out,"/pdfs/incl_by_fw\'.")
+          out_msg <- c(out_msg, print_message)
+          if (verbose) cat(utils::tail(out_msg,1), sep="\n")
+          update_progress_info(print_message)
+        }
+        
       } else {
         filterwords.go <- FALSE
         print_message <- paste0("\'",id,".pdf\' was filtered out due to a lack of the filter words. ",
@@ -1734,10 +1962,31 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
           utils::write.table(paste0("Not enough txt lines with filter word found. ",
                                     length(word.txtpos.fw),
                                     " filter word(s) were detected in ", id, ".pdf."),
-                             paste0(out,"/excl_by_fw/",id,"_not.enough.txt.w.filter.words",
+                             paste0(out,"/excl_by_fw/",id,"_too_few_fwds",
                                     out.table.ext),
                              sep = out.table.separator, row.names = FALSE,
                              col.names = FALSE, na = "")
+        }
+        ## if cpymv is either cpy or mv
+        if (cpy_mv == "cpy"){
+          dir.create(paste0(out,"/pdfs"), showWarnings = FALSE)
+          dir.create(paste0(out,"/pdfs/excl_by_fw"), showWarnings = FALSE)
+          file.copy(pdf, paste0(out,"/pdfs/excl_by_fw"))
+          print_message <- paste0(basename(pdf),
+                                  " was copied to \'", out,"/pdfs/excl_by_fw\'.")
+          out_msg <- c(out_msg, print_message)
+          if (verbose) cat(utils::tail(out_msg,1), sep="\n")
+          update_progress_info(print_message)
+        } else if (cpy_mv == "mv"){
+          dir.create(paste0(out,"/pdfs"), showWarnings = FALSE)
+          dir.create(paste0(out,"/pdfs/excl_by_fw"), showWarnings = FALSE)
+          file.copy(pdf, paste0(out,"/pdfs/excl_by_fw"))
+          unlink(pdf)
+          print_message <- paste0(basename(pdf),
+                                  " was moved to \'", out,"/pdfs/excl_by_fw\'.")
+          out_msg <- c(out_msg, print_message)
+          if (verbose) cat(utils::tail(out_msg,1), sep="\n")
+          update_progress_info(print_message)
         }
       }  ## end if filter words were present
     } else {
@@ -1745,6 +1994,9 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
       if (verbose) cat(utils::tail(out_msg,1), sep="\n")
       update_progress_info("No filter words chosen for analysis.")
       filterwords.go <- TRUE
+      pdf_filterword_total <- NA
+      pdf_filterword_times <- NA
+      pdf_filterwords <- c("filter_word_list")
     }  ## end if filter words were set
   } ## end 3.3) Filter Search
   
@@ -1755,7 +2007,6 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
     searchwords.go <- FALSE
     ## search for lines with search word
     word.txtline <- NULL
-
     for (i in 1:nrow(search.words)) {
       ## 4.1) Search for lines with search word -------------------------
       word <- search.words[i, "words"]
@@ -1773,10 +2024,10 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
         word.keeplayoutline <- grep(word, keeplayouttxtcontent,
                                     ignore.case = ignore.case.sw)
       }
-
+      
       ## 4.2) Continue analysis when search words were found ----------------------------
       if (length(word.txtline) > 0) searchwords.go <- TRUE
-
+      
       ## 4.3) Replace abbreviations -----------------------------------------------------
       if (eval.abbrevs == TRUE && length(word.txtline) > 0 &&
           !search.words[i, "words"] == ""){
@@ -1839,19 +2090,19 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
       } ## end replace abbreviations in content
     } ## end for each search word
   } ## if (filterwords.go == TRUE && integrity.indicator == TRUE)
-
+  
   ## if search words were found replace the abbreviations in content
   if (searchwords.go == TRUE && filterwords.go == TRUE &&
       eval.abbrevs == TRUE && integrity.indicator == TRUE &&
       !search.words[i, "words"] == "") {
     txtcontent <- content[[1]]
     keeplayouttxtcontent <- content[[2]]
-
+    
     ## html content per page
     for (pa in 3:length(content)) txthtmlcontent[[(pa-2)]] <- content[[pa]]
-
+    
   } ## end replace abbreviations
-
+  
   ## if no search words are detected in document
   if (filterwords.go == TRUE &&
       searchwords.go == FALSE &&
@@ -1864,13 +2115,13 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
     if (write.txt.doc.file == TRUE) {
       dir.create(paste0(out,"/excl_by_sw"), showWarnings = FALSE)
       utils::write.table("No text line with search word found.",
-                         paste0(out,"/excl_by_sw/",id, "_no.txt.w.search.words",
+                         paste0(out,"/excl_by_sw/",id, "_no_txt_w_swds",
                                 out.table.ext),
                          sep = out.table.separator, row.names = FALSE,
                          col.names = FALSE, na = "")
     }
   }  ## end if search words were present
-
+  
   ## 5) Sort the html content ---------------------------------------
   if (filterwords.go == TRUE && integrity.indicator == TRUE) {
     ## add the top and left ##
@@ -1889,7 +2140,7 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
     }
     for (p in 1:length(txthtmlcontent)){
       ## 5.1) Assign top and left values ------------------------------
-
+      
       start <- grep("^<body>",htmlcontent[[p]][,1])[1] + 1
       if (is.na(start)) start <- 1
       end <- grep("^</body>",htmlcontent[[p]][,1])[1] - 1
@@ -1937,11 +2188,11 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
           
           ## get the top information
           pos.top.start <- regexpr("top:",
-                                    out.htmlcontent[line.number, 1])[[1]] + 4
+                                   out.htmlcontent[line.number, 1])[[1]] + 4
           pos.top.end <- regexpr("px",
-                                  substr(out.htmlcontent[line.number, 1],
-                                         pos.top.start,
-                                         nchar(out.htmlcontent[line.number, 1])))[[1]] - 2 + pos.top.start
+                                 substr(out.htmlcontent[line.number, 1],
+                                        pos.top.start,
+                                        nchar(out.htmlcontent[line.number, 1])))[[1]] - 2 + pos.top.start
           top.value <- suppressWarnings(as.integer(substr(out.htmlcontent[line.number, 1], pos.top.start, pos.top.end)))
           if (is.na(top.value) && grepl(";vertical-align:baseline;",
                                         out.htmlcontent[line.number, 1])) {
@@ -1957,7 +2208,7 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
                                                    pos.fontsize.start, 
                                                    nchar(out.htmlcontent[line.number, 1])))[[1]] + pos.fontsize.start - 2
           fontsize.value <- substr(out.htmlcontent[line.number, 1],
-                                     pos.fontsize.start, pos.fontsize.end)
+                                   pos.fontsize.start, pos.fontsize.end)
           fontsize.value <- as.numeric(fontsize.value)
           out.htmlcontent[line.number, "font_size"] <- fontsize.value
         } else {
@@ -1995,15 +2246,15 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
       txthtmlcontent[[p]][start:end] <- out.txthtmlcontent
     }  
   }
-
+  
   ## 6) Extract Tables --------------------------------------------
   ## Explanation: The table detection is important to destinguish tables from text
   ## even if tables will not be exported they will not be a part of the sentence
   ## detection if search words.
-
+  
   ## Use html to find table end line by adding 5 lines and then search for span id= change
   ## test if file has tables --> only process tables when table is present
-
+  
   ## 6.1) Test if document has tables -------
   if (searchwords.go == TRUE && filterwords.go == TRUE &&
       integrity.indicator == TRUE) {
@@ -2047,11 +2298,11 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
                                txthtmlcontent[[j]], ignore.case = TRUE))
     }
   }
-
+  
   ## 6.2) Detect the table start positions by detecting headings ----------------
   if (searchwords.go == TRUE && filterwords.go == TRUE &&
       integrity.indicator == TRUE && !length(tablestart.pos) == 0) {
-
+    
     ## Initialize master table for positions
     htmltablelines <- data.frame(page = NULL,
                                  tableheading = NULL, tablestart.pos = NULL,
@@ -2063,10 +2314,10 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
                                 tablelastline = NULL, tableend.pos = NULL,
                                 legendlastline = NULL,
                                 legendend.pos = NULL, txtfirstline = NULL)
-
+    
     ## go through pages
     for (j in 1:length(txthtmlcontent)) {
-
+      
       ## if there is no additional heading
       if (table.heading.words[1, "words"] == "") {
         html.tablestart.pos <- c(grep("^(\f|)(Table |Tab. )[0-99|MDCLXVI]+(\\.)(*)",
@@ -2105,8 +2356,7 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
                                     newrow)
           }
         }
-      } else
-      {
+      } else  {
         ## if there is an additional heading
         txthtml.word.txtline.th <- NULL
         for (i in 1:nrow(table.heading.words)) {
@@ -2167,7 +2417,7 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
           }
         }
       }  ## end if there is (no) additional heading
-
+      
       ## Look at tables in htmlcontent
       if (length(html.tablestart.pos) > 0) {
         for (i in 1:length(html.tablestart.pos)) {
@@ -2245,6 +2495,7 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
         }
       }  ## end if there is a table on this page
       ## Look at tables in txtcontent
+
       if (length(txt.tablestart.pos) > 0) {
         for (i in 1:length(txt.tablestart.pos)) {
           ## Removing the Table wording
@@ -2359,7 +2610,7 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
         }
       }  ## end if there is a table on this page
     }  ## end go through each page j
-
+    
     ## end if file has no tables (if function started
     ## then PDF file has to have search words)
   } else if (searchwords.go == TRUE && filterwords.go == TRUE &&
@@ -2375,7 +2626,7 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
     txttablelines <- NULL
     htmltablelines <- NULL
   }
-
+  
   ## 6.3) Determine if tables were found in html, txt to both files ------------
   if (searchwords.go == TRUE && filterwords.go == TRUE &&
       integrity.indicator == TRUE && !length(tablestart.pos) == 0 &&
@@ -2397,7 +2648,7 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
         txttablelines <- cbind(txttablelines,
                                detected.in = NA)
       }
-
+      
       ## go through each line of the tables and compare
       ## which tables are in the txt only
       for (txtrow in 1:nrow(txttablelines)) {
@@ -2415,17 +2666,18 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
                                            output.column.name = "detected.in")$targettablelines
       }
     }
+
     ## name all the rows that are only found in html
     if (nrow(htmltablelines[is.na(htmltablelines[, "detected.in"]), ]) > 0)
       htmltablelines[is.na(htmltablelines[, "detected.in"]), "detected.in"] = "htmlonly"
   }
-
-
+  
+  
   ## 6.4) Add positional value to tables -----
   if (searchwords.go == TRUE && filterwords.go == TRUE &&
       integrity.indicator == TRUE && !length(tablestart.pos) == 0 &&
       nrow(as.data.frame((htmltablelines))) > 0 && ncol(as.data.frame((htmltablelines))) > 0) {
-
+    
     ## add tableend.pos if column does not exist
     if (!"tableend.pos" %in% colnames(htmltablelines)){
       htmltablelines <- cbind(htmltablelines, tableend.pos = NA)
@@ -2438,7 +2690,7 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
       npos <- position + 7
       ## test if the table is too short for detection
       if (nrow(htmlcontent[[p]]) < npos){
-        outofbound <- TRUE 
+        outofbound <- TRUE
       } else {
         outofbound <- FALSE
       }
@@ -2446,7 +2698,7 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
         if (is.null(htmlcontent[[p]][npos, "top"]))
           notop <- TRUE else notop <- FALSE
       }
-
+      
       if ((outofbound == TRUE) || (notop == TRUE)) {
         ## end is at the end of the page
         htmltablelines[i, "tableend.pos"] <- nrow(htmlcontent[[p]])
@@ -2470,7 +2722,7 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
       }
     }  ## end go through each row
   }
-
+  
   if (searchwords.go == TRUE && filterwords.go == TRUE &&
       integrity.indicator == TRUE && !length(tablestart.pos) == 0 &&
       nrow(as.data.frame((htmltablelines))) > 0 && ncol(as.data.frame((htmltablelines))) > 0) {
@@ -2478,7 +2730,7 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
     ## do for each table row
     nexti <- FALSE
     htmltablelines <-  htmltablelines[!(is.na(htmltablelines[,"page"])),]
-
+    
     for (i in 1:nrow(htmltablelines)) {
       ## ignore the lines with txtonly
       if ((htmltablelines[i, "detected.in"] == "txtonly.notabledetected") ||
@@ -2496,9 +2748,9 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
         }
         next
       }
-
+      
       ## 6.5) Detect how many columns by evaluating how many different left values ---------------
-
+      
       ## set the current line pos and page for the while loop
       currentline.pos <- htmltablelines[i, "tableend.pos"]
       currentline.page <- htmltablelines[i, "page"]
@@ -2507,14 +2759,14 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
       all.left.found <- FALSE
       while (all.left.found == FALSE) {
         constant.value <- NULL
-
+        
         while (is.null(constant.value)) {
           ## currentline.pos is either set before the loop or at the end
           currentline <- htmlcontent[[currentline.page]][currentline.pos, ]
-
+          
           ## get the top information
           oritop.value <- paste0("top:", currentline["top"], "px")
-
+          
           ## go to the next line
           currentline.pos <- currentline.pos + 1
           ## set the start for of the next table
@@ -2523,28 +2775,31 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
             nextstartpos <- htmltablelines[i + 1, "tablestart.pos"] else nextstartpos <- 999999
           ## test if end of page is reached
           currentline <- htmlcontent[[currentline.page]][currentline.pos, ]
-
+          
           ## get the top information
           top.value <- paste0("top:",
                               currentline["top"], "px")
-
+          
           ## if beyond the end of the html page
           if ((currentline.pos > nrow(htmlcontent[[currentline.page]])) ||
               (top.value == "top:NApx")) {
-            htmltablelines[i, "detected.in"] <- "txtonly.notabledetected"
+            # htmltablelines[i, "detected.in"] <- "txtonly.notabledetected"
             if (nrow(txttablelines) > 0 && ncol(txttablelines) > 0) {
-              ## go through each line of the tables and compare
-              ## which tables are in the txt only
-              txttablelines <- txttablelines[!(is.na(txttablelines[,"page"])),]
-              txttablelines <- find_similar_row(originrow = htmltablelines[i, ],
-                                                targettablelines = txttablelines,
-                                                relative.match.col = "tableheading",
-                                                output.for.originrow.only = "error",
-                                                output.for.match = "txtonly.notabledetected",
-                                                output.column.name = "detected.in")$targettablelines
+              # ## go through each line of the tables and compare
+              # ## which tables are in the txt only
+              # txttablelines <- txttablelines[!(is.na(txttablelines[,"page"])),]
+              # txttablelines <- find_similar_row(originrow = htmltablelines[i, ],
+              #                                   targettablelines = txttablelines,
+              #                                   relative.match.col = "tableheading",
+              #                                   output.for.originrow.only = "error",
+              #                                   output.for.match = "txtonly.notabledetected",
+              #                                   output.column.name = "detected.in")$targettablelines
+              htmltablelines[i, "tableend.pos"] <- currentline.pos - 1
             }
             currentline.pos <- currentline.pos - 1
-            nexti <- TRUE
+            all.left.found <- TRUE
+            constant.value <- top.value
+            # nexti <- TRUE
             break
             ## if tables overlap
           } else if (currentline.pos >= nextstartpos) {
@@ -2552,13 +2807,13 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
             htmltablelines[i, "legendend.pos"] <- as.numeric(htmltablelines[i + 1, "tablestart.pos"]) - 1
             ## fill the txtcontent columns
             htmltablelines[i, "tablelastline"] <- txthtmlcontent[[currentline.page]][as.numeric(htmltablelines[i, 
-                                                                                              "tableend.pos"])]
+                                                                                                               "tableend.pos"])]
             htmltablelines[i, "legendlastline"] <- txthtmlcontent[[currentline.page]][as.numeric(htmltablelines[i, 
-                                                                                                "legendend.pos"])]
+                                                                                                                "legendend.pos"])]
             htmltablelines[i, "txtfirstline"] <- txthtmlcontent[[currentline.page]][as.numeric(htmltablelines[i, 
-                                                                                            "legendend.pos"]) + 1]
+                                                                                                              "legendend.pos"]) + 1]
             currentline.pos <- as.numeric(htmltablelines[i + 1, "tablestart.pos"]) - 1
-
+            
             if (nrow(txttablelines) > 0 && ncol(txttablelines) > 0) {
               txttablelines[i, "tableend.pos"] <- as.numeric(txttablelines[i + 1, "tablestart.pos"]) - 1
               txttablelines[i, "legendend.pos"] <- as.numeric(txttablelines[i + 1, "tablestart.pos"]) - 1
@@ -2569,7 +2824,7 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
             nexti <- TRUE
             break
           }  ## end if
-
+          
           if (oritop.value == top.value) {
             ## the constant value is the top
             constant.value <- top.value
@@ -2577,12 +2832,12 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
             ## use this currentline.pos as new start
             htmltablelines[i, "tableend.pos"] <- currentline.pos
           }
-
+          
         }  ## end while is.null(constant.value)
-
+        
         if (nexti == TRUE) break
         ## determine the left range ##
-
+        
         ## go to min
         ind <- TRUE
         while (ind == TRUE) {
@@ -2592,7 +2847,7 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
         }
         currentline.pos <- currentline.pos + 1
         currentline <- htmlcontent[[currentline.page]][currentline.pos, ]
-
+        
         left.list <- NULL
         ind <- TRUE
         while (ind == TRUE) {
@@ -2604,7 +2859,7 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
           ind <- grepl(constant.value,
                        currentline[1])
         }
-
+        
         ## test if left.list (column list) is complete ##
         if (all(left.list %in% out.left.list)) {
           ## if the left.list if complete, end the loop
@@ -2624,11 +2879,10 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
         nexti <- FALSE
         next
       }
-
+      
       ## 6.6) Determine the end of the table through the highest top value ---------------
       ## search for the max with all the left values ##
-
-
+      
       ## if two tables are on the same page restrict lines
       if (!is.na(htmltablelines[i + 1, "tablestart.pos"]) &&
           htmltablelines[i + 1, "page"] == htmltablelines[i, "page"]){
@@ -2636,7 +2890,7 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
       } else {
         nexttablestartpos <- nrow(htmlcontent[[currentline.page]])
       }
-
+      
       ## make a toplist
       top.list <- NULL
       for (left.item in out.left.list) {
@@ -2665,26 +2919,25 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
         }
       }
       max.top.value <- suppressWarnings(max(strtoi(unq.top.list[match.list > 1])))
-
+      
       ## if not one value is duplicated then go with max
-      if (!any(match.list > 1))
-        max.top.value <- max(strtoi(top.list))
-
+      if (!any(match.list > 1))max.top.value <- max(strtoi(top.list))
+      
       ## if not one value is duplicated then go with max
       htmltablelines[i, "tableend.pos"] <- max(grep(paste0("top:",
                                                            max.top.value, "px;"),
                                                     htmlcontent[[currentline.page]][,1]))
       currentline.pos <- htmltablelines[i, "tableend.pos"]
       currentline <- htmlcontent[[currentline.page]][currentline.pos, ]
-
+      
       ## add the last line to the htmltablelines ## add
       ## the last line to the htmltablelines
       htmltablelines[i, "tablelastline"] <- txthtmlcontent[[currentline.page]][currentline.pos]
       ## save the end of the table
       htmltablelines[i, "tableend.pos"] <- currentline.pos
-
+      
       ## add everything below the table ##
-
+      
       ## 6.7) Detect the legend by extracting all lines with a lower font that than the table -----
       ## get the current font size information ##
       pos.fontsize.start <- regexpr("font-size:",
@@ -2695,7 +2948,7 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
       current.fontsize <- substr(currentline[1],
                                  pos.fontsize.start, pos.fontsize.end)
       current.fontsize <- as.numeric(current.fontsize)
-
+      
       ## add everything with smaller font size
       fontsize <- 0
       while (current.fontsize >= fontsize) {
@@ -2709,8 +2962,8 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
                                       currentline)[[1]] + 10
         if (pos.fontsize.start > 9){
           pos.fontsize.end <- regexpr("px;",substr(currentline,
-                                           pos.fontsize.start, 
-                                           nchar(currentline)))[[1]] + pos.fontsize.start - 2
+                                                   pos.fontsize.start, 
+                                                   nchar(currentline)))[[1]] + pos.fontsize.start - 2
         } else {
           break
         }
@@ -2719,7 +2972,7 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
         ## when the next line has no font size
         if (str.fontsize == "") break
         fontsize <- as.numeric(str.fontsize)
-
+        
       }
       
       currentline.pos <- currentline.pos - 1
@@ -2727,7 +2980,7 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
       linecontent <- txthtmlcontent[[currentline.page]][currentline.pos]
       htmltablelines[i, "legendlastline"] <- linecontent
       htmltablelines[i, "legendend.pos"] <- currentline.pos
-
+      
       ## add the last line to the htmltablelines
       if (currentline.pos + 1 > nrow(htmlcontent[[currentline.page]])) {
         htmltablelines[i, "txtfirstline"] <- ""
@@ -2737,13 +2990,13 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
       }
     }  ## end for (i in 1:nrow(htmltablelines)) {
   }
-
+  
   ## 6.8) Transfer information gained from html file to txt and keeplayouttxt tables-----------
-
+  
   if (searchwords.go == TRUE && filterwords.go == TRUE &&
       integrity.indicator == TRUE && !length(tablestart.pos) == 0 &&
       nrow(as.data.frame((htmltablelines))) > 0 && ncol(as.data.frame((htmltablelines))) > 0) {
-
+    
     htmltablelines <- htmltablelines[,
                                      c("page", "tableheading", "tablestart.pos",
                                        "tablelastline", "tableend.pos",
@@ -2755,7 +3008,7 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
                                         "tablelastline", "tableend.pos",
                                         "legendlastline", "legendend.pos",
                                         "txtfirstline", "detected.in")]
-
+      
       ## convert into dataframe without levels
       txttablelines <- data.frame(lapply(txttablelines,
                                          as.character), stringsAsFactors = FALSE)
@@ -2770,7 +3023,8 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
                                                   output.for.originrow.only = NA,
                                                   output.for.match = NA,
                                                   output.column.name = "detected.in")$targettablerow
-
+        
+        
         ## if table was not detected table is only one line
         if (txttablelines[i, "detected.in"] == "txtonly.notabledetected" ||
             txttablelines[i, "detected.in"] == "txtonly") {
@@ -2779,7 +3033,7 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
           txttablelines[i, "tablelastline"] <-  txtcontent[as.numeric(txttablelines[i, "tableend.pos"])]
           txttablelines[i, "legendlastline"] <- txtcontent[as.numeric(txttablelines[i, "legendend.pos"])]
           txttablelines[i, "txtfirstline"] <-  txtcontent[as.numeric(txttablelines[i, "legendend.pos"]) + 1]
-
+          
           next
         } else {
           ## get legendlastline from html
@@ -2799,7 +3053,7 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
           txttablelines[i, "legendlastline"] <- txtcontent[leg.pos]
           txttablelines[i, "tablelastline"] <- txtcontent[leg.pos]
           txttablelines[i, "txtfirstline"] <- txtcontent[txt.pos]
-
+          
         } else if (!txttablelines[i, "txtfirstline"] == "") {
           ## adjust txtfirstline
           leg.pos <- suppressWarnings(min(grep(txttablelines[i, "legendlastline"],
@@ -2862,9 +3116,9 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
           txttablelines[i, "tableend.pos"] <- leg.pos.final - rev.pos + 1
         }
       }  ## end
-
+      
       ## adjust keeplayouttxttablelines ##
-
+      
       keeplayouttxttablelines <- htmltablelines[,
                                                 c("page", "tableheading", "tablestart.pos",
                                                   "tablelastline", "tableend.pos",
@@ -2874,7 +3128,7 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
       keeplayouttxttablelines <- data.frame(lapply(keeplayouttxttablelines,
                                                    as.character), stringsAsFactors = FALSE)
       for (i in 1:nrow(keeplayouttxttablelines)) {
-
+        
         ## adjust tablestart.pos
         tabhead <- keeplayouttxttablelines[i, "tableheading"]
         for (symbol in c("\\+", "\\*","\\?",
@@ -2922,13 +3176,13 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
           keeplayouttxttablelines[i, "legendlastline"] <- keeplayouttxtcontent[leg.pos]
           keeplayouttxttablelines[i, "tablelastline"] <- keeplayouttxtcontent[leg.pos]
           keeplayouttxttablelines[i, "txtfirstline"] <- keeplayouttxtcontent[leg.pos+1]
-
+          
         } else if (!keeplayouttxttablelines[i, "txtfirstline"] == "") {
           ## adjust keeplayouttxtfirstline
           leg.pos <- suppressWarnings(min(grep(keeplayouttxttablelines[i, "legendlastline"], 
                                                keeplayouttxtcontent[start:length(keeplayouttxtcontent)],
                                                fixed = TRUE))) + start - 1
-
+          
           keeplayouttxt.pos <- suppressWarnings(min(grep(keeplayouttxttablelines[i, "txtfirstline"],
                                                          keeplayouttxtcontent[start:length(keeplayouttxtcontent)],
                                                          fixed = TRUE))) + start - 1
@@ -2999,12 +3253,12 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
       }
     } #end if (nrow(txttablelines) > 0 && ncol(txttablelines) > 0) {
   }
-
+  
   ## 6.9) Assign table, legend or txt to the each html and txtline ----------
   if (searchwords.go == TRUE && filterwords.go == TRUE &&
       integrity.indicator == TRUE && !length(tablestart.pos) == 0 &&
       nrow(as.data.frame((htmltablelines))) > 0 && ncol(as.data.frame((htmltablelines))) > 0) {
-
+    
     ## Assign table, legend or txt to the each htmlline
     ## initialize the output table
     htmltables <- list()
@@ -3023,19 +3277,28 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
           if (write.tab.doc.file == TRUE) {
             ## write the mock table
             tableheader <- as.character(htmltablelines[i, "tableheading"])
-            for (symbol in c("\\\\", "\\/",
-                             "\\:", "\\*", "\\?",
-                             "\"", ">", "<", "\\|", "\\a")) {
-              tableheader <- gsub(symbol,"_", tableheader)
+            tablenumber <- suppressWarnings(as.numeric( sub("\\D*(\\d+).*", "\\1", tableheader)))
+            if (is.na(tablenumber)){
+              tablenum <- "table"
+            } else{
+              tablenum <- paste0("table",tablenumber)
             }
+            
             ## write table file
             dir.create(paste0(out,"/tables"), showWarnings = FALSE)
-            outputtable.name.part <- paste0(out,"/tables/",id,
-                                            "_")
+            ## if nrow(htmltablelines) is double digits convert i
+            if (nrow(htmltablelines) > 99){
+              i_num <- paste0("00",as.character(i))
+            } else if (nrow(htmltablelines) > 9) {
+              i_num <- paste0("0",as.character(i))
+            } else{
+              i_num <- as.character(i)
+            }
+            
             outputtable.name <- gsub(" ","_",paste0(out,"/tables/",id,
-                                                    "_", i, "_",
-                                                    tableheader))
-            if (nchar(outputtable.name.part) > 100) {
+                                                    "_#", i_num, "_",
+                                                    tablenum))
+            if (nchar(outputtable.name) > 255) {
               print_message <- paste0("The file path of ",paste0(outputtable.name,
                                                                  out.table.ext),
                                       " might be too long to be read by some programs. Consider using a shorter output path.")
@@ -3045,13 +3308,13 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
                                           out.table.format,
                                           " file path maybe too long."))
               utils::write.table(print_message, file = paste0(outputtable.name,
-                                                                             out.table.ext),
+                                                              out.table.ext),
                                  sep = out.table.separator,
                                  row.names = FALSE, col.names = FALSE,
                                  na = "")
             } else {
-              utils::write.table(print_message, file = paste0(substr(outputtable.name, 1, 100),
-                                                                             out.table.ext),
+              utils::write.table(print_message, file = paste0(outputtable.name,
+                                                              out.table.ext),
                                  sep = out.table.separator,
                                  row.names = FALSE, col.names = FALSE,
                                  na = "")
@@ -3078,10 +3341,10 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
     } else {
       htmltables <- list()
     }
-
+    
     ## assign table, legend or txt to the each txtline
     ##
-
+    
     ## initialize outtable
     outtable <- cbind(txtcontent, layout = NA,
                       rownumber = 1:length(txtcontent))
@@ -3096,7 +3359,7 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
     }
     outtable[is.na(outtable[, "layout"]),
              "layout"] <- "txt"
-
+    
     txtlines <- outtable[(outtable[, "layout"] == "txt"), ]
   } else if (filterwords.go == TRUE &&
              integrity.indicator == TRUE) {
@@ -3108,7 +3371,7 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
     if (write.tab.doc.file == TRUE) {
       dir.create(paste0(out,"/no_tab"), showWarnings = FALSE)
       utils::write.table("no table found",
-                         paste0(out,"/no_tab/",id, "_no.table",
+                         paste0(out,"/no_tab/",id, "_no_tab_found",
                                 out.table.ext),
                          sep = out.table.separator,
                          row.names = FALSE, col.names = FALSE,
@@ -3126,11 +3389,11 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
                       rownumber = 1:length(txtcontent))
     txtlines <- outtable[(outtable[, "layout"] == "txt"), ]
   }
-
+  
   ## 7.1) Second search of search words in htmllines -----------------------------------------------
-  if (searchwords.go == TRUE && filterwords.go == TRUE &&
-      integrity.indicator == TRUE && !length(tablestart.pos) == 0 &&
-      nrow(as.data.frame((htmltablelines))) > 0 && ncol(as.data.frame((htmltablelines))) > 0&&
+  if (filterwords.go == TRUE &&
+      integrity.indicator == TRUE &&
+      nrow(as.data.frame((htmltablelines))) > 0 && ncol(as.data.frame((htmltablelines))) > 0 &&
       (whattoextr == "tabandtxt" ||
        whattoextr == "tab" ||
        whattoextr == "table" ||
@@ -3144,46 +3407,84 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
     ## start search only when search words are in the
     ## list
     if (!is.na(search.words[1, "words"])) {
-      ## go through each word
-      for (i in 1:nrow(search.words)) {
-        ## search for tables with searchword ##
-        word <- search.words[i, "words"]
-        ignore.case.sw <- search.words[i,
-                                       "ignore.case.sw"]
-        word.table <- c(word.table,
-                        grep(word, htmltables, ignore.case = ignore.case.sw))
-        word.table <- unique(word.table)
-      }
-
-      ## choose tables with search word
-      processed.tables <- htmltables[word.table]
-      names(processed.tables) <- names(htmltables)[word.table]
-      if (length(word.table) > 0) {
-        htmltablelines[word.table, "searchwords.found"] <- "YES"
-        htmltablelines[-word.table, "searchwords.found"] <- "NO"
-      } else {
-        htmltablelines["searchwords.found"] <- "NO"
-      }
-
-      ## add all tables that have the word 'continue' in
-      ## it and follow a table with the search word
-      n <- 1
-      while (n < nrow(htmltablelines)) {
-        ## if current row is having search word and next
-        ## table not
-        if ((htmltablelines[n, "searchwords.found"] == "YES") && (htmltablelines[n + 1, 
-                                                                                 "searchwords.found"] == "NO")) {
-          ## if next table includes 'continue'
-          if (grepl("continue", htmltables[n + 1], ignore.case = "TRUE")) {
-            htmltablelines[n + 1, "searchwords.found"] <- "YES"
-          }  ## else it remains NO
+      if (search.words[1, "words"] != "") {
+        ## go through each word
+        for (i in 1:nrow(search.words)) {
+          ## search for tables with searchword ##
+          word <- search.words[i, "words"]
+          ignore.case.sw <- search.words[i,
+                                         "ignore.case.sw"]
+          word.table <- c(word.table,
+                          grep(word, htmltables, ignore.case = ignore.case.sw))
+          word.table <- unique(word.table)
+          ## count search words in tables
+          if (ignore.case.sw == TRUE){
+            ic <- "ic"
+          } else {
+            ic <- "nic"
+          }
+          if (regex.sw == TRUE){
+            reg <- "regex"
+          } else {
+            reg <- "nregex"
+          }
+          pdf_searchwords <- c(pdf_searchwords, paste0("SW_",ic,"_",reg,":",word))
+          current_word.tabpos.sw <- NULL
+          for (t in word.table){
+            ## skip the table if it wasn't extracted
+            if (length(nrow(htmltables[[t]])) < 1){
+              next
+            }
+            htmltablelines_w_sw <- grep(word, htmltables[[t]][,1], ignore.case = ignore.case.sw)
+            for (li in htmltablelines_w_sw){
+              current_word.tabpos.sw <- c(current_word.tabpos.sw,
+                                          gregexpr(word, htmltables[[t]][li,1], ignore.case = ignore.case.sw)[[1]])
+            }
+          }
+          pdf_searchword_times <- c(pdf_searchword_times, length(current_word.tabpos.sw))
+          pdf_searchword_total <- sum(pdf_searchword_times)
+          sw_in_tab_counted <- TRUE
         }
-        n <- n + 1
+        
+        ## choose tables with search word
+        processed.tables <- htmltables[word.table]
+        names(processed.tables) <- names(htmltables)[word.table]
+        if (length(word.table) > 0) {
+          htmltablelines[word.table, "searchwords.found"] <- "YES"
+          htmltablelines[-word.table, "searchwords.found"] <- "NO"
+        } else {
+          htmltablelines["searchwords.found"] <- "NO"
+        }
+        
+        ## add all tables that have the word 'continue' in
+        ## it and follow a table with the search word
+        n <- 1
+        while (n < nrow(htmltablelines)) {
+          ## if current row is having search word and next
+          ## table not
+          if ((htmltablelines[n, "searchwords.found"] == "YES") && (htmltablelines[n + 1, 
+                                                                                   "searchwords.found"] == "NO")) {
+            ## if next table includes 'continue'
+            if (grepl("continue", htmltables[n + 1], ignore.case = "TRUE")) {
+              htmltablelines[n + 1, "searchwords.found"] <- "YES"
+            }  ## else it remains NO
+          }
+          n <- n + 1
+        }
+      } else{
+        processed.tables <- htmltables
+        names(processed.tables) <- names(htmltables)
+        pdf_searchword_total <- NA
+        pdf_searchword_times <- NA
+        pdf_searchwords <- "search_word_list"
       }
-
+      
     } else {
       processed.tables <- htmltables
       names(processed.tables) <- names(htmltables)
+      pdf_searchword_times <- NA
+      pdf_searchword_total <- NA
+      pdf_searchwords <- "search_word_list"
     }
   }
   
@@ -3196,11 +3497,11 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
        whattoextr == "tab" ||
        whattoextr == "table" ||
        whattoextr == "txtandtab")) {
-
+    
     ## export tables ##
-
+    
     ## sort processed tables
-
+    
     ## look if any table with search word was found
     if (!length(processed.tables) == 0) {
       processed.tables <- processed.tables[order(names(processed.tables))]
@@ -3211,21 +3512,29 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
         } else if (nrow(processed.tables[[t]]) < 2) {
           ## write the table
           tableheader <- names(processed.tables)[[t]]
-          for (symbol in c("\\\\", "\\/",
-                           "\\:", "\\*", "\\?",
-                           "\"", ">", "<", "\\|", "\\a")) {
-            tableheader <- gsub(symbol,"_", tableheader)
+          tablenumber <- suppressWarnings(as.numeric( sub("\\D*(\\d+).*", "\\1", tableheader)))
+          if (is.na(tablenumber)){
+            tablenum <- "table"
+          } else{
+            tablenum <- paste0("table",tablenumber)
           }
           dir.create(paste0(out,"/tables"), showWarnings = FALSE)
-          outputtable.name.part <- paste0(out,"/tables/",id,
-                                          "_")
+          ## if nrow(htmltablelines) is double digits convert i
+          if (nrow(htmltablelines) > 99){
+            t_num <- paste0("00",as.character(t))
+          } else if (nrow(htmltablelines) > 9) {
+            t_num <- paste0("0",as.character(t))
+          } else{
+            t_num <- as.character(t)
+          }
+          
           outputtable.name <- gsub(" ","_",paste0(out,"/tables/",id,
-                                                  "_", t, "_",
-                                                  tableheader))
-          if (nchar(outputtable.name.part) > 100) {
+                                                  "_#", t_num, "_",
+                                                  tablenum))
+          if (nchar(outputtable.name) > 255) {
             print_message <- paste0("The file path of ",paste0(outputtable.name,
-                                                    out.table.ext),
-                         " might be too long to be read by some programs. Consider using a shorter output path.")
+                                                               out.table.ext),
+                                    " might be too long to be read by some programs. Consider using a shorter output path.")
             out_msg <- c(out_msg, print_message)
             if (verbose) cat(utils::tail(out_msg,1), sep="\n")
             update_progress_info(paste0(outputtable.name,
@@ -3237,7 +3546,7 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
                                row.names = FALSE, col.names = FALSE,
                                na = "")
           } else {
-            utils::write.table(names(processed.tables)[[t]], file = paste0(substr(outputtable.name, 1, 100),
+            utils::write.table(names(processed.tables)[[t]], file = paste0(outputtable.name,
                                                                            out.table.ext),
                                sep = out.table.separator,
                                row.names = FALSE, col.names = FALSE,
@@ -3245,7 +3554,7 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
           }
           next
         }
-
+        
         for (o in c("left", "top")) {
           ## save the range of orient values
           change.table <- processed.tables[[t]][order(strtoi(processed.tables[[t]][, o]), strtoi(processed.tables[[t]][, "font_size"])), ]
@@ -3254,11 +3563,11 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
           ## same
           # change.table <- data.frame(from = orient.range[1],
           #                            to = orient.range[1])
-
+          
           ## only combine for left values and when it is a table with more than 1 column (orient.range > 1)
           if (o == "left" && length(orient.range) > 1) {
             for (i in 2:nrow(change.table)) {
-
+              
               if (dev_x > 0 &&
                   (strtoi(change.table[i, o]) - dev_x) <= strtoi(change.table[i - 1, o])) {
                 change.table[i, o] <- change.table[i - 1, o]
@@ -3314,7 +3623,7 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
               1) {
             ## make a new current line
             new.processed.table[li, 1] <- paste(unlist(new.processed.table[c(duplicated.lines), 1]), 
-                                                      collapse = " ")
+                                                collapse = " ")
             ## delete the other lines
             new.processed.table <- new.processed.table[-duplicated.lines[-1], ]
           }
@@ -3331,22 +3640,30 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
         }
         ## write the table
         tableheader <- names(processed.tables)[[t]]
-        for (symbol in c("\\\\", "\\/",
-                         "\\:", "\\*", "\\?",
-                         "\"", ">", "<", "\\|", "\\a")) {
-          tableheader <- gsub(symbol,"_", tableheader)
+        tablenumber <- suppressWarnings(as.numeric( sub("\\D*(\\d+).*", "\\1", tableheader)))
+        if (is.na(tablenumber)){
+          tablenum <- "table"
+        } else{
+          tablenum <- paste0("table",tablenumber)
         }
         ## write table file
         dir.create(paste0(out,"/tables"), showWarnings = FALSE)
-        outputtable.name.part <- paste0(out,"/tables/",id,
-                                        "_")
+        ## if nrow(htmltablelines) is double digits convert i
+        if (nrow(htmltablelines) > 99){
+          t_num <- paste0("00",as.character(t))
+        } else if (nrow(htmltablelines) > 9) {
+          t_num <- paste0("0",as.character(t))
+        } else{
+          t_num <- as.character(t)
+        }
+        
         outputtable.name <- gsub(" ","_",paste0(out,"/tables/",id,
-                                                "_", t, "_",
-                                                tableheader))
-        if (nchar(outputtable.name.part) > 100) {
+                                                "_#", t_num, "_",
+                                                tablenum))
+        if (nchar(outputtable.name) > 255) {
           print_message <- paste0("The file path of ",paste0(outputtable.name,
-                                                  out.table.ext),
-                       " might be too long to be read by some programs. Consider using a shorter output path.")
+                                                             out.table.ext),
+                                  " might be too long to be read by some programs. Consider using a shorter output path.")
           out_msg <- c(out_msg, print_message)
           if (verbose) cat(utils::tail(out_msg,1), sep="\n")
           update_progress_info(paste0(outputtable.name,
@@ -3358,10 +3675,10 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
             outtable <- c(outtable, gsub("\"NA\"","",out.row))
           }
           suppressWarnings(utils::write.table(outtable, file = paste0(outputtable.name,
-                                                     out.table.ext),
-                             sep = out.table.separator,quote = FALSE,
-                             row.names = FALSE, col.names = FALSE,
-                             na = "", fileEncoding = out.encoding))
+                                                                      out.table.ext),
+                                              sep = out.table.separator,quote = FALSE,
+                                              row.names = FALSE, col.names = FALSE,
+                                              na = "", fileEncoding = out.encoding))
         } else {
           outtable <- NULL
           for (row in 1:nrow(output.table)){
@@ -3369,10 +3686,10 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
             outtable <- c(outtable, gsub("\"NA\"","",out.row))
           }
           suppressWarnings(utils::write.table(outtable, file = paste0(outputtable.name,
-                                                     out.table.ext),
-                             sep = out.table.separator,quote = FALSE,
-                             row.names = FALSE, col.names = FALSE,
-                             na = "",fileEncoding = out.encoding))
+                                                                      out.table.ext),
+                                              sep = out.table.separator,quote = FALSE,
+                                              row.names = FALSE, col.names = FALSE,
+                                              na = "",fileEncoding = out.encoding))
         }
       }  ## end each table
       print_message <- paste0(length(names(processed.tables))," table(s) found in \'",
@@ -3391,7 +3708,7 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
       if (write.tab.doc.file == TRUE) {
         dir.create(paste0(out,"/no_tab"), showWarnings = FALSE)
         utils::write.table("no table with search word found",
-                           paste0(out,"/no_tab/",id, "_no.table.w.search.words",
+                           paste0(out,"/no_tab/",id, "_no_tab_w_swds",
                                   out.table.ext),
                            sep = out.table.separator,
                            row.names = FALSE, col.names = FALSE,
@@ -3399,7 +3716,7 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
       }
     }
   }  ## end if (whattoextr == 'tabandtxt' || whattoextr == 'tab' || whattoextr == 'table' || whattoextr == 'txtandtab')
-
+  
   ## 7.3) Export TABLE INFO only if tab function was called --------------
   if (searchwords.go == TRUE && filterwords.go == TRUE &&
       integrity.indicator == TRUE && !length(tablestart.pos) == 0 &&
@@ -3409,7 +3726,7 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
        whattoextr == "table" ||
        whattoextr == "txtandtab")) {
     ## write.table.locations ##
-
+    
     if (write.table.locations == TRUE) {
       if (!is.null(htmltablelines) &&
           nrow(htmltablelines) > 0) {
@@ -3439,38 +3756,83 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
                            row.names = FALSE)
       }
     }
-
+    
     ## Return htmltablelines,txttablelines and
     ## keeplayouttxttablelines ##
-    output_files <- list(htmltablelines = htmltablelines,
+    stat_output <- cbind(pdf_word_count = pdf_word_count, pdf_page_count = pdf_page_count,
+                         pdf_filterword_total = pdf_filterword_total, 
+                         pdf_searchword_total = pdf_searchword_total,
+                         rbind(pdf_filterword_times), rbind(pdf_searchword_times))
+    extracol_num <- (ncol(stat_output) - 
+                       length(pdf_filterword_times) - 
+                       length(pdf_searchword_times) + 1)
+    colnames(stat_output)[extracol_num:ncol(stat_output)] <- c(pdf_filterwords,pdf_searchwords)
+    rownames(stat_output) <- id
+    output_files <- list(stat_output = data.frame(stat_output, check.names = FALSE),
+                         htmltablelines = htmltablelines,
                          txttablelines = txttablelines,
                          keeplayouttxttablelines = keeplayouttxttablelines,
                          id = id)
-
+    
   }  ## end if (whattoextr == 'tabandtxt' || whattoextr == 'tab' || whattoextr == 'table' || whattoextr == 'txtandtab')
-
+  
   ## 8) Export of SENTENCES if txt function was called -----------------------------------------------
-  if (searchwords.go == TRUE && filterwords.go == TRUE &&
+  if (filterwords.go == TRUE &&
       integrity.indicator == TRUE &&
       (whattoextr == "tabandtxt" || whattoextr == "txt" || whattoextr == "txtandtab")) {
-
+    
     ## search for txt lines with search word in
     ## txtcontent ##
     txtpositionstable <- NULL
-    for (i in 1:nrow(search.words)) {
+    pdf_searchwords <- NULL
+    ## if there are search words
+    if (!search.words[1, "words"] == "") {
+      for (i in 1:nrow(search.words)) {
       ## search for lines with searchword ##
       word <- search.words[i, "words"]
       ignore.case.sw <- search.words[i, "ignore.case.sw"]
       words.found.in.lines <- txtlines[grep(word, txtlines[, "txtcontent"],
                                             ignore.case = ignore.case.sw),
                                        "rownumber"]
+      ## count search words in tables
+      if (ignore.case.sw == TRUE){
+        ic <- "ic"
+      } else {
+        ic <- "nic"
+      }
+      if (regex.sw == TRUE){
+        reg <- "regex"
+      } else {
+        reg <- "nregex"
+      }
+      #TODEL
+      print(pdf_searchwords)
+      pdf_searchwords <- c(pdf_searchwords, paste0("SW_",ic,"_",reg,":",word))
       ## search each line for the exact position of the
       ## word
+      current_word.txtpos.sw <- NULL
+      if (length(words.found.in.lines)==0) {
+        ## if tables were not searched
+        if (sw_in_tab_counted == FALSE){
+          pdf_searchword_times <- c(pdf_searchword_times, 0)
+          ## if tables were searched (add to existing numbers)
+        } else {
+          pdf_searchword_times[i] <- pdf_searchword_times[i] + 0
+        }
+      }
       for (line in words.found.in.lines) {
         ## detect all the positions of the word
         word.positions <- as.vector(gregexpr(word,
                                              txtcontent[strtoi(line)],
                                              ignore.case = ignore.case.sw)[[1]])
+        ## if tables were not searched
+        if (sw_in_tab_counted == FALSE){
+          pdf_searchword_times <- c(pdf_searchword_times, length(word.positions))
+          ## if tables were searched (add to existing numbers)
+        } else {
+          pdf_searchword_times[i] <- pdf_searchword_times[i] + length(word.positions)
+        }
+        pdf_searchword_total <- sum(pdf_searchword_times)
         ## loop through all the positions
         for (word.pos in word.positions) {
           ## A) Detect sentences after
@@ -3520,7 +3882,7 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
           numb.sentences.after <- x - 1
           postword.txtcontent <- substr(postword.txtcontent, 1, nchar(postword.txtcontent) - 1)
           postword.current.sent.end <- postword.current.sent.end - 1
-
+          
           ## A) Detect sentences before
           preword.current.line <- strtoi(line)
           preword.current.sent.start <- word.pos - 1
@@ -3552,7 +3914,7 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
                 preword.current.sent.start <- nchar(txtcontent[preword.current.line])
               }
             }
-
+            
             ## new sent.start point is set to the sent.start of
             ## the sentence +1
             new.preword.current.sent.start <- max(as.vector(gregexpr("\\. [0-9A-Z]",
@@ -3568,7 +3930,7 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
           preword.txtcontent <- substr(preword.txtcontent,
                                        2, nchar(preword.txtcontent))
           preword.current.sent.start <- preword.current.sent.start + 1
-
+          
           ## find the page info
           currentlinenumb <- 0
           page_numb <- 0
@@ -3582,77 +3944,98 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
           #count sentences number (search word location_total sentences)
           outputrow <- data.frame(txtcontent = paste0(preword.txtcontent,
                                                       postword.txtcontent),
-                      page = page_numb,
-                      start.line = preword.current.line,
-                      start.pos = preword.current.sent.start,
-                      start.paragraph = start.paragraph,
-                      end.line = postword.current.line,
-                      end.pos = postword.current.sent.end,
-                      end.paragraph = end.paragraph,
-                      search.word.loc_total = paste0(as.character(numb.sentences.before + 1),"_",
-                                                     as.character(numb.sentences.before + 1 + numb.sentences.after)))
+                                  page = page_numb,
+                                  start.line = preword.current.line,
+                                  start.pos = preword.current.sent.start,
+                                  start.paragraph = start.paragraph,
+                                  end.line = postword.current.line,
+                                  end.pos = postword.current.sent.end,
+                                  end.paragraph = end.paragraph,
+                                  search.word.loc_total = paste0(as.character(numb.sentences.before + 1),"_",
+                                                                 as.character(numb.sentences.before + 1 + numb.sentences.after)))
           txtpositionstable <- rbind(txtpositionstable,
                                      outputrow)
           txtpositionstable <- unique(txtpositionstable)
         }  ## end each search word
       }  ## end for each line
     }  ## end for each search word again
-
-
-    ## export txt info
-    if (!is.null(txtpositionstable)) {
+    
+    
+      ## export txt info
+      if (!is.null(txtpositionstable)) {
       outputtable <- txtpositionstable[order(txtpositionstable$page,
                                              txtpositionstable$start.paragraph),
                                        c("txtcontent","page",
                                          "start.paragraph","end.paragraph",
                                          "search.word.loc_total")]
-      search.word.list <- gsub(" ",
-                               "_", paste(search.words[, "words"],
-                                          collapse = ","))
-      if (nchar(search.word.list) > 30)
-        search.word.list <- paste0(substr(search.word.list,
-                                          1, 30), "...")
-      for (symbol in c("\\/", "\\:",
-                       "\\*", "\\?", "\"", ">", "<",
-                       "\\|", "\\(", "\\)", "\\[",
-                       "\\]", "\\{", "\\}")) {
-        search.word.list <- gsub(symbol,
-                                 "_", search.word.list)
-      }
+      
+      sw_id <- create_id_from_stringlist(search.words[, "words"])
+      pdf_sentences_w_searchwords <- nrow(outputtable)
+      output_files$stat_output <- data.frame(cbind(output_files$stat_output, 
+                                                   pdf_sentences_w_searchwords = pdf_sentences_w_searchwords),
+                                             check.names = FALSE)
       print_message <- paste0(nrow(outputtable)," sentences with search words were found in \'",id,".pdf\'.")
       out_msg <- c(out_msg, print_message)
       if (verbose) cat(utils::tail(out_msg,1), sep="\n")
       update_progress_info(print_message)
       dir.create(paste0(out,"/txt+-", context), showWarnings = FALSE)
-      utils::write.table(outputtable, file = paste0(out,"/txt+-", context,"/",id,"_txt+-", context,
-                                                    "_",search.word.list,
+      ## create file with all searchwords
+      utils::write.table(c(paste(search.words[, "words"], collapse = ","),
+                           search.words[, "words"]), 
+                         file = paste0(out,"/txt+-", context,"/search_word_list_ID_",sw_id,
+                                       ".txt"),
+                         quote = FALSE,
+                         row.names = FALSE,
+                         col.names = FALSE)
+      
+      ##export table
+      utils::write.table(outputtable, file = paste0(out,"/txt+-", context,"/",id,"_",sw_id,
+                                                    "_swds_txt+-", context,
                                                     out.table.ext),
                          sep = out.table.separator,
                          row.names = FALSE,
                          fileEncoding = "UTF-8")
     } else if (filterwords.go == TRUE &&
                integrity.indicator == TRUE) {
-      print_message <- paste0("No text with search words in \'",id,".pdf\' found")
-      out_msg <- c(out_msg, print_message)
-      if (verbose) cat(utils::tail(out_msg,1), sep="\n")
-      update_progress_info(print_message)
-      ## write an empty file
-      if (write.txt.doc.file == TRUE) {
-        dir.create(paste0(out,"/no_txt_w_sw"), showWarnings = FALSE)
-        utils::write.table("no text line with search word found.",
-                           paste0(out,"/no_txt_w_sw/",id, "_no.txt.w.search.words",
-                                  out.table.ext),
-                           sep = out.table.separator,
-                           row.names = FALSE, col.names = FALSE,
-                           na = "")
+        print_message <- paste0("No text with search words in \'",id,".pdf\' found")
+        out_msg <- c(out_msg, print_message)
+        if (verbose) cat(utils::tail(out_msg,1), sep="\n")
+        update_progress_info(print_message)
+        ## write an empty file
+        if (write.txt.doc.file == TRUE) {
+          dir.create(paste0(out,"/no_txt_w_sw"), showWarnings = FALSE)
+          utils::write.table("no text line with search word found.",
+                             paste0(out,"/no_txt_w_sw/",id, "_no_txt_w_swds",
+                                    out.table.ext),
+                             sep = out.table.separator,
+                             row.names = FALSE, col.names = FALSE,
+                             na = "")
+        }
       }
+      ##update output
+      stat_output <- cbind(pdf_word_count = pdf_word_count, pdf_page_count = pdf_page_count,
+                           pdf_filterword_total = pdf_filterword_total, 
+                           pdf_searchword_total = pdf_searchword_total,
+                           rbind(pdf_filterword_times), rbind(pdf_searchword_times))
+      extracol_num <- (ncol(stat_output) - 
+                         length(pdf_filterword_times) - 
+                         length(pdf_searchword_times) + 1)
+      colnames(stat_output)[extracol_num:ncol(stat_output)] <- c(pdf_filterwords,pdf_searchwords)
+      rownames(stat_output) <- id
+      stat_output <- cbind(stat_output, pdf_sentences_w_searchwords = pdf_sentences_w_searchwords)
+      
+      output_files$stat_output <- data.frame(stat_output, check.names = FALSE)
+    } else { ## end if (!search.words[1, "words"] == "") {
+      pdf_searchword_total <- NA
+      pdf_searchword_times <- NA
+      pdf_searchwords <- "search_word_list"
     }
   }  ## end if (whattoextr == 'tabandtxt' || whattoextr == 'txt' || whattoextr == 'txtandtab')
-
+  
   ## 9) if the algorithm was not run in table detection ---------------------
   ## setting tablelines is NULL
   if (length(output_files) > 0) {
-
+    
     if (exp.nondetc.tabs == TRUE) {
       if (nrow(output_files$htmltablelines) > 0 &&
           !is.null(output_files$htmltablelines)) {
@@ -3680,6 +4063,19 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
   if (verbose) cat(utils::tail(out_msg,1), sep="\n")
   update_progress_info(print_message)
   
+  stat_output <- cbind(pdf_word_count = pdf_word_count, pdf_page_count = pdf_page_count,
+                       pdf_filterword_total = pdf_filterword_total, 
+                       pdf_searchword_total = pdf_searchword_total,
+                       rbind(pdf_filterword_times), rbind(pdf_searchword_times))
+  if (length(pdf_filterword_times) > 0 || length(pdf_searchword_times) > 0){
+    extracol_num <- (ncol(stat_output) - 
+                       length(pdf_filterword_times) - 
+                       length(pdf_searchword_times) + 1)
+    colnames(stat_output)[extracol_num:ncol(stat_output)] <- c(pdf_filterwords,pdf_searchwords)
+  }
+  rownames(stat_output) <- id
+  stat_output <- cbind(stat_output, pdf_sentences_w_searchwords = pdf_sentences_w_searchwords)
+  output_files$stat_output <- data.frame(stat_output, check.names = FALSE)
   output_files$out_msg <- out_msg
   return(output_files)
 }  ## end function
@@ -3699,9 +4095,11 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
 #'  \code{"."}.
 #'@param filter.words List of strings. The list of filter words. If not
 #'  \code{NA} or \code{""} a hit will be counted every time a word from the list
-#'  is detected in the article. Regex rules apply (see also
-#'  \url{https://github.com/rstudio/cheatsheets/raw/master/regex.pdf}).
+#'  is detected in the article.
 #'   Default: \code{""}.
+#'@param regex.fw Logical. If TRUE filter words will follow the regex rules
+#' (see \url{https://github.com/erikstricker/PDE/blob/master/inst/examples/cheetsheets/regex.pdf}).
+#'  Default = \code{TRUE}.
 #'@param ignore.case.fw Logical. Are the filter words case-sensitive (does
 #'  capitalization matter)? Default: \code{FALSE}.
 #'@param filter.word.times Numeric. The minimum number of hits described for
@@ -3709,15 +4107,16 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
 #'@param table.heading.words List of strings. Different than standard (TABLE,
 #'  TAB or table plus number) headings to be detected. Regex rules apply (see
 #'  also
-#'  \url{https://github.com/rstudio/cheatsheets/raw/master/regex.pdf}).
+#'  \url{https://github.com/erikstricker/PDE/blob/master/inst/examples/cheetsheets/regex.pdf}).
 #'   Default = \code{""}.
 #'@param ignore.case.th Logical. Are the additional table headings (see
 #'  \code{table.heading.words}) case-sensitive (does capitalization matter)?
 #'  Default = \code{FALSE}.
 #'@param search.words List of strings. List of search words. To extract all
-#'  tables from the PDF files leave \code{search.words = ""}. Regex rules apply (see
-#'  also
-#'  \url{https://github.com/rstudio/cheatsheets/raw/master/regex.pdf}).
+#'  tables from the PDF files leave \code{search.words = ""}. 
+#'@param regex.sw Logical. If TRUE search words will follow the regex rules
+#' (see \url{https://github.com/erikstricker/PDE/blob/master/inst/examples/cheetsheets/regex.pdf}).
+#'  Default = \code{TRUE}.
 #'@param ignore.case.sw Logical. Are the search words case-sensitive (does
 #'  capitalization matter)? Default: \code{FALSE}.
 #'@param eval.abbrevs Logical. Should abbreviations for the search words be
@@ -3759,6 +4158,9 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
 #'@param delete Logical. If \code{TRUE}, the intermediate \strong{txt},
 #'  \strong{keeplayouttxt} and \strong{html} copies of the PDF files will be 
 #'  deleted. Default: \code{TRUE}.
+#'@param cpy_mv String. Either "nocpymv", "cpy", or "mv". If filter words are used in the
+#'  analyses, the processed PDF files will either be copied ("cpy") or moved ("mv") into the
+#'  /pdf/ subfolder of the output folder. Default: \code{"nocpymv"}.
 #'@param verbose Logical. Indicates whether messages will be printed in the console. Default: \code{TRUE}.
 #'
 #'@return If tables were extracted from the PDF file the function returns a list of
@@ -3775,35 +4177,39 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
 #'## Running a simple analysis with filter and search words to extract sentences and tables
 #'if(PDE_check_Xpdf_install() == TRUE){
 #'  outputtables <- PDE_extr_data_from_pdfs(pdfs = c(paste0(system.file(package = "PDE"),
-#'                                                  "examples/Methotrexate/29973177_!.pdf"),
+#'                                                  "/examples/Methotrexate/29973177_!.pdf"),
 #'                                                  paste0(system.file(package = "PDE"),
-#'                                                  "examples/Methotrexate/31083238_!.pdf")),
+#'                                                  "/examples/Methotrexate/31083238_!.pdf")),
 #'  whattoextr = "tabandtxt",
-#'  out = paste0(system.file(package = "PDE"),"/examples/MTX_all_files+-0_test/"),
+#'  out = paste0(system.file(package = "PDE"),"/examples/MTX_output+-0_test/"),
 #'  filter.words = strsplit("cohort;case-control;group;study population;study participants", ";")[[1]],
 #'  ignore.case.fw = TRUE,
+#'  regex.fw = FALSE,
 #'  search.words = strsplit("(M|m)ethotrexate;(T|t)rexal;(R|r)heumatrex;(O|o)trexup", ";")[[1]],
-#'  ignore.case.sw = FALSE)
+#'  ignore.case.sw = FALSE,
+#'  regex.sw = TRUE)
 #'}
 #'
 #'## Running an advanced analysis with filter and search words to
 #'## extract sentences and tables and obtain documentation files
 #'if(PDE_check_Xpdf_install() == TRUE){
 #'  outputtables <- PDE_extr_data_from_pdfs(pdfs = c(paste0(system.file(package = "PDE"),
-#'                                                  "examples/Methotrexate/29973177_!.pdf"),
+#'                                                  "/examples/Methotrexate/29973177_!.pdf"),
 #'                                                   paste0(system.file(package = "PDE"),
-#'                                                  "examples/Methotrexate/31083238_!.pdf")),
+#'                                                  "/examples/Methotrexate/31083238_!.pdf")),
 #'  whattoextr = "tabandtxt",
-#'  out = paste0(system.file(package = "PDE"),"/examples/MTX_all_files+-1_test/"),
+#'  out = paste0(system.file(package = "PDE"),"/examples/MTX_output+-1_test/"),
 #'  context = 1,
 #'  dev_x = 20,
 #'  dev_y = 9999,
 #'  filter.words = strsplit("cohort;case-control;group;study population;study participants",";")[[1]],
 #'  ignore.case.fw = TRUE,
+#'  regex.fw = FALSE,
 #'  filter.word.times = 20,
 #'  table.heading.words = "",
 #'  ignore.case.th = FALSE,
 #'  search.words = strsplit("(M|m)ethotrexate;(T|t)rexal;(R|r)heumatrex;(O|o)trexup", ";")[[1]],
+#'  regex.sw = TRUE,
 #'  ignore.case.sw = FALSE,
 #'  eval.abbrevs = TRUE,
 #'  out.table.format = ".csv (WINDOWS-1252)",
@@ -3811,6 +4217,7 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
 #'  write.tab.doc.file = TRUE,
 #'  write.txt.doc.file = TRUE,
 #'  exp.nondetc.tabs = TRUE,
+#'  cpy_mv = "nocpymv",
 #'  delete = TRUE)
 #'}
 #'
@@ -3819,33 +4226,37 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
 #'
 #'@export
 PDE_extr_data_from_pdfs <- function(pdfs, whattoextr,
-                          out = ".", filter.words = "", ignore.case.fw = FALSE, filter.word.times = 20,
-                          table.heading.words = "", ignore.case.th = FALSE, search.words,
-                          ignore.case.sw = FALSE, eval.abbrevs = TRUE, 
-                          out.table.format = ".csv (WINDOWS-1252)", dev_x = 20, dev_y = 9999, context = 0,
-                          write.table.locations = FALSE, exp.nondetc.tabs = TRUE, write.tab.doc.file = TRUE,
-                          write.txt.doc.file = TRUE, delete = TRUE, verbose = TRUE){
+                                    out = ".", filter.words = "", regex.fw = TRUE, ignore.case.fw = FALSE, 
+                                    filter.word.times = 20,
+                                    table.heading.words = "", ignore.case.th = FALSE, search.words,regex.sw = TRUE,
+                                    ignore.case.sw = FALSE, eval.abbrevs = TRUE, 
+                                    out.table.format = ".csv (WINDOWS-1252)", dev_x = 20, dev_y = 9999, context = 0,
+                                    write.table.locations = FALSE, exp.nondetc.tabs = TRUE, write.tab.doc.file = TRUE,
+                                    write.txt.doc.file = TRUE,  delete = TRUE, cpy_mv = "nocpymv",verbose = TRUE){
   ## run the analysis ----------------------------------------------------------------
   tablelines <- NULL
   output <- NULL
   
   for (pdf in pdfs) {
-
+    
     if(file.exists(pdf)){
       tablelines <- .PDE_extr_data_from_pdf(pdf = pdf, whattoextr = whattoextr,
                                             out = out, context = context, dev_x = dev_x,
-                                            filter.words = filter.words, ignore.case.fw = ignore.case.fw,
+                                            filter.words = filter.words, regex.fw = regex.fw,
+                                            ignore.case.fw = ignore.case.fw,
                                             filter.word.times = filter.word.times, 
                                             table.heading.words = table.heading.words,
                                             ignore.case.th = ignore.case.th, search.words = search.words,
+                                            regex.sw = regex.sw,
                                             ignore.case.sw = ignore.case.sw, eval.abbrevs = eval.abbrevs,
                                             write.table.locations = write.table.locations,
                                             write.tab.doc.file = write.tab.doc.file, 
                                             write.txt.doc.file = write.txt.doc.file,
                                             exp.nondetc.tabs = exp.nondetc.tabs, 
                                             out.table.format = out.table.format,
+                                            cpy_mv = cpy_mv,
                                             delete = delete, verbose = verbose)
-    ## example data
+      ## example data
     } else {
       id <- sub("^(.*)\\..*$", "\\1", basename(pdf))
       tablelines <- list(htmltablelines = "",
@@ -3856,15 +4267,48 @@ PDE_extr_data_from_pdfs <- function(pdfs, whattoextr,
     ## if the algorithm was not run in table detection
     ## setting tablelines is NULL
     if (length(tablelines) > 0) {
-
-      ## add new tablelines to output
-      output[[length(output) + 1]] <- tablelines
+      
+      # ## add new tablelines to output
+      # output[[length(output) + 1]] <- tablelines
+      
+      ##make stat_output mastertable
+      if (is.null(output)){
+        output <- tablelines$stat_output
+      } else {
+        output[setdiff(names(tablelines$stat_output), names(output))] <- NA
+        tablelines$stat_output[setdiff(names(output), names(tablelines$stat_output))] <- NA
+        output <- rbind(output,tablelines$stat_output)
+      }
     }
-
+    
   }  ## end for each PDF file
-
+  
+  ## write the PDE_analyzer_word_stats table
+  if ("pdf_searchword_total" %in% colnames(output)){
+    if ("pdf_filterword_total" %in% colnames(output)){
+      output <- output[order(output$pdf_searchword_total,
+                             output$pdf_filterword_total, decreasing = TRUE),,drop=FALSE]
+    } else {
+      output <- output[order(output$pdf_searchword_total, decreasing = TRUE),,drop=FALSE]
+    }
+  }
+  todays.date_time <- paste0(format(Sys.Date(), "%Y-%m-%d"),format(Sys.time(), "-%Hh-%Mm"))
+  if (grepl("csv", out.table.format)) {
+    out.table.separator <- ","
+    out.table.ext <- ".csv"
+  }
+  if (grepl("tsv", out.table.format)) {
+    out.table.separator <- "\t"
+    out.table.ext <- ".tsv"
+  }
+  output_table <- cbind(pdf_file_name = rownames(output), output)
+  utils::write.table(output_table, file = paste0(out,"/",todays.date_time,"_PDE_analyzer_word_stats",
+                                                 out.table.ext),
+                     sep = out.table.separator,
+                     row.names = FALSE)
+  
   return(output)
-
+  
 }
 
 #'Extracting all tables from a PDF (Portable Document Format) file
@@ -3878,7 +4322,7 @@ PDE_extr_data_from_pdfs <- function(pdfs, whattoextr,
 #'@param table.heading.words List of strings. Different than standard (TABLE,
 #'  TAB or table plus number) headings to be detected. Regex rules apply (see
 #'  also
-#'  \url{https://github.com/rstudio/cheatsheets/raw/master/regex.pdf}).
+#'  \url{https://github.com/erikstricker/PDE/blob/master/inst/examples/cheetsheets/regex.pdf}).
 #'   Default = \code{""}.
 #'@param ignore.case.th Logical. Are the additional table headings (see
 #'  \code{table.heading.words}) case-sensitive (does capitalization matter)?
@@ -3912,14 +4356,14 @@ PDE_extr_data_from_pdfs <- function(pdfs, whattoextr,
 #'## Running a simple table extraction
 #'if(PDE_check_Xpdf_install() == TRUE){
 #' outputtables <- PDE_pdfs2table(pdf = paste0(system.file(package = "PDE"),
-#'                  "examples/Methotrexate/29973177_!.pdf"),
+#'                  "/examples/Methotrexate/29973177_!.pdf"),
 #'  out = paste0(system.file(package = "PDE"),"/examples/29973177_tables/"))
 #'}
 #'
 #'## Running a the same table extraction as above with all paramaters shown
 #'if(PDE_check_Xpdf_install() == TRUE){
 #'  outputtables <- PDE_pdfs2table(pdf = paste0(system.file(package = "PDE"),
-#'                                  "examples/Methotrexate/29973177_!.pdf"),
+#'                                  "/examples/Methotrexate/29973177_!.pdf"),
 #'  out = paste0(system.file(package = "PDE"),"/examples/29973177_tables/"),
 #'  dev_x = 20,
 #'  dev_y = 9999,
@@ -3939,11 +4383,11 @@ PDE_pdfs2table <- function(pdfs, out = ".", table.heading.words = "", ignore.cas
                            out.table.format = ".csv (WINDOWS-1252)", dev_x = 20, dev_y = 9999,
                            write.table.locations = FALSE, exp.nondetc.tabs = TRUE, delete = TRUE, 
                            verbose=TRUE){
-
+  
   ## run the analysis ----------------------------------------------------------------
   no_output <- NULL
   for (pdf in pdfs) {
-
+    
     if(file.exists(pdf)){
       no_output <- .PDE_extr_data_from_pdf(pdf=pdf,
                                            whattoextr = "tab",
@@ -3964,6 +4408,7 @@ PDE_pdfs2table <- function(pdfs, out = ".", table.heading.words = "", ignore.cas
                                            exp.nondetc.tabs = exp.nondetc.tabs,
                                            write.tab.doc.file = FALSE,
                                            write.txt.doc.file = FALSE,
+                                           cpy_mv = "nocpymv",
                                            delete = delete, verbose = verbose)
     }
   }
@@ -3980,9 +4425,11 @@ PDE_pdfs2table <- function(pdfs, out = ".", table.heading.words = "", ignore.cas
 #'  \code{"."}.
 #'@param filter.words List of strings. The list of filter words. If not
 #'  \code{NA} or \code{""} a hit will be counted every time a word from the list
-#'  is detected in the article. Regex rules apply (see also
-#'  \url{https://github.com/rstudio/cheatsheets/raw/master/regex.pdf}).
+#'  is detected in the article.
 #'   Default: \code{""}.
+#'@param regex.fw Logical. If TRUE filter words will follow the regex rules
+#' (see \url{https://github.com/erikstricker/PDE/blob/master/inst/examples/cheetsheets/regex.pdf}).
+#'  Default = \code{TRUE}.
 #'@param ignore.case.fw Logical. Are the filter words case-sensitive (does
 #'  capitalization matter)? Default: \code{FALSE}.
 #'@param filter.word.times Numeric. The minimum number of hits described for
@@ -3990,15 +4437,16 @@ PDE_pdfs2table <- function(pdfs, out = ".", table.heading.words = "", ignore.cas
 #'@param table.heading.words List of strings. Different than standard (TABLE,
 #'  TAB or table plus number) headings to be detected. Regex rules apply (see
 #'  also
-#'  \url{https://github.com/rstudio/cheatsheets/raw/master/regex.pdf}).
+#'  \url{https://github.com/erikstricker/PDE/blob/master/inst/examples/cheetsheets/regex.pdf}).
 #'   Default = \code{""}.
 #'@param ignore.case.th Logical. Are the additional table headings (see
 #'  \code{table.heading.words}) case-sensitive (does capitalization matter)?
 #'  Default = \code{FALSE}.
 #'@param search.words List of strings. List of search words. To extract all
-#'  tables from the PDF file leave \code{search.words = ""}. Regex rules apply 
-#'  (see also
-#'  \url{https://github.com/rstudio/cheatsheets/raw/master/regex.pdf}).
+#'  tables from the PDF file leave \code{search.words = ""}.
+#'@param regex.sw Logical. If TRUE search words will follow the regex rules
+#' (see \url{https://github.com/erikstricker/PDE/blob/master/inst/examples/cheetsheets/regex.pdf}).
+#'  Default = \code{TRUE}.
 #'@param ignore.case.sw Logical. Are the search words case-sensitive (does
 #'  capitalization matter)? Default: \code{FALSE}.
 #'@param eval.abbrevs Logical. Should abbreviations for the search words be
@@ -4030,6 +4478,9 @@ PDE_pdfs2table <- function(pdfs, out = ".", table.heading.words = "", ignore.cas
 #'@param delete Logical. If \code{TRUE}, the intermediate \strong{txt},
 #'  \strong{keeplayouttxt} and \strong{html} copies of the PDF file will be 
 #'  deleted. Default: \code{TRUE}.
+#'@param cpy_mv String. Either "nocpymv", "cpy", or "mv". If filter words are used in the
+#'  analyses, the processed PDF files will either be copied ("cpy") or moved ("mv") into the
+#'  /pdf/ subfolder of the output folder. Default: \code{"nocpymv"}.
 #'@param verbose Logical. Indicates whether messages will be printed in the console. Default: \code{TRUE}.
 #'
 #'@return If tables were extracted from the PDF file the function returns a list of
@@ -4046,11 +4497,13 @@ PDE_pdfs2table <- function(pdfs, out = ".", table.heading.words = "", ignore.cas
 #'## Running a simple analysis with filter and search words to extract tables
 #'if(PDE_check_Xpdf_install() == TRUE){
 #'  outputtables <- PDE_pdfs2table_searchandfilter(pdf = paste0(system.file(package = "PDE"),
-#'                                    "examples/Methotrexate/29973177_!.pdf"),
+#'                                    "/examples/Methotrexate/29973177_!.pdf"),
 #'  out = paste0(system.file(package = "PDE"),"/examples/29973177_tables/"),
 #'  filter.words = strsplit("cohort;case-control;group;study population;study participants", ";")[[1]],
+#'  regex.fw = FALSE,
 #'  ignore.case.fw = TRUE,
 #'  search.words = strsplit("(M|m)ethotrexate;(T|t)rexal;(R|r)heumatrex;(O|o)trexup", ";")[[1]],
+#'  regex.sw = TRUE,
 #'  ignore.case.sw = FALSE)
 #'}
 #'
@@ -4058,40 +4511,43 @@ PDE_pdfs2table <- function(pdfs, out = ".", table.heading.words = "", ignore.cas
 #'## extract tables and obtain documentation files
 #'if(PDE_check_Xpdf_install() == TRUE){
 #'  outputtables <- PDE_pdfs2table_searchandfilter(pdf = paste0(system.file(package = "PDE"),
-#'                                    "examples/Methotrexate/29973177_!.pdf"),
+#'                                    "/examples/Methotrexate/29973177_!.pdf"),
 #'  out = paste0(system.file(package = "PDE"),"/examples/29973177_tables/"),
 #'  dev_x = 20,
 #'  dev_y = 9999,
 #'  filter.words = strsplit("cohort;case-control;group;study population;study participants", ";")[[1]],
+#'  regex.fw = FALSE,
 #'  ignore.case.fw = TRUE,
 #'  filter.word.times = 20,
 #'  table.heading.words = "",
 #'  ignore.case.th = FALSE,
 #'  search.words = strsplit("(M|m)ethotrexate;(T|t)rexal;(R|r)heumatrex;(O|o)trexup", ";")[[1]],
+#'  regex.sw = TRUE,
 #'  ignore.case.sw = FALSE,
 #'  eval.abbrevs = TRUE,
 #'  out.table.format = ".csv (WINDOWS-1252)",
 #'  write.table.locations = TRUE,
 #'  write.tab.doc.file = TRUE,
 #'  exp.nondetc.tabs = TRUE,
+#'  cpy_mv = "nocpymv",
 #'  delete = TRUE)
 #'}
 #'
 #'@seealso \code{\link{PDE_extr_data_from_pdfs}}, \code{\link{PDE_pdfs2table}}
 #'
 #'@export
-PDE_pdfs2table_searchandfilter <- function(pdfs, out = ".", filter.words = "", 
+PDE_pdfs2table_searchandfilter <- function(pdfs, out = ".", filter.words = "", regex.fw = TRUE, 
                                            ignore.case.fw = FALSE, filter.word.times = 20,
                                            table.heading.words = "", ignore.case.th = FALSE, search.words,
-                                           ignore.case.sw = FALSE, eval.abbrevs = TRUE, 
+                                           regex.sw = TRUE, ignore.case.sw = FALSE, eval.abbrevs = TRUE, 
                                            out.table.format = ".csv (WINDOWS-1252)", dev_x = 20, dev_y = 9999,
                                            write.table.locations = FALSE, exp.nondetc.tabs = TRUE, 
                                            write.tab.doc.file = TRUE,
-                                           delete = TRUE, verbose = TRUE){
+                                           delete = TRUE, cpy_mv = "nocpymv", verbose = TRUE){
   tablelines <- NULL
   output <- NULL
   for (pdf in pdfs) {
-
+    
     if(file.exists(pdf)){
       tablelines <- .PDE_extr_data_from_pdf(pdf=pdf,
                                             whattoextr = "tab",
@@ -4112,7 +4568,7 @@ PDE_pdfs2table_searchandfilter <- function(pdfs, out = ".", filter.words = "",
                                             exp.nondetc.tabs = exp.nondetc.tabs,
                                             write.tab.doc.file = write.tab.doc.file,
                                             write.txt.doc.file = FALSE,
-                                            delete = delete, verbose = verbose)
+                                            delete = delete, cpy_mv = cpy_mv, verbose = verbose)
     } else {
       id = sub("^(.*)\\..*$", "\\1", basename(pdf))
       output = list(output = "",
@@ -4123,13 +4579,46 @@ PDE_pdfs2table_searchandfilter <- function(pdfs, out = ".", filter.words = "",
     ## if the algorithm was not run in table detection
     ## setting tablelines is NULL
     if (length(tablelines) > 0) {
-
-      ## add new tablelines to output
-      output[[length(output) + 1]] <- tablelines
+      
+      # ## add new tablelines to output
+      # output[[length(output) + 1]] <- tablelines
+      
+      ##make stat_output mastertable
+      if (is.null(output)){
+        output <- tablelines$stat_output
+      } else {
+        output[setdiff(names(tablelines$stat_output), names(output))] <- NA
+        tablelines$stat_output[setdiff(names(output), names(tablelines$stat_output))] <- NA
+        output <- rbind(output,tablelines$stat_output)
+      }
     }
-
+    
   }  ## end for each pdf
-
+  
+  ## write the PDE_analyzer_word_stats table
+  if ("pdf_searchword_total" %in% colnames(output)){
+    if ("pdf_filterword_total" %in% colnames(output)){
+      output <- output[order(output$pdf_searchword_total,
+                             output$pdf_filterword_total, decreasing = TRUE),,drop=FALSE]
+    } else {
+      output <- output[order(output$pdf_searchword_total, decreasing = TRUE),,drop=FALSE]
+    }
+  }
+  todays.date_time <- paste0(format(Sys.Date(), "%Y-%m-%d"),format(Sys.time(), "-%Hh-%Mm"))
+  if (grepl("csv", out.table.format)) {
+    out.table.separator <- ","
+    out.table.ext <- ".csv"
+  }
+  if (grepl("tsv", out.table.format)) {
+    out.table.separator <- "\t"
+    out.table.ext <- ".tsv"
+  }
+  output_table <- cbind(pdf_file_name = rownames(output), output)
+  utils::write.table(output_table, file = paste0(out,"/",todays.date_time,"_PDE_analyzer_word_stats",
+                                                 out.table.ext),
+                     sep = out.table.separator,
+                     row.names = FALSE)
+  
   return(output)
 }
 
@@ -4144,16 +4633,19 @@ PDE_pdfs2table_searchandfilter <- function(pdfs, out = ".", filter.words = "",
 #'  \code{"."}.
 #'@param filter.words List of strings. The list of filter words. If not
 #'  \code{NA} or \code{""} a hit will be counted every time a word from the list
-#'  is detected in the article. Regex rules apply (see also
-#'  \url{https://github.com/rstudio/cheatsheets/raw/master/regex.pdf}).
+#'  is detected in the article.
 #'   Default: \code{""}.
+#'@param regex.fw Logical. If TRUE filter words will follow the regex rules
+#' (see \url{https://github.com/erikstricker/PDE/blob/master/inst/examples/cheetsheets/regex.pdf}).
+#'  Default = \code{TRUE}.
 #'@param ignore.case.fw Logical. Are the filter words case-sensitive (does
 #'  capitalization matter)? Default: \code{FALSE}.
 #'@param filter.word.times Numeric. The minimum number of hits described for
 #'  \code{filter.words} for a paper to be further analyzed. Default: \code{20}.
-#'@param search.words List of strings. List of search words. Regex rules apply (see
-#'  also
-#'  \url{https://github.com/rstudio/cheatsheets/raw/master/regex.pdf}).
+#'@param search.words List of strings. List of search words. 
+#'@param regex.sw Logical. If TRUE search words will follow the regex rules
+#' (see \url{https://github.com/erikstricker/PDE/blob/master/inst/examples/cheetsheets/regex.pdf}).
+#'  Default = \code{TRUE}.
 #'@param ignore.case.sw Logical. Are the search words case-sensitive (does
 #'  capitalization matter)? Default: \code{FALSE}.
 #'@param eval.abbrevs Logical. Should abbreviations for the search words be
@@ -4181,17 +4673,22 @@ PDE_pdfs2table_searchandfilter <- function(pdfs, out = ".", filter.words = "",
 #'@param delete Logical. If \code{TRUE}, the intermediate \strong{txt},
 #'  \strong{keeplayouttxt} and \strong{html} copies of the PDF file will be 
 #'  deleted. Default: \code{TRUE}.
+#'@param cpy_mv String. Either "nocpymv", "cpy", or "mv". If filter words are used in the
+#'  analyses, the processed PDF files will either be copied ("cpy") or moved ("mv") into the
+#'  /pdf/ subfolder of the output folder. Default: \code{"nocpymv"}.
 #'@param verbose Logical. Indicates whether messages will be printed in the console. Default: \code{TRUE}.
 #'
 #'@examples
 #'## Running a simple analysis with filter and search words to extract sentences
 #'if(PDE_check_Xpdf_install() == TRUE){
 #'  outputtables <- PDE_pdfs2txt_searchandfilter(pdf = paste0(system.file(package = "PDE"),
-#'                                       "examples/Methotrexate/29973177_!.pdf"),
+#'                                       "/examples/Methotrexate/29973177_!.pdf"),
 #'  out = paste0(system.file(package = "PDE"),"/examples/MTX_txt+-0/"),
 #'  filter.words = strsplit("cohort;case-control;group;study population;study participants", ";")[[1]],
+#'  regex.fw = FALSE,
 #'  ignore.case.fw = TRUE,
 #'  search.words = strsplit("(M|m)ethotrexate;(T|t)rexal;(R|r)heumatrex;(O|o)trexup", ";")[[1]],
+#'  regex.sw = TRUE,
 #'  ignore.case.sw = FALSE)
 #'}
 #'
@@ -4199,33 +4696,37 @@ PDE_pdfs2table_searchandfilter <- function(pdfs, out = ".", filter.words = "",
 #'## extract sentences and obtain documentation files
 #'if(PDE_check_Xpdf_install() == TRUE){
 #'  outputtables <- PDE_pdfs2txt_searchandfilter(pdf = paste0(system.file(package = "PDE"),
-#'                                        "examples/Methotrexate/29973177_!.pdf"),
+#'                                        "/examples/Methotrexate/29973177_!.pdf"),
 #'  out = paste0(system.file(package = "PDE"),"/examples/MTX_txt+-1/"),
 #'  context = 1,
 #'  filter.words = strsplit("cohort;case-control;group;study population;study participants", ";")[[1]],
+#'  regex.fw = FALSE,
 #'  ignore.case.fw = TRUE,
 #'  filter.word.times = 20,
 #'  search.words = strsplit("(M|m)ethotrexate;(T|t)rexal;(R|r)heumatrex;(O|o)trexup", ";")[[1]],
+#'  regex.sw = TRUE,
 #'  ignore.case.sw = FALSE,
 #'  eval.abbrevs = TRUE,
 #'  out.table.format = ".csv (WINDOWS-1252)",
 #'  write.txt.doc.file = TRUE,
+#'  cpy_mv = "nocpymv",
 #'  delete = TRUE)
 #'}
 #'
 #'@seealso \code{\link{PDE_extr_data_from_pdfs}}
 #'
 #'@export
-PDE_pdfs2txt_searchandfilter = function(pdfs, out = ".", filter.words = "", 
+PDE_pdfs2txt_searchandfilter = function(pdfs, out = ".", filter.words = "", regex.fw = TRUE,
                                         ignore.case.fw = FALSE, filter.word.times = 20, search.words,
+                                        regex.sw = TRUE,
                                         ignore.case.sw = FALSE, eval.abbrevs = TRUE, 
                                         out.table.format = ".csv (WINDOWS-1252)", context = 0,
                                         write.txt.doc.file = TRUE,
-                                        delete = TRUE, verbose=TRUE){
-
+                                        delete = TRUE, cpy_mv = "nocpymv",verbose=TRUE){
+  
   no_output <- NULL
   for (pdf in pdfs) {
-
+    
     if(file.exists(pdf)){
       no_output <- .PDE_extr_data_from_pdf(pdf=pdf,
                                            whattoextr = "txt",
@@ -4246,10 +4747,10 @@ PDE_pdfs2txt_searchandfilter = function(pdfs, out = ".", filter.words = "",
                                            exp.nondetc.tabs = FALSE,
                                            write.tab.doc.file = FALSE,
                                            write.txt.doc.file = write.txt.doc.file,
-                                           delete = delete, verbose = verbose)
+                                           delete = delete, cpy_mv = cpy_mv, verbose = verbose)
     }
   }
-
+  
 }
 
 
@@ -4274,7 +4775,34 @@ PDE_pdfs2txt_searchandfilter = function(pdfs, out = ".", filter.words = "",
 #' 
 #' @export
 PDE_analyzer_i <- function(verbose=TRUE) {
-
+  
+  ##functions --------------------------------------------------
+  tooltip <- function(text, targetWidget, width = 350){
+    
+    end <- function(){
+      tkdestroy(base)
+    }
+    
+    tipX <- as.numeric(tkwinfo("rootx", targetWidget)) +
+      as.numeric(tkwinfo("width", targetWidget))
+    tipY <- as.numeric(tkwinfo("rooty", targetWidget))
+    
+    # Takes out the frame and title bar
+    tkwm.overrideredirect(base <- tktoplevel(), TRUE)
+    on.exit(tkdestroy(base))
+    # Put the TW in the right place
+    tkwm.geometry(base, paste("+", tipX, "+", tipY, sep = ""))
+    tip <- tklabel(base, text = text, background = "white",
+                   wraplength = width)
+    tkpack(tip)
+    
+    tkbind(targetWidget, "<Leave>", end)
+    
+    tkwait.window(base)
+    
+    return(invisible())
+  }
+  
   ## set the variables ------------------------------------------
   out_msg <- NULL
   tsv_location.var <- tcltk::tclVar("")
@@ -4299,10 +4827,13 @@ PDE_analyzer_i <- function(verbose=TRUE) {
   dev_x.var <- tcltk::tclVar("20")
   dev_y.var <- tcltk::tclVar("9999")
   dynamic.dev_y.var <- tcltk::tclVar("1")
+  regex.sw.var <- tcltk::tclVar("0")
+  regex.fw.var <- tcltk::tclVar("0")
   l15.filter.words.rbValue <- tcltk::tclVar("no")
   filter.words.var <- tcltk::tclVar("")
   filter.word.times.var <- tcltk::tclVar("20")
   ignore.case.fw.var <- tcltk::tclVar("FALSE")
+  copy_move_pdfs.var <- tcltk::tclVar("nocpymv")
   l19.rbValue <- tcltk::tclVar("all")
   search.words.var <- tcltk::tclVar("")
   ignore.case.sw.var <- tcltk::tclVar("FALSE")
@@ -4325,7 +4856,7 @@ PDE_analyzer_i <- function(verbose=TRUE) {
   wrap.var <- tcltk::tclVar("1")
   columnnumber.var <- tcltk::tclVar("0")
   table.location.var <- tcltk::tclVar("")
-
+  
   ## find os.font
   if (Sys.info()["sysname"] == "Windows") {
     os.font <- "Arial"
@@ -4344,14 +4875,14 @@ PDE_analyzer_i <- function(verbose=TRUE) {
     os.font.ten.bold <- "Arial 10 bold"
     os.font.twelve.bold <- "Arial 12 bold"
   }
-
+  
   ## components of the form -------------------------------------
   ## tcltk test specifically relevant for Mac
   tcltk.test <- try(test <- tcltk::tktoplevel(bg = "#05F2DB"), silent = TRUE)
   tcltk.test2 <- try(tcltk::tkdestroy(test), silent = TRUE)
-  if (class(tcltk.test) == "try-error"){
+  if (inherits(tcltk.test,"try-error")){
     out_msg <- c(out_msg, paste("Package tcltk is not working properly.",
-               "If you are on a Mac try installing the latest version of xquartz to use tcltk correctly."))
+                                "If you are on a Mac try installing the latest version of xquartz to use tcltk correctly."))
     if (verbose) cat(utils::tail(out_msg,1), sep="\n")
   } else {
     ## if tcltk works continue
@@ -4359,7 +4890,7 @@ PDE_analyzer_i <- function(verbose=TRUE) {
     notebook <- tcltk::ttknotebook(PDE.globals$ttanalyzer)
     tcltk::tkwm.geometry(PDE.globals$ttanalyzer, "+0+0")
     tcltk::tkwm.title(PDE.globals$ttanalyzer, "PDE analyzer - Choose your variables")
-  
+    
     ## style ------------------------------------------------------
     themes <- try(tcltk2::tk2theme.list(), silent = TRUE)
     if (!inherits(themes, "try-error")) {
@@ -4373,11 +4904,11 @@ PDE_analyzer_i <- function(verbose=TRUE) {
         try(tcltk2::tk2theme("aquaTk"), silent = TRUE)
       }
     }
-  
+    
     ## min size so that no buttons disappear vertically
     tcltk::tkwm.minsize(PDE.globals$ttanalyzer, 620, 335)
-  
-  
+    
+    
     ## frames --------------------------------------------
     ## right frame
     r <- tcltk::tkframe(PDE.globals$ttanalyzer)
@@ -4389,18 +4920,20 @@ PDE_analyzer_i <- function(verbose=TRUE) {
     l39 <- tcltk::tkframe(PDE.globals$ttanalyzer)
     ## line in_output (line6-10) with buttons
     in_output_tab <- tcltk::tkframe(notebook, borderwidth = 1, relief = "solid",
-                                bg = "#05F2C7",
-                                class="Notebook")
+                                    bg = "#05F2C7",
+                                    class="Notebook")
     l7 <- tcltk::tkframe(in_output_tab, bg = "#05F2C7")  ## pdfs
     l7.2 <- tcltk::tkframe(in_output_tab, bg = "#05F2C7")  ## pdfs
     l9 <- tcltk::tkframe(in_output_tab, bg = "#05F2C7")  ## outputfolder
     l9.2 <- tcltk::tkframe(in_output_tab, bg = "#05F2C7")  ## outputfolder
     l10 <- tcltk::tkframe(in_output_tab, bg = "#05F2C7")  ## out.table.format
     l10.2 <- tcltk::tkframe(in_output_tab, bg = "#05F2C7")  ## out.table.format
+    l11 <- tcltk::tkframe(in_output_tab, bg = "#05F2C7")  ## step 4 label
+    l11.2 <- tcltk::tkframe(in_output_tab, bg = "#05F2C7")  ## step 5 label
     ## line serachwords
     searchwords_tab <- tcltk::tkframe(notebook, borderwidth = 1, relief = "solid",
-                                  bg = "#05F2C7",
-                                  class="Notebook")
+                                      bg = "#05F2C7",
+                                      class="Notebook")
     l8 <- tcltk::tkframe(searchwords_tab, bg = "#05F2C7")  ## whattoextr
     l19 <- tcltk::tkframe(searchwords_tab, bg = "#05F2C7")  ## extract all tables?
     l20 <- tcltk::tkframe(searchwords_tab, bg = "#05F2C7")  ## search.words
@@ -4418,12 +4951,13 @@ PDE_analyzer_i <- function(verbose=TRUE) {
     l16 <- tcltk::tkframe(filterwords_tab, bg = "#05F2C7")  ## filter.words
     l16.2 <- tcltk::tkframe(filterwords_tab, bg = "#05F2C7")  ## filter.words
     l17 <- tcltk::tkframe(filterwords_tab, bg = "#05F2C7")  ## ignore.case.fw
-    l18 <- tcltk::tkframe(filterwords_tab, bg = "#05F2C7")  ## filter.word.times.caption
+    l18.1 <- tcltk::tkframe(filterwords_tab, bg = "#05F2C7")  ## filter.word.times.caption
+    l18.2 <- tcltk::tkframe(filterwords_tab, bg = "#05F2C7")  ## filter.word.times.caption
     
     ## line paras (line11-23) with buttons
     paras_tab <- tcltk::tkframe(notebook, borderwidth = 1, relief = "solid",
-                            bg = "#05F2C7",
-                            class="Notebook")
+                                bg = "#05F2C7",
+                                class="Notebook")
     l12 <- tcltk::tkframe(paras_tab, bg = "#05F2C7")  ## table.heading.words
     l12.2 <- tcltk::tkframe(paras_tab, bg = "#05F2C7")  ## table.heading.words
     l13 <- tcltk::tkframe(paras_tab, bg = "#05F2C7")  ## ignore.case.th
@@ -4431,8 +4965,8 @@ PDE_analyzer_i <- function(verbose=TRUE) {
     l14.2 <- tcltk::tkframe(paras_tab, bg = "#05F2C7")  ## dev_y.caption
     ## line docus (line24-28) with buttons
     docus_tab <- tcltk::tkframe(notebook, borderwidth = 1, relief = "solid",
-                            bg = "#05F2C7",
-                            class="Notebook")
+                                bg = "#05F2C7",
+                                class="Notebook")
     l25 <- tcltk::tkframe(docus_tab, bg = "#05F2C7")  ## write table values
     l26 <- tcltk::tkframe(docus_tab, bg = "#05F2C7")  ## exp.nondetc.tabs
     l27 <- tcltk::tkframe(docus_tab, bg = "#05F2C7")  ## write.tab.doc.file
@@ -4440,8 +4974,8 @@ PDE_analyzer_i <- function(verbose=TRUE) {
     l29 <- tcltk::tkframe(docus_tab, bg = "#05F2C7")  ## delete
     
     no.output_tab <- tcltk::tkframe(notebook, borderwidth = 1, relief = "solid",
-                                bg = "#05F2C7",
-                                class="Notebook")
+                                    bg = "#05F2C7",
+                                    class="Notebook")
     
     l30 <- tcltk::tkframe(no.output_tab, bg = "#05F2C7")  ## no table
     l31 <- tcltk::tkframe(no.output_tab, bg = "#05F2C7")  ## no table 1
@@ -4452,25 +4986,25 @@ PDE_analyzer_i <- function(verbose=TRUE) {
     l36 <- tcltk::tkframe(no.output_tab, bg = "#05F2C7")  ## url
     
     contact_tab <- tcltk::tkframe(notebook, borderwidth = 1, relief = "solid",
-                                bg = "#05F2C7",
-                                class="Notebook")
-  
+                                  bg = "#05F2C7",
+                                  class="Notebook")
+    
     
     e <- tcltk::tkframe(PDE.globals$ttanalyzer)
     le <- tcltk::tkframe(e)  ## progress bar
     
     ## test os.font ------------------------------------------------------------------------
     res <- try(tcltk2::tk2label(l1, text = "test", font = os.font.ten.bold), silent = TRUE)
-    if (class(res)[1] == "try-error") {
+    if (inherits(res[1],"try-error")) {
       out_msg <- c(out_msg, "There is an error with the allocation of tcl system fonts.")
       if (verbose) cat(utils::tail(out_msg,1), sep="\n")
       os.font <- ""
       os.font.ten.bold <- ""
       os.font.twelve.bold <- ""
     }
-  
+    
     ## slider --------------------------------------------------------
-  
+    
     ## A function that changes the label
     ## paras l14.1.dev_x slider
     l14.1.onChange <- function(...) {
@@ -4480,8 +5014,8 @@ PDE_analyzer_i <- function(verbose=TRUE) {
     }
     ## Add the slider
     l14.1.dev_x.slider <- tcltk2::tk2scale(l14.1, from = 0, to = 200,
-                                       variable = dev_x.var, orient = "horizontal",
-                                       length = 100, command = l14.1.onChange)
+                                           variable = dev_x.var, orient = "horizontal",
+                                           length = 100, command = l14.1.onChange)
     
     ## A function that changes the label
     ## paras l14.2.dev_y slider
@@ -4496,19 +5030,19 @@ PDE_analyzer_i <- function(verbose=TRUE) {
                                            variable = dev_y.var, orient = "horizontal",
                                            length = 100, command = l14.2.onChange)
     
-  
-    ## l18.filter.word.times slider A function that
+    
+    ## l18.1.filter.word.times slider A function that
     ## changes the label
-    l18.onChange <- function(...) {
-      l18.value <- as.integer(tcltk::tclvalue(filter.word.times.var))
-      l18.entry <- sprintf("%s", l18.value)
-      tcltk::tclvalue(filter.word.times.var) <- l18.entry
+    l18.1.onChange <- function(...) {
+      l18.1.value <- as.integer(tcltk::tclvalue(filter.word.times.var))
+      l18.1.entry <- sprintf("%s", l18.1.value)
+      tcltk::tclvalue(filter.word.times.var) <- l18.1.entry
     }
     ## Add the slider
-    l18.filter.word.times.slider <- tcltk2::tk2scale(l18,
+    l18.1.filter.word.times.slider <- tcltk2::tk2scale(l18.1,
                                                      from = 0, to = 500, variable = filter.word.times.var,
-                                                     orient = "horizontal", length = 100, command = l18.onChange)
-  
+                                                     orient = "horizontal", length = 100, command = l18.1.onChange)
+    
     ## l22.context slider A function that changes the
     ## label
     l22.onChange <- function(...) {
@@ -4532,39 +5066,62 @@ PDE_analyzer_i <- function(verbose=TRUE) {
     }
     
     l14.2.dynamic.dev_y.cbtn <- tcltk::tkcheckbutton(l14.2, variable = dynamic.dev_y.var, 
-                                                  text = "dynamic",
-                                                  state = "normal", background = "#05F2C7", 
-                                                  command = change.dynamic.dev_y)
-  
-  
+                                                     text = "dynamic",
+                                                     state = "normal", background = "#05F2C7", 
+                                                     command = change.dynamic.dev_y)
+    change.regex.sw <- function() {
+      
+    }
+    
+    l20.2.regex.sw.cbtn <- tcltk::tkcheckbutton(l20.2, variable = regex.sw.var, 
+                                                text = "Regex",
+                                                state = "normal", background = "#05F2C7", 
+                                                command = change.regex.sw)
+    change.regex.fw <- function() {
+    }
+    
+    l16.2.regex.fw.cbtn <- tcltk::tkcheckbutton(l16.2, variable = regex.fw.var, 
+                                                text = "Regex",
+                                                state = "normal", background = "#05F2C7", 
+                                                command = change.regex.fw)
+    
+    
     ## No output tab -----------------------------------------------------
     if (Sys.info()["sysname"] == "Windows") {
       os.font <- "Arial"
+      os.font.ten <- "Arial 10"
       os.font.ten.bold <- "Arial 10 bold"
       os.font.twelve.bold <- "Arial 12 bold"
+      os.font.ten.underlined <- "Arial 10 underline"
     } else if (Sys.info()["sysname"] == "Darwin") {
       os.font <- "Helvetica"
+      os.font.ten <- "Helvetica 10"
       os.font.ten.bold <- "Helvetica 10 bold"
       os.font.twelve.bold <- "Helvetica 12 bold"
+      os.font.ten.underlined <- "Helvetica 10 underline"
     } else if (Sys.info()["sysname"] == "Linux" || Sys.info()["sysname"] == "SunOS") {
       os.font <- grDevices::X11Fonts()$sans
+      os.font.ten <- paste0(os.font, " 10")
       os.font.ten.bold <- paste0(os.font, " 10 bold")
       os.font.twelve.bold <- paste0(os.font, " 12 bold")
+      os.font.ten.underlined <- paste0(os.font, " 10 underline")
     } else {
       os.font <- "Arial"
+      os.font.ten <- "Arial 10"
       os.font.ten.bold <- "Arial 10 bold"
       os.font.twelve.bold <- "Arial 12 bold"
+      os.font.ten.underlined <- "Arial 10 underline"
     }
     
     l30.no.tables.label <- tcltk2::tk2label(l30, text = "No tables?", background = "#05F2C7",
-                                      font = os.font.twelve.bold)
+                                            font = os.font.twelve.bold)
     l31.no.tables.one.label <- tcltk2::tk2label(l31, text = paste0("1) Make your your tables have",
-                                                              " a standard scientific format with \"TABLE\"",
-                                                              ", \"TAB\", \"Table\" or \"table\" plus number.",
-                                                              " Use custom table headings under the Parameters ",
-                                                              "Tab if necessary"), 
-                                            background = "#05F2C7",
-                                            wraplength = 620 - 50)
+                                                                   " a standard scientific format with \"TABLE\"",
+                                                                   ", \"TAB\", \"Table\" or \"table\" plus number.",
+                                                                   " Use custom table headings under the Parameters ",
+                                                                   "Tab if necessary"), 
+                                                background = "#05F2C7",
+                                                wraplength = 620 - 50)
     l32.no.tables.two.label <- tcltk2::tk2label(l32, text = paste0("2) Check that your PDF file is not secured (read-only)",
                                                                    ", consists only out of images, or has rotated pages. ",
                                                                    "Tables on rotated pages will be exported as png if the ",
@@ -4575,22 +5132,22 @@ PDE_analyzer_i <- function(verbose=TRUE) {
                                                                      " files includes enough filter words not to be excluded",
                                                                      " from analyses (double-check your filter word and",
                                                                      " case-sensivity selections in the Filter Words Tab.)"), 
-                                                background = "#05F2C7",
-                                                wraplength = 620 - 50)
+                                                  background = "#05F2C7",
+                                                  wraplength = 620 - 50)
     l34.no.tables.four.label <- tcltk2::tk2label(l34, text = paste0("4) If you selected search words, ensure that your tables",
                                                                     " include at least one of the search words (double-check",
                                                                     " your search word and case-sensivity selections in the",
                                                                     " Search Words Tab.)"), 
-                                                background = "#05F2C7",
-                                                wraplength = 620 - 50)
+                                                 background = "#05F2C7",
+                                                 wraplength = 620 - 50)
     l35.no.tables.five.label <- tcltk2::tk2label(l35, text = paste0("5) For presisting problems look for the maintainer",
                                                                     " contact information on the PDE CRAN page: "), 
-                                                background = "#05F2C7",
-                                                wraplength = 620 - 50)
+                                                 background = "#05F2C7",
+                                                 wraplength = 620 - 50)
     
     
     l36.url.label <- tcltk2::tk2label(l36, text = paste0("https://cran.r-project.org/web/packages/PDE/index.html"), 
-                                                 background = "#05F2C7", foreground="blue", cursor="hand2")
+                                      background = "#05F2C7", foreground="blue", cursor="hand2")
     
     tcltk::tkbind(l36.url.label, "<Button-1>",
                   function() {
@@ -4619,12 +5176,16 @@ PDE_analyzer_i <- function(verbose=TRUE) {
     # })
     
     
-
+    
     
     ## labels -----------------------------------------------------------
-  
+    
     ## line in_output (line6-10) with buttons
+    l7.step1.label <- tcltk2::tk2label(l7, text = "Step 1:",
+                                       font = os.font.ten.bold,
+                                       background = "#05F2C7")
     l7.pdfs.label <- tcltk2::tk2label(l7, text = "Choose the PDF(s)/folder",
+                                      font = os.font.ten,
                                       background = "#05F2C7")
     l8.whattoextr.label <- tcltk2::tk2label(l8, text = "Choose what to extract from the PDF files",
                                             background = "#05F2C7")
@@ -4634,15 +5195,37 @@ PDE_analyzer_i <- function(verbose=TRUE) {
                                                    background = "#05F2C7")
     l8.whattoextr.both.label <- tcltk2::tk2label(l8, text = "both",
                                                  background = "#05F2C7")
+    l9.step2.label <- tcltk2::tk2label(l9, text = "Step 2:",
+                                       font = os.font.ten.bold,
+                                       background = "#05F2C7")
     l9.outputfolder.label <- tcltk2::tk2label(l9, text = "Choose the output folder",
+                                              font = os.font.ten,
                                               background = "#05F2C7")
+    l10.step3.label <- tcltk2::tk2label(l10, text = "Step 3 (optional):",
+                                        font = os.font.ten.bold,
+                                        background = "#05F2C7")
     l10.out.table.format.label <- tcltk2::tk2label(l10, text = "Choose the output format",
+                                                   font = os.font.ten,
                                                    background = "#05F2C7")
-  
+    
+    l11.step4.label <- tcltk2::tk2label(l11, text = "Step 4 (optional):",
+                                        font = os.font.ten.bold,
+                                        background = "#05F2C7")
+    l11.step4_2.label <- tcltk2::tk2label(l11, text = "Adjust options in the tabs above.",
+                                          font = os.font.ten,
+                                          background = "#05F2C7")
+    
+    l11.2.step5.label <- tcltk2::tk2label(l11.2, text = "Step 5:",
+                                          font = os.font.ten.bold,
+                                          background = "#05F2C7")
+    l11.2.step5_2.label <- tcltk2::tk2label(l11.2, text = "Start analysis.",
+                                            font = os.font.ten,
+                                            background = "#05F2C7")
+    
     ## line paras (line11-23) with buttons
     l12.table.heading.words.label <- tcltk2::tk2label(l12,
-                                        text = "Enter all table headings other than \"table\" (separated by ; without extra spaces):",
-                                        background = "#05F2C7")
+                                                      text = "Enter all table headings other than \"table\" (separated by ; without extra spaces):",
+                                                      background = "#05F2C7")
     l13.ignore.case.th.label <- tcltk2::tk2label(l13, text = "Are the table headings case sensitive (capitalization important)?",
                                                  background = "#05F2C7")
     l13.ignore.case.th.yes.label <- tcltk2::tk2label(l13,
@@ -4650,7 +5233,7 @@ PDE_analyzer_i <- function(verbose=TRUE) {
     l13.ignore.case.th.no.label <- tcltk2::tk2label(l13,
                                                     text = "no", background = "#05F2C7")
     l14.1.dev_x.label <- tcltk2::tk2label(l14.1, text = "Enter the pixel deviation where different table columns are considered same:",
-                                      background = "#05F2C7")
+                                          background = "#05F2C7")
     l14.2.dev_y.label <- tcltk2::tk2label(l14.2, text = paste0("Enter the pixel deviation where different table value heights are considered\n",
                                                                "the same row (enter 9999 for dynamic detection based on font size):"),
                                           background = "#05F2C7")
@@ -4668,9 +5251,17 @@ PDE_analyzer_i <- function(verbose=TRUE) {
                                                      background = "#05F2C7")
     l17.ignore.case.fw.no.label <- tcltk2::tk2label(l17, text = "no",
                                                     background = "#05F2C7")
-    l18.filter.word.times.label <- tcltk2::tk2label(l18,
+    l18.1.filter.word.times.label <- tcltk2::tk2label(l18.1,
                                                     text = "Min. number of words from filter word list required to be detected in the PDF file:",
                                                     background = "#05F2C7")
+    l18.2.fw.label <- tcltk2::tk2label(l18.2, text = "Copy/move PDF files according to the presence of filter words?",
+                                                 background = "#05F2C7")
+    l18.2.fw.nocpymv.label <- tcltk2::tk2label(l18.2, text = "no copy/move",
+                                                     background = "#05F2C7")
+    l18.2.fw.cpy.label <- tcltk2::tk2label(l18.2, text = "copy",
+                                               background = "#05F2C7")
+    l18.2.fw.mv.label <- tcltk2::tk2label(l18.2, text = "move",
+                                               background = "#05F2C7")
     l19.extract.all.tables.label <- tcltk2::tk2label(l19, text = "Extract all tables or only ones with search words?",
                                                      background = "#05F2C7")
     l19.extract.all.tables.all.label <- tcltk2::tk2label(l19,
@@ -4695,11 +5286,11 @@ PDE_analyzer_i <- function(verbose=TRUE) {
                                                   background = "#05F2C7")
     # (line24-28) with buttons
     l25.write.table.locations.label <- tcltk2::tk2label(l25, text = "Should the table values (coordinates within the files) be written in an output file?",
-                                                     background = "#05F2C7")
+                                                        background = "#05F2C7")
     l25.write.table.locations.yes.label <- tcltk2::tk2label(l25,
-                                                         text = "yes", background = "#05F2C7")
+                                                            text = "yes", background = "#05F2C7")
     l25.write.table.locations.no.label <- tcltk2::tk2label(l25,
-                                                        text = "no", background = "#05F2C7")
+                                                           text = "no", background = "#05F2C7")
     l26.exp.nondetc.tabs.label <- tcltk2::tk2label(l26, text = "Should the tables with problems exported as pngs?",
                                                    background = "#05F2C7")
     l26.exp.nondetc.tabs.yes.label <- tcltk2::tk2label(l26,
@@ -4727,36 +5318,36 @@ PDE_analyzer_i <- function(verbose=TRUE) {
     
     l37.wrap.label <- tcltk2::tk2label(l37, text = "wrap", background = "#05F2C7")
     l37.nowrap.label <- tcltk2::tk2label(l37, text = "don't wrap (for window resizing)",
-                                        background = "#05F2C7")
+                                         background = "#05F2C7")
     ## line (line29) with buttons
     PDE.globals$le.progress.textbox <- tcltk2::tk2combobox(le, values = c("",""), textvariable = "", justify = "center")
-  
+    
     ## entry boxes -----------------------------------------------
-  
+    
     ## in_output
     l7.2.pdfs.entry <- tcltk2::tk2entry(l7.2, textvariable = pdfs.var,
-                                      width = 10)
+                                        width = 10)
     l9.2.outputfolder.entry <- tcltk2::tk2entry(l9.2, textvariable = outputfolder.var,
-                                              width = 10)
+                                                width = 10)
     ## paras
     l12.2.table.heading.words.entry <- tcltk2::tk2entry(l12.2,
-                                                      textvariable = table.heading.words.var, width = 10)
+                                                        textvariable = table.heading.words.var, width = 10)
     l14.1.dev_x.entry <- tcltk2::tk2entry(l14.1, textvariable = dev_x.var,
-                                      width = 4)
+                                          width = 4)
     l14.2.dev_y.entry <- tcltk2::tk2entry(l14.2, textvariable = dev_y.var,
                                           width = 4)
     l16.2.filter.words.entry <- tcltk2::tk2entry(l16.2, textvariable = filter.words.var,
-                                               width = 10)
-    l18.filter.word.times.entry <- tcltk2::tk2entry(l18,
+                                                 width = 10)
+    l18.1.filter.word.times.entry <- tcltk2::tk2entry(l18.1,
                                                     textvariable = filter.word.times.var, width = 4)
     l20.2.search.words.entry <- tcltk2::tk2entry(l20.2, textvariable = search.words.var,
-                                               width = 10)
+                                                 width = 10)
     l22.context.entry <- tcltk2::tk2entry(l22, textvariable = context.var,
                                           width = 4)
     ## docus
-  
-    ## radio buttons --------------------------------------------
-  
+    
+    ## radio buttons 1 --------------------------------------------
+    
     l13.ignore.case.th.yes.rb <- tcltk::tkradiobutton(l13,
                                                       variable = ignore.case.th.var, value = "FALSE",
                                                       background = "#05F2C7")
@@ -4769,38 +5360,79 @@ PDE_analyzer_i <- function(verbose=TRUE) {
     l17.ignore.case.fw.no.rb <- tcltk::tkradiobutton(l17,
                                                      variable = ignore.case.fw.var, value = "TRUE",
                                                      background = "#05F2C7")
-  
+    
+    l18.2.fw.nocpymv.rb <- tcltk::tkradiobutton(l18.2,
+                                                      variable = copy_move_pdfs.var, value = "nocpymv",
+                                                      background = "#05F2C7")
+    l18.2.fw.cpy.rb <- tcltk::tkradiobutton(l18.2,
+                                                     variable = copy_move_pdfs.var, value = "cpy",
+                                                     background = "#05F2C7")
+    l18.2.fw.mv.rb <- tcltk::tkradiobutton(l18.2,
+                                                        variable = copy_move_pdfs.var, value = "mv",
+                                                        background = "#05F2C7")
+    
     l15.onyes.click <- function() {
       tcltk::tkconfigure(l16.filter.words.label, state = "normal")
       tcltk::tkconfigure(l16.2.filter.words.entry, state = "normal")
+      tcltk::tkconfigure(l16.2.regex.fw.cbtn, state = "normal")
       tcltk::tkconfigure(l17.ignore.case.fw.label, state = "normal")
       tcltk::tkconfigure(l17.ignore.case.fw.yes.rb, state = "normal")
       tcltk::tkconfigure(l17.ignore.case.fw.yes.label, state = "normal")
       tcltk::tkconfigure(l17.ignore.case.fw.no.label, state = "normal")
       tcltk::tkconfigure(l17.ignore.case.fw.no.rb, state = "normal")
-      tcltk::tkconfigure(l18.filter.word.times.label,
+      tcltk::tkconfigure(l18.1.filter.word.times.label,
                          state = "normal")
-      tcltk::tkconfigure(l18.filter.word.times.entry,
+      tcltk::tkconfigure(l18.1.filter.word.times.entry,
                          state = "normal")
-      tcltk::tkconfigure(l18.filter.word.times.slider,
+      tcltk::tkconfigure(l18.1.filter.word.times.slider,
                          to = "500")
       tcltk::tclvalue(filter.word.times.var) = "20"
+      tcltk::tkconfigure(l18.2.fw.label,
+                         state = "normal")
+      tcltk::tkconfigure(l18.2.fw.nocpymv.label,
+                         state = "normal")
+      tcltk::tkconfigure(l18.2.fw.nocpymv.rb,
+                         state = "normal")
+      tcltk::tkconfigure(l18.2.fw.cpy.label,
+                         state = "normal")
+      tcltk::tkconfigure(l18.2.fw.cpy.rb,
+                         state = "normal")
+      tcltk::tkconfigure(l18.2.fw.mv.label,
+                         state = "normal")
+      tcltk::tkconfigure(l18.2.fw.mv.rb,
+                         state = "normal")
     }
     l15.onno.click <- function() {
       tcltk::tkconfigure(l16.filter.words.label, state = "disabled")
       tcltk::tkconfigure(l16.2.filter.words.entry, state = "disabled")
+      tcltk::tkconfigure(l16.2.regex.fw.cbtn, state = "disabled")
       tcltk::tkconfigure(l17.ignore.case.fw.label, state = "disabled")
       tcltk::tkconfigure(l17.ignore.case.fw.yes.rb, state = "disabled")
       tcltk::tkconfigure(l17.ignore.case.fw.no.rb, state = "disabled")
       tcltk::tkconfigure(l17.ignore.case.fw.yes.label, state = "disabled")
       tcltk::tkconfigure(l17.ignore.case.fw.no.label, state = "disabled")
-      tcltk::tkconfigure(l18.filter.word.times.label,
+      tcltk::tkconfigure(l18.1.filter.word.times.label,
                          state = "disabled")
-      tcltk::tkconfigure(l18.filter.word.times.entry,
+      tcltk::tkconfigure(l18.1.filter.word.times.entry,
                          state = "disabled")
       tcltk::tclvalue(filter.word.times.var) <- "0"
-      tcltk::tkconfigure(l18.filter.word.times.slider,
+      tcltk::tkconfigure(l18.1.filter.word.times.slider,
                          to = "0")
+      tcltk::tkconfigure(l18.2.fw.label,
+                         state = "disabled")
+      tcltk::tkconfigure(l18.2.fw.nocpymv.label,
+                         state = "disabled")
+      tcltk::tkconfigure(l18.2.fw.nocpymv.rb,
+                         state = "disabled")
+      tcltk::tkconfigure(l18.2.fw.cpy.label,
+                         state = "disabled")
+      tcltk::tkconfigure(l18.2.fw.cpy.rb,
+                         state = "disabled")
+      tcltk::tkconfigure(l18.2.fw.mv.label,
+                         state = "disabled")
+      tcltk::tkconfigure(l18.2.fw.mv.rb,
+                         state = "disabled")
+      
       ## delete all filterwords
       tcltk::tclvalue(filter.words.var) <- ""
     }
@@ -4809,18 +5441,19 @@ PDE_analyzer_i <- function(verbose=TRUE) {
                                                     value = "yes", command = l15.onyes.click, background = "#05F2C7")
     l15.filter.words.no.rb <- tcltk::tkradiobutton(l15, variable = l15.filter.words.rbValue,
                                                    value = "no", command = l15.onno.click, background = "#05F2C7")
-  
+    
     l21.ignore.case.sw.yes.rb <- tcltk::tkradiobutton(l21,
                                                       variable = ignore.case.sw.var, value = "FALSE",
                                                       background = "#05F2C7")
     l21.ignore.case.sw.no.rb <- tcltk::tkradiobutton(l21,
                                                      variable = ignore.case.sw.var, value = "TRUE",
                                                      background = "#05F2C7")
-  
-  
+    
+    
     l19.onall.click <- function() {
       tcltk::tkconfigure(l20.search.words.label, state = "disabled")
       tcltk::tkconfigure(l20.2.search.words.entry, state = "disabled")
+      tcltk::tkconfigure(l20.2.regex.sw.cbtn, state = "disabled")
       tcltk::tkconfigure(l21.ignore.case.sw.label, state = "disabled")
       tcltk::tkconfigure(l21.ignore.case.sw.yes.label, state = "disabled")
       tcltk::tkconfigure(l21.ignore.case.sw.no.label, state = "disabled")
@@ -4836,6 +5469,7 @@ PDE_analyzer_i <- function(verbose=TRUE) {
     l19.onsearchwords.click <- function() {
       tcltk::tkconfigure(l20.search.words.label, state = "normal")
       tcltk::tkconfigure(l20.2.search.words.entry, state = "normal")
+      tcltk::tkconfigure(l20.2.regex.sw.cbtn, state = "normal")
       tcltk::tkconfigure(l21.ignore.case.sw.label, state = "normal")
       tcltk::tkconfigure(l21.ignore.case.sw.yes.label, state = "normal")
       tcltk::tkconfigure(l21.ignore.case.sw.no.label, state = "normal")
@@ -4852,47 +5486,47 @@ PDE_analyzer_i <- function(verbose=TRUE) {
     l19.extract.all.tables.searchwords.rb <- tcltk::tkradiobutton(l19,
                                                                   variable = l19.rbValue, value = "searchwords",
                                                                   command = l19.onsearchwords.click, background = "#05F2C7")
-  
+    
     l23.eval.abbrevs.yes.rb <- tcltk::tkradiobutton(l23,
                                                     variable = eval.abbrevs.var, value = "TRUE",
                                                     background = "#05F2C7")
     l23.eval.abbrevs.no.rb <- tcltk::tkradiobutton(l23,
                                                    variable = eval.abbrevs.var, value = "FALSE",
                                                    background = "#05F2C7")
-  
+    
     l25.write.table.locations.yes.rb <- tcltk::tkradiobutton(l25,
-                                                          variable = write.table.locations.var, value = "TRUE",
-                                                          background = "#05F2C7")
+                                                             variable = write.table.locations.var, value = "TRUE",
+                                                             background = "#05F2C7")
     l25.write.table.locations.no.rb <- tcltk::tkradiobutton(l25,
-                                                         variable = write.table.locations.var, value = "FALSE",
-                                                         background = "#05F2C7")
-  
+                                                            variable = write.table.locations.var, value = "FALSE",
+                                                            background = "#05F2C7")
+    
     l26.exp.nondetc.tabs.yes.rb <- tcltk::tkradiobutton(l26,
                                                         variable = exp.nondetc.tabs.var, value = "TRUE",
                                                         background = "#05F2C7")
     l26.exp.nondetc.tabs.no.rb <- tcltk::tkradiobutton(l26,
                                                        variable = exp.nondetc.tabs.var, value = "FALSE",
                                                        background = "#05F2C7")
-  
+    
     l27.write.tab.doc.file.yes.rb <- tcltk::tkradiobutton(l27,
                                                           variable = write.tab.doc.file.var, value = "TRUE",
                                                           background = "#05F2C7")
     l27.write.tab.doc.file.no.rb <- tcltk::tkradiobutton(l27,
                                                          variable = write.tab.doc.file.var, value = "FALSE",
                                                          background = "#05F2C7")
-  
+    
     l28.write.txt.doc.file.yes.rb <- tcltk::tkradiobutton(l28,
                                                           variable = write.txt.doc.file.var, value = "TRUE",
                                                           background = "#05F2C7")
     l28.write.txt.doc.file.no.rb <- tcltk::tkradiobutton(l28,
                                                          variable = write.txt.doc.file.var, value = "FALSE",
                                                          background = "#05F2C7")
-  
+    
     l29.delete.yes.rb <- tcltk::tkradiobutton(l29, variable = delete.var,
                                               value = "FALSE", background = "#05F2C7")
     l29.delete.no.rb <- tcltk::tkradiobutton(l29, variable = delete.var,
                                              value = "TRUE", background = "#05F2C7")
-  
+    
     l8.ontxt.click <- function() {
       tcltk::tkconfigure(l12.table.heading.words.label, state = "disabled")
       tcltk::tkconfigure(l12.2.table.heading.words.entry, state = "disabled")
@@ -4917,6 +5551,8 @@ PDE_analyzer_i <- function(verbose=TRUE) {
       tcltk::tkconfigure(l19.extract.all.tables.searchwords.label, state = "disabled")
       tcltk::tkconfigure(l19.extract.all.tables.searchwords.rb, state = "disabled")
       tcltk::tclvalue(l19.rbValue) <- "searchwords"
+      tcltk::tkconfigure(l20.2.search.words.entry, state = "normal")
+      tcltk::tkconfigure(l20.2.regex.sw.cbtn, state = "normal")
       tcltk::tkconfigure(l25.write.table.locations.label, state = "disabled")
       tcltk::tkconfigure(l25.write.table.locations.yes.rb, state = "disabled")
       tcltk::tkconfigure(l25.write.table.locations.no.rb, state = "disabled")
@@ -4936,6 +5572,7 @@ PDE_analyzer_i <- function(verbose=TRUE) {
       tcltk::tkconfigure(l22.context.label, state = "normal")
       tcltk::tkconfigure(l22.context.entry, state = "normal")
       tcltk::tkconfigure(l22.context.slider, to = "100")
+      tcltk::tkconfigure(l23.eval.abbrevs.label, state = "normal")
       tcltk::tkconfigure(l28.write.txt.doc.file.label, state = "normal")
       tcltk::tkconfigure(l28.write.txt.doc.file.yes.rb, state = "normal")
       tcltk::tkconfigure(l28.write.txt.doc.file.no.rb, state = "normal")
@@ -4982,6 +5619,7 @@ PDE_analyzer_i <- function(verbose=TRUE) {
       tcltk::tkconfigure(l27.write.tab.doc.file.no.label, state = "normal")
       tcltk::tkconfigure(l22.context.label, state = "disabled")
       tcltk::tkconfigure(l22.context.entry, state = "disabled")
+      tcltk::tkconfigure(l23.eval.abbrevs.label, state = "disabled")
       tcltk::tclvalue(context.var) <- "0"
       tcltk::tkconfigure(l22.context.slider, to = "0")
       tcltk::tkconfigure(l28.write.txt.doc.file.label, state = "disabled")
@@ -4994,7 +5632,7 @@ PDE_analyzer_i <- function(verbose=TRUE) {
       tcltk::tkconfigure(l19.extract.all.tables.all.label, state = "normal")
     }
     l8.ontxtandtab.click <- function() {
-  
+      
       tcltk::tkconfigure(l12.table.heading.words.label, state = "normal")
       tcltk::tkconfigure(l12.2.table.heading.words.entry, state = "normal")
       tcltk::tkconfigure(l13.ignore.case.th.label, state = "normal")
@@ -5019,6 +5657,8 @@ PDE_analyzer_i <- function(verbose=TRUE) {
       tcltk::tkconfigure(l19.extract.all.tables.searchwords.rb, state = "normal")
       tcltk::tclvalue(l19.rbValue) <- "searchwords"
       tcltk::tkconfigure(l20.search.words.label, state="normal")
+      tcltk::tkconfigure(l20.2.search.words.entry, state = "normal")
+      tcltk::tkconfigure(l20.2.regex.sw.cbtn, state = "normal")
       tcltk::tkconfigure(l25.write.table.locations.label, state = "normal")
       tcltk::tkconfigure(l25.write.table.locations.yes.rb, state = "normal")
       tcltk::tkconfigure(l25.write.table.locations.no.rb, state = "normal")
@@ -5037,6 +5677,7 @@ PDE_analyzer_i <- function(verbose=TRUE) {
       tcltk::tkconfigure(l22.context.label, state = "normal")
       tcltk::tkconfigure(l22.context.entry, state = "normal")
       tcltk::tkconfigure(l22.context.slider, to = "100")
+      tcltk::tkconfigure(l23.eval.abbrevs.label, state = "normal")
       tcltk::tkconfigure(l28.write.txt.doc.file.label, state = "normal")
       tcltk::tkconfigure(l28.write.txt.doc.file.yes.rb, state = "normal")
       tcltk::tkconfigure(l28.write.txt.doc.file.no.rb, state = "normal")
@@ -5056,23 +5697,23 @@ PDE_analyzer_i <- function(verbose=TRUE) {
     l8.whattoextr.txtandtab.rb <- tcltk::tkradiobutton(l8, variable = whattoextr.var, 
                                                        value = "txtandtab", 
                                                        command = l8.ontxtandtab.click,background="#05F2C7")
-  
-  
-  
+    
+    
+    
     ## combobox list -------------------------------------------------
-  
+    
     ## in_output
     l10.2.out.table.format.options <- c(".csv (WINDOWS-1252)", ".csv (macintosh)", ".csv (UTF-8)", 
-                                      ".tsv (WINDOWS-1252)",".tsv (macintosh)",".tsv (UTF-8)")
+                                        ".tsv (WINDOWS-1252)",".tsv (macintosh)",".tsv (UTF-8)")
     l10.2.out.table.format.combo <- tcltk2::tk2combobox(l10.2,
-                                                      values = l10.2.out.table.format.options, state = "readonly")
+                                                        values = l10.2.out.table.format.options, state = "readonly")
     tcltk::tkconfigure(l10.2.out.table.format.combo, textvariable = out.table.format.var)
-  
+    
     ## progress bar --------------------------------------------------
     le.progress.bar.pb <- tcltk2::tk2progress(le, value = 0,
-                                               maximum = 100, length = 500)
-  
-    ## radiobuttons -----------------------------------------------------
+                                              maximum = 100, length = 500)
+    
+    ## radio buttons 2 -----------------------------------------------------
     changewrapping <- function() {
       if (!tcltk::tclvalue(columnnumber.var) == "0") {
         for (c in 0:(as.integer(tcltk::tclvalue(columnnumber.var)) - 1)) {
@@ -5083,16 +5724,16 @@ PDE_analyzer_i <- function(verbose=TRUE) {
     }
     
     l37.wrap.rb <- tcltk::tkradiobutton(l37, variable = wrap.var, state = "disabled",
-                                       value = "1", background = "#05F2C7", command = changewrapping)
+                                        value = "1", background = "#05F2C7", command = changewrapping)
     l37.no.wrap.rb <- tcltk::tkradiobutton(l37, variable = wrap.var, state = "disabled",
-                                          value = "0", background = "#05F2C7", command = changewrapping)
-  
-  
+                                           value = "0", background = "#05F2C7", command = changewrapping)
+    
+    
     ## buttons -------------------------------------------------------
-  
+    
     ## line 1 load a tsv to fill in all the boxes
     load.tsv <- function() {
-  
+      
       tcltk::tclvalue(tsv_location.var) <- tcltk::tk_choose.files(default = tcltk::tclvalue(tsv_location.var),
                                                                   caption = "Choose the TSV file",
                                                                   multi = FALSE)
@@ -5102,16 +5743,16 @@ PDE_analyzer_i <- function(verbose=TRUE) {
                                           sep = "\t", header = TRUE, quote = "\"")
         res <- try(values_table[, "variable"],
                    silent = TRUE)
-        if (class(res) == "try-error") {
+        if (inherits(res,"try-error")) {
           tcltk::tkmessageBox(title = "Error", type = "ok",
                               icon = "error", message = paste0("Please select a correctly formated TSV file."))
         } else {
-  
+          
           ## preset mandatory variables for running search
           ## word
           whattoextr <- sub(" ", "", as.character(values_table[(grep("whattoextr",
                                                                      values_table[, "variable"])), "value"]))
-    
+          
           ## correct spelling
           if (whattoextr == "table" || whattoextr ==
               "tables")
@@ -5127,7 +5768,7 @@ PDE_analyzer_i <- function(verbose=TRUE) {
           if ((whattoextr == "txtandtab" || whattoextr ==
                "tab" || whattoextr == "txt"))
             tcltk::tclvalue(whattoextr.var) <- whattoextr
-    
+          
           ## uncheck the correct boxes
           if (whattoextr == "txt")
             l8.ontxt.click()
@@ -5135,7 +5776,7 @@ PDE_analyzer_i <- function(verbose=TRUE) {
             l8.ontab.click()
           if (whattoextr == "txtandtab")
             l8.ontxtandtab.click()
-    
+          
           ## fill the approriate checkmarks
           l15.filter.words.rb <- as.character(values_table[(grep("l15.filter.words.rbValue",
                                                                  values_table[, "variable"])), "value"])
@@ -5148,8 +5789,8 @@ PDE_analyzer_i <- function(verbose=TRUE) {
             }
             tcltk::tclvalue(l15.filter.words.rbValue) <- l15.filter.words.rb
           }
-    
-    
+          
+          
           l19.rb <- as.character(values_table[(grep("l19.rbValue",
                                                     values_table[, "variable"])), "value"])
           if (!(length(l19.rb) == 0 || is.na(l19.rb))) {
@@ -5160,11 +5801,21 @@ PDE_analyzer_i <- function(verbose=TRUE) {
             }
             tcltk::tclvalue(l19.rbValue) <- l19.rb
           }
-    
+          
           search.wds <- as.character(values_table[(grep("search.words",
                                                         values_table[, "variable"])), "value"])
           if (!(length(search.wds) == 0 || is.na(search.wds)))
             tcltk::tclvalue(search.words.var) <- search.wds
+          ## ignore.case.sw
+          regex.sw <- as.logical(values_table[(grep("regex.sw",
+                                                    values_table[, "variable"])), "value"])
+          if (!(length(regex.sw) == 0 || is.na(regex.sw))){
+            if (regex.sw == TRUE){
+              tcltk::tclvalue(regex.sw.var) <- "1"
+            } else {
+              tcltk::tclvalue(regex.sw.var) <- "0"
+            }
+          }
           ## ignore.case.sw
           ic.sw <- as.logical(values_table[(grep("ignore.case.sw",
                                                  values_table[, "variable"])), "value"])
@@ -5175,20 +5826,20 @@ PDE_analyzer_i <- function(verbose=TRUE) {
                                                         values_table[, "variable"])), "value"])
           if (!(length(eval.abbrevs) == 0 || is.na(eval.abbrevs)))
             tcltk::tclvalue(eval.abbrevs.var) <- as.character(eval.abbrevs)
-    
-    
+          
+          
           ## write.table.locations (generates 3 tables with
           ## the locations of the tables within the txt/html
           ## files)
           wtl <- as.logical(values_table[(grep("write.table.locations",
                                                values_table[, "variable"])), "value"])
           if (!(length(wtl) == 0 || is.na(wtl))) tcltk::tclvalue(write.table.locations.var) <- as.character(wtl)
-    
+          
           outputfolder <- as.character(values_table[(grep("outputfolder",
                                                           values_table[, "variable"])), "value"])
           
           if (!(length(outputfolder) == 0 || is.na(outputfolder))) {
-            if (grepl("^examples/MTX_output", outputfolder)){
+            if (grepl("^/examples/MTX_output", outputfolder) || grepl("^examples/MTX_output", outputfolder)){
               tcltk::tclvalue(outputfolder.var) <- paste0(system.file(package = "PDE"),"/",outputfolder)
             } else {
               tcltk::tclvalue(outputfolder.var) <- outputfolder
@@ -5197,7 +5848,7 @@ PDE_analyzer_i <- function(verbose=TRUE) {
             tcltk::tclvalue(outputfolder.var) <- ""
           }
           
-    
+          
           pdfs <- as.character(values_table[(grep("pdfs",
                                                   values_table[, "variable"])), "value"])
           if (length(pdfs) == 0 || is.na(pdfs)) {
@@ -5208,7 +5859,7 @@ PDE_analyzer_i <- function(verbose=TRUE) {
           if (length(pdfs) == 0 || is.na(pdfs)) {
             pdfs <- ""
           }
-        
+          
           ## if it is a directory
           ## if it is a single file
           ## if example working directory
@@ -5223,124 +5874,139 @@ PDE_analyzer_i <- function(verbose=TRUE) {
                      file.exists(paste0(system.file(package = "PDE"),"/",pdfs))) {
             tcltk::tclvalue(pdfs.var) <- paste0(system.file(package = "PDE"),"/",pdfs)
           } else if (all(file.exists(paste0(system.file(package = "PDE"),"/",unlist(strsplit(pdfs,
-                                                                         ";")))))) {
+                                                                                             ";")))))) {
             tcltk::tclvalue(pdfs.var) <- paste0(paste0(system.file(package = "PDE"),"/",unlist(strsplit(pdfs,
-                                                                             ";"))), collapse = ";")
+                                                                                                        ";"))), collapse = ";")
           }
-    
+          
           ## preset the additional parameters filter words
           filter.wds <- as.character(values_table[(grep("^filter.words$",
                                                         values_table[, "variable"])), "value"])
           if (!(length(filter.wds) == 0 || is.na(filter.wds))) tcltk::tclvalue(filter.words.var) <- filter.wds
           if (length(grep(";", filter.wds)) > 0) tcltk::tclvalue(filter.words.var) <- filter.wds
-    
+          
           ## ignore.case.fw
           ic.fw <- as.logical(values_table[(grep("ignore.case.fw",
                                                  values_table[, "variable"])), "value"])
           if (!(length(ic.fw) == 0 || is.na(ic.fw))) tcltk::tclvalue(ignore.case.fw.var) <- as.character(ic.fw)
-    
+          
+          ## regex.fw
+          regex.fw <- as.logical(values_table[(grep("regex.fw",
+                                                    values_table[, "variable"])), "value"])
+          if (!(length(regex.fw) == 0 || is.na(regex.fw))){
+            if (regex.fw == TRUE){
+              tcltk::tclvalue(regex.fw.var) <- "1"
+            } else {
+              tcltk::tclvalue(regex.fw.var) <- "0"
+            }
+          }
+          
           ## filter.word.times
           filter.word.times <- strtoi(values_table[(grep("filter.word.times",
                                                          values_table[, "variable"])), "value"])
           if (!(length(filter.word.times) == 0 ||
                 is.na(filter.word.times))) tcltk::tclvalue(filter.word.times.var) <- filter.word.times
-    
+          
           ## table headings
           table.heading.wds <- as.character(values_table[(grep("table.heading.words",
                                                                values_table[, "variable"])), "value"])
           if (!(length(table.heading.wds) == 0 ||
                 is.na(filter.wds))) tcltk::tclvalue(table.heading.words.var) <- table.heading.wds
           if (length(grep(";", table.heading.wds)) > 0) tcltk::tclvalue(table.heading.words.var) <- table.heading.wds
-    
+          
           ## ignore.case.th
           ic.th <- as.logical(values_table[(grep("ignore.case.th",
                                                  values_table[, "variable"])), "value"])
           if (!(length(ic.th) == 0 || is.na(ic.th))) tcltk::tclvalue(ignore.case.th.var) <- as.character(ic.th)
-    
+          
           out.table.format <- as.character(values_table[(grep("out.table.format",
                                                               values_table[, "variable"])), "value"])
           valid.out.table.formats <- c(".csv (WINDOWS-1252)", ".csv (macintosh)", ".csv (UTF-8)", 
-                      ".tsv (WINDOWS-1252)",".tsv (macintosh)",".tsv (UTF-8)")
+                                       ".tsv (WINDOWS-1252)",".tsv (macintosh)",".tsv (UTF-8)")
           if (!(length(out.table.format) == 0)){
             if (!is.na(out.table.format) &&
                 out.table.format %in% valid.out.table.formats){
-                  tcltk::tclvalue(out.table.format.var) <- out.table.format
+              tcltk::tclvalue(out.table.format.var) <- out.table.format
             }
           }
-    
+          
           dev_x <- strtoi(values_table[(grep("dev_x",
-                                           values_table[, "variable"])), "value"])
+                                             values_table[, "variable"])), "value"])
           if (!(length(dev_x) == 0 || is.na(dev_x))) tcltk::tclvalue(dev_x.var) <- dev_x
           
           dev_y <- strtoi(values_table[(grep("dev_y",
                                              values_table[, "variable"])), "value"])
           if (!(length(dev_y) == 0 || is.na(dev_y))) tcltk::tclvalue(dev_y.var) <- dev_y
-    
+          
           context <- strtoi(values_table[(grep("context",
                                                values_table[, "variable"])), "value"])
           if (!(length(context) == 0 || is.na(context))) tcltk::tclvalue(context.var) <- context
-    
+          
           write.tab.doc.file <- as.logical(values_table[(grep("write.tab.doc.file",
                                                               values_table[, "variable"])), "value"])
           if (!(length(write.tab.doc.file) == 0 ||
                 is.na(write.tab.doc.file))) tcltk::tclvalue(write.tab.doc.file.var) <- as.character(write.tab.doc.file)
-    
+          
           exp.nondetc.tabs <- as.logical(values_table[(grep("exp.nondetc.tabs",
                                                             values_table[, "variable"])), "value"])
           if (!(length(exp.nondetc.tabs) == 0 ||
                 is.na(exp.nondetc.tabs))) tcltk::tclvalue(exp.nondetc.tabs.var) <- as.character(exp.nondetc.tabs)
-    
+          
           write.txt.doc.file <- as.logical(values_table[(grep("write.txt.doc.file",
                                                               values_table[, "variable"])), "value"])
           if (!(length(write.txt.doc.file) == 0 ||
                 is.na(write.txt.doc.file))) tcltk::tclvalue(write.txt.doc.file.var) <- as.character(write.txt.doc.file)
-    
+          
           exp.nondetc.tabs <- as.logical(values_table[(grep("exp.nondetc.tabs",
                                                             values_table[, "variable"])), "value"])
           if (!(length(exp.nondetc.tabs) == 0 ||
                 is.na(exp.nondetc.tabs))) tcltk::tclvalue(exp.nondetc.tabs.var) <- as.character(exp.nondetc.tabs)
-    
+          
+          cpy_mv <- as.character(values_table[(grep("cpy_mv",
+                                                  values_table[, "variable"])), "value"])
+          if (!(length(cpy_mv) == 0 || is.na(cpy_mv))) tcltk::tclvalue(copy_move_pdfs.var) <- as.character(cpy_mv)
+          
           delete <- as.logical(values_table[(grep("delete",
                                                   values_table[, "variable"])), "value"])
           if (!(length(delete) == 0 || is.na(delete))) tcltk::tclvalue(delete.var) <- as.character(delete)
         } ## if wrong TSV was selected
       }
-  
+      
       tcltk::tkfocus(start.pause.but)
       tcltk::tkraise(PDE.globals$ttanalyzer)
     }
     l1.load.tsv.but <- tcltk2::tk2button(l1, text = "Load form from TSV",
                                          command = load.tsv)
-  
+    
     ## save current variables into tsv to fill in all
     ## the boxes
     save.tsv <- function() {
       todays.date <- format(Sys.Date(), "%Y-%m-%d")
       if (tcltk::tclvalue(tsv_location.var) == ""){
         PDE_parameters_filename <- paste0(todays.date, 
-                                        "_", "PDE_parameters_v1.3.tsv")
+                                          "_", "PDE_parameters_v1.3.tsv")
       } else {
         PDE_parameters_filename <-  basename(tcltk::tclvalue(tsv_location.var))
       }
       tcltk::tclvalue(tsv_location.var) <- tcltk::tkgetSaveFile(initialdir = dirname(tcltk::tclvalue(tsv_location.var)),
                                                                 initialfile = PDE_parameters_filename,
-                                                           defaultextension = ".tsv", 
-                                                           filetypes = "{ {TSV Files} {.tsv} } { {All Files} * }")
-  
+                                                                defaultextension = ".tsv", 
+                                                                filetypes = "{ {TSV Files} {.tsv} } { {All Files} * }")
+      
       values_table <- data.frame(matrix(ncol = 2,
-                                        nrow = 22))
+                                        nrow = 25))
       x <- c("variable", "value")
       colnames(values_table) <- x
       values_table$variable <- c("whattoextr", "pdfs",
                                  "outputfolder", "table.heading.words",
-                                 "ignore.case.th", "filter.words", "ignore.case.fw",
-                                 "filter.word.times", "search.words", "ignore.case.sw",
+                                 "ignore.case.th", "filter.words", "regex.fw", "ignore.case.fw",
+                                 "filter.word.times", "search.words", "regex.sw", "ignore.case.sw",
                                  "eval.abbrevs",
-                                 "write.table.locations", "delete", "exp.nondetc.tabs",
+                                 "write.table.locations", "cpy_mv", "delete", "exp.nondetc.tabs",
                                  "out.table.format", "dev_x", "dev_y", "context", "write.tab.doc.file",
                                  "write.txt.doc.file", "l15.filter.words.rbValue",
                                  "l19.rbValue")
-  
+      
       values_table[grep("whattoextr", values_table[,
                                                    "variable"]), "value"] <- tcltk::tclvalue(whattoextr.var)
       values_table[grep("pdfs", values_table[, "variable"]),
@@ -5355,16 +6021,32 @@ PDE_analyzer_i <- function(verbose=TRUE) {
                                                      "variable"]), "value"] <- tcltk::tclvalue(filter.words.var)
       values_table[grep("ignore.case.fw", values_table[,
                                                        "variable"]), "value"] <- tcltk::tclvalue(ignore.case.fw.var)
+      if (tcltk::tclvalue(regex.fw.var) == "1"){
+        regex.fw <- TRUE
+      } else {
+        regex.fw <- FALSE
+      }
+      values_table[grep("regex.fw", values_table[,
+                                                 "variable"]), "value"] <- regex.fw
       values_table[grep("filter.word.times", values_table[,
                                                           "variable"]), "value"] <- tcltk::tclvalue(filter.word.times.var)
       values_table[grep("search.words", values_table[,
                                                      "variable"]), "value"] <- tcltk::tclvalue(search.words.var)
+      if (tcltk::tclvalue(regex.sw.var) == "1"){
+        regex.sw <- TRUE
+      } else {
+        regex.sw <- FALSE
+      }
+      values_table[grep("regex.sw", values_table[,
+                                                 "variable"]), "value"] <- regex.sw
       values_table[grep("ignore.case.sw", values_table[,
                                                        "variable"]), "value"] <- tcltk::tclvalue(ignore.case.sw.var)
       values_table[grep("eval.abbrevs", values_table[,
                                                      "variable"]), "value"] <- tcltk::tclvalue(eval.abbrevs.var)
       values_table[grep("write.table.locations", values_table[,
-                                                           "variable"]), "value"] <- tcltk::tclvalue(write.table.locations.var)
+                                                              "variable"]), "value"] <- tcltk::tclvalue(write.table.locations.var)
+      values_table[grep("cpy_mv", values_table[,
+                                               "variable"]), "value"] = tcltk::tclvalue(copy_move_pdfs.var)
       values_table[grep("delete", values_table[,
                                                "variable"]), "value"] = tcltk::tclvalue(delete.var)
       values_table[grep("exp.nondetc.tabs", values_table[,
@@ -5381,23 +6063,23 @@ PDE_analyzer_i <- function(verbose=TRUE) {
                                                            "variable"]), "value"] <- tcltk::tclvalue(write.tab.doc.file.var)
       values_table[grep("write.txt.doc.file", values_table[,
                                                            "variable"]), "value"] <- tcltk::tclvalue(write.txt.doc.file.var)
-  
+      
       ## additional variable for interactive user form
       values_table[grep("l15.filter.words.rbValue",
                         values_table[, "variable"]), "value"] <- tcltk::tclvalue(l15.filter.words.rbValue)
       values_table[grep("l19.rbValue", values_table[,
                                                     "variable"]), "value"] <- tcltk::tclvalue(l19.rbValue)
-  
+      
       if (tcltk::tclvalue(tsv_location.var) != "") utils::write.table(values_table, file = tcltk::tclvalue(tsv_location.var),
-                                                 row.names = FALSE, sep = "\t", quote = FALSE)
-  
+                                                                      row.names = FALSE, sep = "\t", quote = FALSE)
+      
       tcltk::tkfocus(PDE.globals$ttanalyzer)
       tcltk::tkraise(PDE.globals$ttanalyzer)
     }
-  
+    
     l1.save.tsv.but <- tcltk2::tk2button(l1, text = "Save form as TSV",
                                          command = save.tsv)
-  
+    
     reset <- function() {
       ## in_output
       tcltk::tclvalue(pdfs.var) <- ""
@@ -5409,6 +6091,7 @@ PDE_analyzer_i <- function(verbose=TRUE) {
       tcltk::tclvalue(l19.rbValue) <- "all"
       l19.onall.click()
       tcltk::tclvalue(search.words.var) <- ""
+      tcltk::tclvalue(regex.sw.var) <- "0"
       tcltk::tclvalue(ignore.case.sw.var) <- "FALSE"
       tcltk::tclvalue(eval.abbrevs.var) <- "TRUE"
       tcltk::tclvalue(context.var) <- "0"
@@ -5416,8 +6099,10 @@ PDE_analyzer_i <- function(verbose=TRUE) {
       tcltk::tclvalue(l15.filter.words.rbValue) <- "no"
       l15.onno.click()
       tcltk::tclvalue(filter.words.var) <- ""
+      tcltk::tclvalue(regex.fw.var) <- "0"
       tcltk::tclvalue(filter.word.times.var) <- "20"
       tcltk::tclvalue(ignore.case.fw.var) <- "FALSE"
+      tcltk::tclvalue(copy_move_pdfs.var) <- "nocpymv"
       ## paras
       tcltk::tclvalue(table.heading.words.var) <- ""
       tcltk::tclvalue(ignore.case.th.var) <- "FALSE"
@@ -5446,11 +6131,11 @@ PDE_analyzer_i <- function(verbose=TRUE) {
     }
     l1.reset.but <- tcltk2::tk2button(l1, text = "Reset form",
                                       command = reset)
-  
+    
     ## in_output
-  
+    
     ## line 7 ######### open the PDF file location
-    open.pdffolder <- function() {
+    select.pdffolder <- function() {
       
       default.pdffolder <- unlist(strsplit(tcltk::tclvalue(pdfs.var),";"))[1]
       if (is.na(default.pdffolder)) default.pdffolder <- ""
@@ -5459,11 +6144,11 @@ PDE_analyzer_i <- function(verbose=TRUE) {
       tcltk::tclvalue(pdfs.var) <- pdfs
       tcltk::tkfocus(PDE.globals$ttanalyzer)
       tcltk::tkraise(PDE.globals$ttanalyzer)
-  
+      
     }
-    l7.2.open.pdffolder.but <- tcltk2::tk2button(l7.2, text = "Open folder",
-                                               command = open.pdffolder)
-  
+    l7.2.select.pdffolder.but <- tcltk2::tk2button(l7.2, text = "Select folder",
+                                                   command = select.pdffolder)
+    
     load.pdffiles <- function() {
       default.pdffolder <- unlist(strsplit(tcltk::tclvalue(pdfs.var),";"))[1]
       if (is.na(default.pdffolder)) default.pdffolder <- ""
@@ -5481,10 +6166,23 @@ PDE_analyzer_i <- function(verbose=TRUE) {
       tcltk::tkraise(PDE.globals$ttanalyzer)
     }
     l7.2.load.pdffiles.but <- tcltk2::tk2button(l7.2, text = "Load files",
-                                              command = load.pdffiles)
-  
-    ## line 9 open the functions file location
+                                                command = load.pdffiles)
+    
+    ## line9
     open.outputfolder <- function() {
+      if (dir.exists(tcltk::tclvalue(outputfolder.var))){
+        system(paste0("open ", "\"", tcltk::tclvalue(outputfolder.var),
+                      "\""))
+      } else {
+        tcltk::tkmessageBox(title = "Error", type = "ok",
+                            icon = "error", message = paste0("Please select an existing output folder."))
+      }
+    }
+    l9.2.open.outputfolder.but <- tcltk2::tk2button(l9.2, text = "Open output folder",
+                                                    command = open.outputfolder)
+    
+    ## line 9 open the functions file location
+    select.outputfolder <- function() {
       outputfolder <- tcltk::tk_choose.dir(default = tcltk::tclvalue(outputfolder.var),
                                            caption = "Choose folder with PDF files")
       if (is.na(outputfolder)) outputfolder <- ""
@@ -5492,9 +6190,9 @@ PDE_analyzer_i <- function(verbose=TRUE) {
       tcltk::tkfocus(PDE.globals$ttanalyzer)
       tcltk::tkraise(PDE.globals$ttanalyzer)
     }
-    l9.2.open.outputfolder.but <- tcltk2::tk2button(l9.2, text = "Open",
-                                                  command = open.outputfolder)
-  
+    l9.2.select.outputfolder.but <- tcltk2::tk2button(l9.2, text = "Select folder",
+                                                      command = select.outputfolder)
+    
     start.pause <- function() {
       if (tcltk::tclvalue(start.pause.but.label.var) == "Start analysis"){
         tcltk::tclvalue(start.pause.but.label.var) <- "Pause analysis"
@@ -5505,16 +6203,16 @@ PDE_analyzer_i <- function(verbose=TRUE) {
         save.res <- as.character(tcltk::tkmessageBox(title = "Warning",
                                                      type = "yesnocancel", icon = "question",
                                                      message = "Do you want to save the form before starting the analysis?"))
-    
+        
         ## Write the entries of the form
         if (save.res == "yes") {
           save.tsv()
         }
-    
+        
         if (!save.res == "cancel") {
           start.analysis <- NULL
           ## check input boxes for correct format -------
-    
+          
           ######### pdfs #############
           if (any(dir.exists(tcltk::tclvalue(pdfs.var)),
                   file.exists(tcltk::tclvalue(pdfs.var)),
@@ -5523,7 +6221,7 @@ PDE_analyzer_i <- function(verbose=TRUE) {
             start.analysis <- c(start.analysis,
                                 "input PDF file folder")
           }
-    
+          
           ######### filterwords? #############
           if (tcltk::tclvalue(l15.filter.words.rbValue) == "no") {
             filter.for <- ""
@@ -5534,7 +6232,7 @@ PDE_analyzer_i <- function(verbose=TRUE) {
               filter.for <- tcltk::tclvalue(filter.words.var)
             }
           }
-    
+          
           ######### search words? #############
           if (tcltk::tclvalue(l19.rbValue) == "l19.rbValue") {
             search.for <- ""
@@ -5545,7 +6243,7 @@ PDE_analyzer_i <- function(verbose=TRUE) {
               search.for <- tcltk::tclvalue(search.words.var)
             }
           }
-    
+          
           ## set all variable for executing analysis ---------
           whattoextr <- tcltk::tclvalue(whattoextr.var)
           pdfs <- tcltk::tclvalue(pdfs.var)
@@ -5556,6 +6254,17 @@ PDE_analyzer_i <- function(verbose=TRUE) {
           } else {
             table.heading.for <- tcltk::tclvalue(table.heading.words.var)
           }
+          if (tcltk::tclvalue(regex.sw.var) == "1"){
+            regex.sw <- TRUE
+          } else {
+            regex.sw <- FALSE
+          }
+          if (tcltk::tclvalue(regex.fw.var) == "1"){
+            regex.fw <- TRUE
+          } else {
+            regex.fw <- FALSE
+          }
+          ic.th <- tcltk::tclvalue(ignore.case.th.var)
           ic.th <- tcltk::tclvalue(ignore.case.th.var)
           ic.fw <- tcltk::tclvalue(ignore.case.fw.var)
           ic.sw <- tcltk::tclvalue(ignore.case.sw.var)
@@ -5568,13 +6277,14 @@ PDE_analyzer_i <- function(verbose=TRUE) {
           exp.nondetc.tabs <- tcltk::tclvalue(exp.nondetc.tabs.var)
           write.tab.doc.file <- tcltk::tclvalue(write.tab.doc.file.var)
           write.txt.doc.file <- tcltk::tclvalue(write.txt.doc.file.var)
+          cpy_mv <- tcltk::tclvalue(copy_move_pdfs.var)
           delete <- tcltk::tclvalue(delete.var)
-    
+          
           if (length(start.analysis) == 0) {
-    
+            
             # source(tcltk::tclvalue(functionsfile.var))
-    
-    
+            
+            
             ## if it is a directory
             if (dir.exists(pdfs)) {
               pdf.files <- list.files(pdfs, pattern = "*.pdf",
@@ -5587,9 +6297,9 @@ PDE_analyzer_i <- function(verbose=TRUE) {
               pdf.files <- unlist(strsplit(pdfs,
                                            ";"))
             }
-    
+            
             output <- NULL
-    
+            
             for (pdf in pdf.files) {
               
               # wait if pause is pressed
@@ -5622,7 +6332,7 @@ PDE_analyzer_i <- function(verbose=TRUE) {
               progress_info_length <- length(tcltk2::tk2list.get(PDE.globals$le.progress.textbox))
               if (progress_info_length > 3) {
                 new_list <- tcltk2::tk2list.get(PDE.globals$le.progress.textbox)[!grepl("^$",
-                                                        tcltk2::tk2list.get(PDE.globals$le.progress.textbox))]
+                                                                                        tcltk2::tk2list.get(PDE.globals$le.progress.textbox))]
               } else {
                 new_list <- tcltk2::tk2list.get(PDE.globals$le.progress.textbox)
               }
@@ -5630,38 +6340,74 @@ PDE_analyzer_i <- function(verbose=TRUE) {
               tcltk::tkconfigure(PDE.globals$le.progress.textbox,textvariable = proc.pdf)
               tcltk::tcl("update")
               tcltk::tkfocus(le)
-    
-    
+              
               tablelines <- .PDE_extr_data_from_pdf(pdf = pdf,
                                                     whattoextr = whattoextr,
                                                     out = outputfolder, context = context,
                                                     dev_x = dev_x, dev_y = dev_y, filter.words = filter.for,
-                                                    ignore.case.fw = ic.fw, filter.word.times = filter.word.times,
+                                                    regex.fw = regex.fw, ignore.case.fw = ic.fw,
+                                                    filter.word.times = filter.word.times,
                                                     table.heading.words = table.heading.for,
                                                     ignore.case.th = ic.th, search.words = search.for,
+                                                    regex.sw = regex.sw,
                                                     ignore.case.sw = ic.sw, eval.abbrevs = eval.abbrevs,
                                                     write.table.locations = wtl,
                                                     write.tab.doc.file = write.tab.doc.file,
                                                     write.txt.doc.file = write.txt.doc.file,
                                                     exp.nondetc.tabs = exp.nondetc.tabs,
                                                     out.table.format = out.table.format,
-                                                    delete = delete, verbose = verbose)
-    
+                                                    delete = delete, cpy_mv = cpy_mv, verbose = verbose)
+              
               tcltk::tcl("update")
               tcltk::tkfocus(le)
-    
+              
               ## if the algorithm was not run in table detection
               ## setting tablelines is NULL
               if (length(tablelines) > 0) {
-    
-                ## add new tablelines to output
-                output[[length(output) + 1]] <- tablelines
+                
+                # ## add new tablelines to output
+                # output[[length(output) + 1]] <- tablelines
+                
+                ##make stat_output mastertable
+                if (is.null(output)){
+                  output <- tablelines$stat_output
+                } else {
+                  output[setdiff(names(tablelines$stat_output), names(output))] <- NA
+                  tablelines$stat_output[setdiff(names(output), names(tablelines$stat_output))] <- NA
+                  output <- rbind(output,tablelines$stat_output)
+                }
               }
             }
             
+            ## write the PDE_analyzer_word_stats table
+            if ("pdf_searchword_total" %in% colnames(output)){
+              if ("pdf_filterword_total" %in% colnames(output)){
+                output <- output[order(output$pdf_searchword_total,
+                                     output$pdf_filterword_total, decreasing = TRUE),,drop=FALSE]
+              } else {
+                output <- output[order(output$pdf_searchword_total, decreasing = TRUE),,drop=FALSE]
+              }
+            }
+            todays.date_time <- paste0(format(Sys.Date(), "%Y-%m-%d"),format(Sys.time(), "-%Hh-%Mm"))
+            if (grepl("csv", out.table.format)) {
+              out.table.separator <- ","
+              out.table.ext <- ".csv"
+            }
+            if (grepl("tsv", out.table.format)) {
+              out.table.separator <- "\t"
+              out.table.ext <- ".tsv"
+            }
+            output_table <- cbind(pdf_file_name = rownames(output), output)
+            utils::write.table(output_table, file = paste0(outputfolder,"/",todays.date_time,"_PDE_analyzer_word_stats",
+                                                     out.table.ext),
+                               sep = out.table.separator,
+                               row.names = FALSE)
+            
             ## test for extracted tables
-            out_table_list_full <- dir(path = paste0(outputfolder, "/tables/"), all.files=FALSE, full.names = TRUE)
-            out_table_list <- dir(path = paste0(outputfolder, "/tables/"), all.files=FALSE, full.names = FALSE)
+            out_table_list_full <- dir(path = paste0(outputfolder, "/tables/"), pattern = "\\.csv$|\\.tsv$",
+                                       all.files=FALSE, full.names = TRUE)
+            out_table_list <- dir(path = paste0(outputfolder, "/tables/"), pattern = "\\.csv$|\\.tsv$",
+                                  all.files=FALSE, full.names = FALSE)
             if (length(out_table_list) != 0){
               ## test if first time table extracted
               if (tcltk::tclvalue(table.location.var) == ""){
@@ -5686,12 +6432,12 @@ PDE_analyzer_i <- function(verbose=TRUE) {
               ##update the list of tables
               tcltk::tkconfigure(l37.jumptotable.cb, values = out_table_list)
             }
-    
+            
             ## add completion  info
             progress_info_length <- length(tcltk2::tk2list.get(PDE.globals$le.progress.textbox))
             if (progress_info_length > 3) {
               new_list <- tcltk2::tk2list.get(PDE.globals$le.progress.textbox)[!grepl("^$",
-                                                          tcltk2::tk2list.get(PDE.globals$le.progress.textbox))]
+                                                                                      tcltk2::tk2list.get(PDE.globals$le.progress.textbox))]
             } else {
               new_list <- tcltk2::tk2list.get(PDE.globals$le.progress.textbox)
             }
@@ -5704,19 +6450,19 @@ PDE_analyzer_i <- function(verbose=TRUE) {
             tcltk::tcl("update")
             tcltk::tkfocus(PDE.globals$ttanalyzer)
             tcltk::tkraise(PDE.globals$ttanalyzer)
-    
+            
           } else if (length(start.analysis) == 1) {
             tcltk::tkmessageBox(title = "Error", type = "ok",
                                 icon = "error", message = paste0("Analysis not started. Check the ",
-                                                                  start.analysis[1], " and ", start.analysis[2],
-                                                                  " for corrrect path and formating before analysis."))
+                                                                 start.analysis[1], " and ", start.analysis[2],
+                                                                 " for corrrect path and formating before analysis."))
           } else {
             tcltk::tkmessageBox(title = "Error", type = "ok",
                                 icon = "error", message = paste0("Analysis not started. Check the ",
-                                                                  paste(start.analysis[-length(start.analysis)],
-                                                                        collapse = ", "), " and ",
-                                                                  start.analysis[length(start.analysis)],
-                                                                  " for corrrect path and formating before analysis."))
+                                                                 paste(start.analysis[-length(start.analysis)],
+                                                                       collapse = ", "), " and ",
+                                                                 start.analysis[length(start.analysis)],
+                                                                 " for corrrect path and formating before analysis."))
           }
         }  ## end if cancel was not pressed
         tcltk::tclvalue(start.pause.but.label.var) <- "Start analysis"
@@ -5737,8 +6483,8 @@ PDE_analyzer_i <- function(verbose=TRUE) {
     }
     
     start.pause.but <- tcltk2::tk2button(e, text = tcltk::tclvalue(start.pause.but.label.var),
-                                   command = start.pause)
-  
+                                         command = start.pause)
+    
     close.stop_session <- function() {
       if (tcltk::tclvalue(close.stop.but.label.var) == "Close session"){
         ## this grid gets added at the end
@@ -5760,8 +6506,8 @@ PDE_analyzer_i <- function(verbose=TRUE) {
     }
     quit.but <- tcltk2::tk2button(e, text = tcltk::tclvalue(close.stop.but.label.var),
                                   command = close.stop_session)
-  
-  
+    
+    
     save.progress_info <- function() {
       todays.date_time <- paste0(format(Sys.Date(), "%Y-%m-%d"),format(Sys.time(), "-%Hh-%Mm"))
       PDE_parameters_filename <- paste0(todays.date_time,
@@ -5769,19 +6515,19 @@ PDE_analyzer_i <- function(verbose=TRUE) {
       txt_location <- tcltk::tclvalue(tcltk::tkgetSaveFile(initialfile = PDE_parameters_filename,
                                                            defaultextension = ".txt", 
                                                            filetypes = "{ {TXT Files} {.txt} } { {All Files} * }"))
-  
+      
       progress_info <- tcltk2::tk2list.get(PDE.globals$le.progress.textbox)
       progress_info <- gsub(" file path maybe too long.",
                             " might be too long of a file path to be read by some programs. Consider using a shorter output path.",
                             progress_info)
       output_progress_info <- paste(progress_info, collapse = "\n")
       if (txt_location != "") write(output_progress_info, file = txt_location)
-  
+      
       tcltk::tkfocus(PDE.globals$ttanalyzer)
       tcltk::tkraise(PDE.globals$ttanalyzer)
     }
     le.save.txt.but <- tcltk2::tk2button(le, text = "^ save ^", width = 8,
-                                          command = save.progress_info)
+                                         command = save.progress_info)
     
     ## the output table
     scroll.y <- tcltk2::tk2scrollbar(l38, orient = "vertical",
@@ -5792,10 +6538,100 @@ PDE_analyzer_i <- function(verbose=TRUE) {
                                                                             ...))  ## command that performs the scrolling
     
     l38.table <- tcltk2::tk2tablelist(l38, selectmode = "browse", 
-                                                   exportselection = 0, stripebackground = "lightgrey",
-                                                   stretch = "anchor", selecttype = "cell", 
-                                                   yscrollcommand = function(...) tcltk::tkset(scroll.y,...),
-                                                   xscrollcommand = function(...) tcltk::tkset(scroll.x,...))
+                                      exportselection = 0, stripebackground = "lightgrey",
+                                      stretch = "anchor", selecttype = "cell", 
+                                      yscrollcommand = function(...) tcltk::tkset(scroll.y,...),
+                                      xscrollcommand = function(...) tcltk::tkset(scroll.x,...))
+    
+    ##tooltip labels ----------------
+    l7.hint_choosepdf <- tcltk2::tk2label(l7, text = "?",
+                                          font = os.font.ten.underlined,
+                                          background = "#05F2C7",
+                                          foreground="blue")
+    l9.hint_chooseoutput <- tcltk2::tk2label(l9, text = "?",
+                                             font = os.font.ten.underlined,
+                                             background = "#05F2C7",
+                                             foreground="blue")
+    l10.hint_outputformat <- tcltk2::tk2label(l10, text = "?",
+                                              font = os.font.ten.underlined,
+                                              background = "#05F2C7",
+                                              foreground="blue")
+    l8.hint_whattoextr <- tcltk2::tk2label(l8, text = "?",
+                                           font = os.font.ten.underlined,
+                                           background = "#05F2C7",
+                                           foreground="blue")
+    l19.hint_extractallorsent <- tcltk2::tk2label(l19, text = "?",
+                                                  font = os.font.ten.underlined,
+                                                  background = "#05F2C7",
+                                                  foreground="blue")
+    l20.hint_choose_sw <- tcltk2::tk2label(l20, text = "?",
+                                           font = os.font.ten.underlined,
+                                           background = "#05F2C7",
+                                           foreground="blue")
+    l21.hint_ignorecase_sw <- tcltk2::tk2label(l21, text = "?",
+                                               font = os.font.ten.underlined,
+                                               background = "#05F2C7",
+                                               foreground="blue")
+    l22.hint_context <- tcltk2::tk2label(l22, text = "?",
+                                         font = os.font.ten.underlined,
+                                         background = "#05F2C7",
+                                         foreground="blue")
+    l23.hint_evalabrev <- tcltk2::tk2label(l23, text = "?",
+                                           font = os.font.ten.underlined,
+                                           background = "#05F2C7",
+                                           foreground="blue")
+    l15.hint_fw_yesno <- tcltk2::tk2label(l15, text = "?",
+                                          font = os.font.ten.underlined,
+                                          background = "#05F2C7",
+                                          foreground="blue")
+    l16.hint_choose_fw <- tcltk2::tk2label(l16, text = "?",
+                                           font = os.font.ten.underlined,
+                                           background = "#05F2C7",
+                                           foreground="blue")
+    l17.hint_igrnorecase_fw <- tcltk2::tk2label(l17, text = "?",
+                                                font = os.font.ten.underlined,
+                                                background = "#05F2C7",
+                                                foreground="blue")
+    l18.1.hint_fwtimes <- tcltk2::tk2label(l18.1, text = "?",
+                                         font = os.font.ten.underlined,
+                                         background = "#05F2C7",
+                                         foreground="blue")
+    l12.hint_tableheading <- tcltk2::tk2label(l12, text = "?",
+                                              font = os.font.ten.underlined,
+                                              background = "#05F2C7",
+                                              foreground="blue")
+    l13.hint_ignorecase_th <- tcltk2::tk2label(l13, text = "?",
+                                               font = os.font.ten.underlined,
+                                               background = "#05F2C7",
+                                               foreground="blue")
+    l14.1.hint_devx <- tcltk2::tk2label(l14.1, text = "?",
+                                        font = os.font.ten.underlined,
+                                        background = "#05F2C7",
+                                        foreground="blue")
+    l14.2.hint_devy <- tcltk2::tk2label(l14.2, text = "?",
+                                        font = os.font.ten.underlined,
+                                        background = "#05F2C7",
+                                        foreground="blue")
+    l25.hint_wtl <- tcltk2::tk2label(l25, text = "?",
+                                     font = os.font.ten.underlined,
+                                     background = "#05F2C7",
+                                     foreground="blue")
+    l26.hint_exportnondetc <- tcltk2::tk2label(l26, text = "?",
+                                               font = os.font.ten.underlined,
+                                               background = "#05F2C7",
+                                               foreground="blue")
+    l27.hint_writetabdoc <- tcltk2::tk2label(l27, text = "?",
+                                             font = os.font.ten.underlined,
+                                             background = "#05F2C7",
+                                             foreground="blue")
+    l28.hint_writetxtdoc <- tcltk2::tk2label(l28, text = "?",
+                                             font = os.font.ten.underlined,
+                                             background = "#05F2C7",
+                                             foreground="blue")
+    l29.hint_delete <- tcltk2::tk2label(l29, text = "?",
+                                        font = os.font.ten.underlined,
+                                        background = "#05F2C7",
+                                        foreground="blue")
     
     ## load the table -------
     load_extracted_table <- function(table.location) {
@@ -5821,7 +6657,7 @@ PDE_analyzer_i <- function(verbose=TRUE) {
         all_content <- readLines(loadfile,
                                  encoding = native.encoding)
         out_table <- utils::read.table(file = loadfile, sep = separator, header = FALSE,
-                                encoding = native.encoding, stringsAsFactors=FALSE)
+                                       encoding = native.encoding, stringsAsFactors=FALSE)
         ## test which lines have title
         for (i in 1:length(all_content)){
           ## delete everything before first comma
@@ -5868,7 +6704,7 @@ PDE_analyzer_i <- function(verbose=TRUE) {
         }
         tcltk::tclvalue(columnnumber.var) <- as.character(ncol(table_content))
         tcltk::tkconfigure(l38.table, columns = paste0("1 \"",
-                                                                    colnames(table)[1], columnhead, "\""))
+                                                       colnames(table)[1], columnhead, "\""))
         
         ## make columns editable and wrap
         for (c in 0:(ncol(table_content) - 1)) {
@@ -5883,7 +6719,7 @@ PDE_analyzer_i <- function(verbose=TRUE) {
           rowlist <- NULL
           for (c in 1:ncol(table_content)) {
             rowlist <- c(rowlist, as.character(table_content[r,
-                                                     c]))
+                                                             c]))
           }
           tcltk::tkinsert(l38.table, "end",
                           rowlist)
@@ -5894,7 +6730,7 @@ PDE_analyzer_i <- function(verbose=TRUE) {
     
     out_table_list <- ""
     l37.jumptotable.cb <- tcltk2::tk2combobox(l37, textvariable = table.location.var,
-                                        values = out_table_list, width = 30, state = "readonly")
+                                              values = out_table_list, width = 30, state = "readonly")
     
     ## onchange combobox
     tcltk::tkbind(l37.jumptotable.cb, "<<ComboboxSelected>>",
@@ -5902,10 +6738,10 @@ PDE_analyzer_i <- function(verbose=TRUE) {
                     load_extracted_table(paste0(tcltk::tclvalue(outputfolder.var),"/tables/",
                                                 tcltk::tclvalue(table.location.var)))
                   })
-
+    
     
     ## the scroll buttons -----------------------------------------------------
-  
+    
     # down <- function() {
     #   if (tcltk::tclvalue(scrollpos) == "0") {
     #     tcltk::tkpack.forget(l1)
@@ -5946,43 +6782,58 @@ PDE_analyzer_i <- function(verbose=TRUE) {
     #                             command = up)
     # Down.but <- tcltk2::tk2button(r, text = "\\/", width = 2,
     #                               command = down)
-  
+    
     ## How the form looks --------------------------------------
-  
+    
     ## the scroll buttons --------------------------------------
-  
+    
     # tcltk::tkpack(Up.but, expand = TRUE, side = "top", fill = "both")
     # tcltk::tkpack(Down.but, expand = TRUE, side = "top", fill = "both")
     # tcltk::tkpack(r, side = "right", anchor = "e", fill = "y")
-  
+    
     ## line 1 (buttons) ---------------------------------------
     tcltk::tkpack(l1.load.tsv.but, l1.save.tsv.but, l1.reset.but,
                   side = "left", expand = TRUE, pady = 2, padx = 5)
     tcltk::tkpack(l1, side = "top", anchor = "nw", fill = "x")
-  
-  
+    
+    
     ## in_output ---------------------------------------------
     ## line 7
-    tcltk::tkpack(l7.pdfs.label, side = "left", pady = 2,
-                  padx = 5)
+    tcltk::tkpack(l7.step1.label, side = "left",
+                  pady = 2, padx = 5)
+    tcltk::tkpack(l7.pdfs.label, l7.hint_choosepdf, side = "left", pady = 2,
+                  padx = 0)
     tcltk::tkpack(l7.2.pdfs.entry, side = "left", expand = TRUE,
                   fill = "x", pady = 2, padx = 5)
-    tcltk::tkpack(l7.2.open.pdffolder.but, l7.2.load.pdffiles.but,
+    tcltk::tkpack(l7.2.select.pdffolder.but, l7.2.load.pdffiles.but,
                   side = "left", pady = 2)
     ## line 9
-    tcltk::tkpack(l9.outputfolder.label, side = "left", pady = 2,
-                  padx = 5)
+    tcltk::tkpack(l9.step2.label, side = "left",
+                  pady = 2, padx = 5)
+    tcltk::tkpack(l9.outputfolder.label,l9.hint_chooseoutput, side = "left", pady = 2,
+                  padx = 0)
     tcltk::tkpack(l9.2.outputfolder.entry, side = "left", expand = TRUE,
                   fill = "x", pady = 2, padx = 5)
-    tcltk::tkpack(l9.2.open.outputfolder.but, side = "left",
+    tcltk::tkpack(l9.2.select.outputfolder.but, l9.2.open.outputfolder.but, side = "left",
                   pady = 2, padx = 5)
     ## line 10
-    tcltk::tkpack(l10.out.table.format.label, side = "left",
+    tcltk::tkpack(l10.step3.label, side = "left",
                   pady = 2, padx = 5)
+    tcltk::tkpack(l10.out.table.format.label,l10.hint_outputformat, side = "left",
+                  pady = 2, padx = 0)
     tcltk::tkpack(l10.2.out.table.format.combo, side = "left",
                   pady = 2, padx = 5)
-  
-    tcltk::tkpack(l7,l7.2, l9,l9.2, l10,l10.2, side = "top", fill = "x")
+    ## line 11
+    tcltk::tkpack(l11.step4.label, side = "left",
+                  pady = 2, padx = 5)
+    tcltk::tkpack(l11.step4_2.label, side = "left",
+                  pady = 2, padx = 0)
+    tcltk::tkpack(l11.2.step5.label, side = "left",
+                  pady = 2, padx = 5)
+    tcltk::tkpack(l11.2.step5_2.label, side = "left",
+                  pady = 2, padx = 0)
+    
+    tcltk::tkpack(l7,l7.2, l9,l9.2, l10,l10.2,l11,l11.2, side = "top", fill = "x")
     tcltk::tkpack(in_output_tab, side = "top", fill = "x")
     
     ## Search words ---------------------------------------------
@@ -5991,35 +6842,40 @@ PDE_analyzer_i <- function(verbose=TRUE) {
                   padx = 5)
     tcltk::tkpack(l8.whattoextr.sentences.label, l8.whattoextr.txt.rb,
                   l8.whattoextr.tables.label, l8.whattoextr.tab.rb,
-                  l8.whattoextr.both.label, l8.whattoextr.txtandtab.rb,
+                  l8.whattoextr.both.label, l8.whattoextr.txtandtab.rb,l8.hint_whattoextr,
                   side = "left", pady = 2)
     ## line 19
-    tcltk::tkpack(l19.extract.all.tables.label, side = "left",
+    tcltk::tkpack(l19.extract.all.tables.label,  side = "left",
                   pady = 2, padx = 5)
     tcltk::tkpack(l19.extract.all.tables.all.label, l19.extract.all.tables.all.rb,
                   l19.extract.all.tables.searchwords.label, l19.extract.all.tables.searchwords.rb,
+                  l19.hint_extractallorsent,
                   side = "left", pady = 2)
     ## line 20
-    tcltk::tkpack(l20.search.words.label, side = "left", pady = 2,
+    tcltk::tkpack(l20.search.words.label, l20.hint_choose_sw, side = "left", pady = 2,
                   padx = 5)
     tcltk::tkpack(l20.2.search.words.entry, side = "left", expand = TRUE,
                   fill = "x", pady = 2, padx = 5)
+    tcltk::tkpack(l20.2.regex.sw.cbtn, side = "left", pady = 2, padx = 5)
     ## line 21
     tcltk::tkpack(l21.ignore.case.sw.label, side = "left",
                   pady = 2, padx = 5)
     tcltk::tkpack(l21.ignore.case.sw.yes.label, l21.ignore.case.sw.yes.rb,
-                  l21.ignore.case.sw.no.label, l21.ignore.case.sw.no.rb,
+                  l21.ignore.case.sw.no.label, l21.ignore.case.sw.no.rb,l21.hint_ignorecase_sw,
                   side = "left", pady = 2)
     ## line 22
     tcltk::tkpack(l22.context.label, l22.context.entry,
                   side = "left", pady = 2, padx = 5)
     tcltk::tkpack(l22.context.slider, expand = TRUE, fill = "x",
                   side = "left", pady = 2, padx = 5)
+    tcltk::tkpack(l22.hint_context,
+                  side = "left", pady = 2, padx = 5)
     ## line 23
     tcltk::tkpack(l23.eval.abbrevs.label, side = "left",
                   pady = 2, padx = 5)
     tcltk::tkpack(l23.eval.abbrevs.yes.label, l23.eval.abbrevs.yes.rb,
                   l23.eval.abbrevs.no.label, l23.eval.abbrevs.no.rb,
+                  l23.hint_evalabrev, 
                   side = "left", pady = 2)
     tcltk::tkpack(l8, l19, l20,l20.2,l21, l22, l23, side = "top", fill = "x")
     tcltk::tkpack(searchwords_tab, side = "top", fill = "x")
@@ -6027,36 +6883,47 @@ PDE_analyzer_i <- function(verbose=TRUE) {
     
     ## Filter words ---------------------------------------------
     ## line 15
-    tcltk::tkpack(l15.filter.words.yesno.label, side = "left",
+    tcltk::tkpack(l15.filter.words.yesno.label,side = "left",
                   pady = 2, padx = 5)
     tcltk::tkpack(l15.filter.words.yes.label, l15.filter.words.yes.rb,
-                  l15.filter.words.no.label, l15.filter.words.no.rb,
+                  l15.filter.words.no.label, l15.filter.words.no.rb,l15.hint_fw_yesno, 
                   side = "left", pady = 2)
     ## line 16
-    tcltk::tkpack(l16.filter.words.label, side = "left", pady = 2,
+    tcltk::tkpack(l16.filter.words.label, l16.hint_choose_fw, side = "left", pady = 2,
                   padx = 5)
     tcltk::tkpack(l16.2.filter.words.entry, side = "left", expand = TRUE,
                   fill = "x", pady = 2, padx = 5)
+    tcltk::tkpack(l16.2.regex.fw.cbtn, side = "left", pady = 2, padx = 5)
     ## line 17
     tcltk::tkpack(l17.ignore.case.fw.label, side = "left",
                   pady = 2, padx = 5)
     tcltk::tkpack(l17.ignore.case.fw.yes.label, l17.ignore.case.fw.yes.rb,
-                  l17.ignore.case.fw.no.label, l17.ignore.case.fw.no.rb,
+                  l17.ignore.case.fw.no.label, l17.ignore.case.fw.no.rb, l17.hint_igrnorecase_fw, 
                   side = "left", pady = 2)
-    ## line 18
-    tcltk::tkpack(l18.filter.word.times.label, l18.filter.word.times.entry,
+    ## line 18.1
+    tcltk::tkpack(l18.1.filter.word.times.label, l18.1.filter.word.times.entry,
                   side = "left", pady = 2, padx = 5)
-    tcltk::tkpack(l18.filter.word.times.slider, expand = TRUE,
+    tcltk::tkpack(l18.1.filter.word.times.slider, expand = TRUE,
                   fill = "x", side = "left", pady = 2, padx = 5)
-  
-    tcltk::tkpack(l15,l16,l16.2,l17,l18, side = "top", fill = "x")
+    tcltk::tkpack(l18.1.hint_fwtimes,
+                  side = "left", pady = 2, padx = 5)
+    tcltk::tkpack(l16.2.regex.fw.cbtn, side = "left", pady = 2, padx = 5)
+    ## line 18.2
+    tcltk::tkpack(l18.2.fw.label, side = "left",
+                  pady = 2, padx = 5)
+    tcltk::tkpack(l18.2.fw.nocpymv.label, l18.2.fw.nocpymv.rb,
+                  l18.2.fw.cpy.label,l18.2.fw.cpy.rb,
+                  l18.2.fw.mv.label, l18.2.fw.mv.rb, 
+                  side = "left", pady = 2)
+    
+    tcltk::tkpack(l15,l16,l16.2,l17,l18.1,l18.2, side = "top", fill = "x")
     tcltk::tkpack(filterwords_tab, side = "top", fill = "x")
     
     
     ## Parameters ---------------------------------------------
     
     ## line 12
-    tcltk::tkpack(l12.table.heading.words.label, side = "left",
+    tcltk::tkpack(l12.table.heading.words.label, l12.hint_tableheading, side = "left",
                   pady = 2, padx = 5)
     tcltk::tkpack(l12.2.table.heading.words.entry, side = "left",
                   expand = TRUE, fill = "x", pady = 2, padx = 5)
@@ -6064,53 +6931,57 @@ PDE_analyzer_i <- function(verbose=TRUE) {
     tcltk::tkpack(l13.ignore.case.th.label, side = "left",
                   pady = 2, padx = 5)
     tcltk::tkpack(l13.ignore.case.th.yes.label, l13.ignore.case.th.yes.rb,
-                  l13.ignore.case.th.no.label, l13.ignore.case.th.no.rb,
+                  l13.ignore.case.th.no.label, l13.ignore.case.th.no.rb,l13.hint_ignorecase_th,
                   side = "left", pady = 2)
     ## line 14
     tcltk::tkpack(l14.1.dev_x.label, l14.1.dev_x.entry, side = "left",
                   pady = 2, padx = 5)
     tcltk::tkpack(l14.1.dev_x.slider, expand = TRUE, fill = "x",
                   side = "left", pady = 2, padx = 5)
+    tcltk::tkpack(l14.1.hint_devx, side = "left",
+                  pady = 2, padx = 5)
     ## line 14
     tcltk::tkpack(l14.2.dev_y.label, l14.2.dynamic.dev_y.cbtn, l14.2.dev_y.entry, side = "left",
                   pady = 2, padx = 5)
     tcltk::tkpack(l14.2.dev_y.slider, expand = TRUE, fill = "x",
                   side = "left", pady = 2, padx = 5)
+    tcltk::tkpack(l14.2.hint_devy, side = "left",
+                  pady = 2, padx = 5)
     tcltk::tkpack(l12,l12.2,l13,l14.1, l14.2, side = "top", fill = "x")
     tcltk::tkpack(paras_tab, side = "top", fill = "x")
-  
+    
     ## Documentation -----------------------------------------
     ## line 25
-    tcltk::tkpack(l25.write.table.locations.label, side = "left",
+    tcltk::tkpack(l25.write.table.locations.label,  side = "left",
                   pady = 2, padx = 5)
     tcltk::tkpack(l25.write.table.locations.yes.label, l25.write.table.locations.yes.rb,
-                  l25.write.table.locations.no.label, l25.write.table.locations.no.rb,
+                  l25.write.table.locations.no.label, l25.write.table.locations.no.rb,l25.hint_wtl,
                   side = "left", pady = 2)
     ## line 26
     tcltk::tkpack(l26.exp.nondetc.tabs.label, side = "left",
                   pady = 2, padx = 5)
     tcltk::tkpack(l26.exp.nondetc.tabs.yes.label, l26.exp.nondetc.tabs.yes.rb,
-                  l26.exp.nondetc.tabs.no.label, l26.exp.nondetc.tabs.no.rb,
+                  l26.exp.nondetc.tabs.no.label, l26.exp.nondetc.tabs.no.rb,l26.hint_exportnondetc, 
                   side = "left", pady = 2)
     # line 27
     tcltk::tkpack(l27.write.tab.doc.file.label, side = "left",
                   pady = 2, padx = 5)
     tcltk::tkpack(l27.write.tab.doc.file.yes.label, l27.write.tab.doc.file.yes.rb,
-                  l27.write.tab.doc.file.no.label, l27.write.tab.doc.file.no.rb,
+                  l27.write.tab.doc.file.no.label, l27.write.tab.doc.file.no.rb,l27.hint_writetabdoc, 
                   side = "left", pady = 2)
     ## line 28
-    tcltk::tkpack(l28.write.txt.doc.file.label, side = "left",
+    tcltk::tkpack(l28.write.txt.doc.file.label,  side = "left",
                   pady = 2, padx = 5)
     tcltk::tkpack(l28.write.txt.doc.file.yes.label, l28.write.txt.doc.file.yes.rb,
-                  l28.write.txt.doc.file.no.label, l28.write.txt.doc.file.no.rb,
+                  l28.write.txt.doc.file.no.label, l28.write.txt.doc.file.no.rb,l28.hint_writetxtdoc,
                   side = "left", pady = 2)
     # line 29
     tcltk::tkpack(l29.delete.label, side = "left", pady = 2,
                   padx = 5)
     tcltk::tkpack(l29.delete.yes.label, l29.delete.yes.rb,
-                  l29.delete.no.label, l29.delete.no.rb, side = "left",
+                  l29.delete.no.label, l29.delete.no.rb, l29.hint_delete, side = "left",
                   pady = 2)
-  
+    
     tcltk::tkpack(l25, l26, l27, l28, l29, side = "top",
                   fill = "x")
     tcltk::tkpack(docus_tab, side = "top", fill = "x")
@@ -6145,7 +7016,196 @@ PDE_analyzer_i <- function(verbose=TRUE) {
     tcltk::tkpack(notebook, side = "top", fill = "x")
     
     ## end buttons -----------------------------------------------
-  
+    
+    ## Tooltips -------------------
+    tcltk::tkbind(l7.hint_choosepdf, "<Enter>", 
+                  expression(tooltip(paste0("Choose a folder with PDF files or ",
+                                            "select one or more PDF files for analysis ",
+                                            "(use Ctrl and/or Shift to select multiple). ",
+                                            "All PDF files in the chosen folder and ",
+                                            "subfolders will be analyzed. ",
+                                            "Multiple PDF files will be separated by \";\" without a space."), 
+                                     l7.hint_choosepdf)))
+    tcltk::tkbind(l9.hint_chooseoutput, "<Enter>", 
+                  expression(tooltip(paste0("All analysis files will be created inside of this folder; ",
+                                            "therefore, choose an empty folder or create a new one as ",
+                                            "output directory, since analyses create at least a number ",
+                                            "of files equal to the amount of PDF files analyzed. If no ",
+                                            "output folder is chosen, the results will be saved in the R",
+                                            " working directory."), 
+                                     l9.hint_chooseoutput)))
+    tcltk::tkbind(l10.hint_outputformat, "<Enter>", 
+                  expression(tooltip(paste0("The resulting analyses files can either be generated as ",
+                                            "comma-separated values files (.csv) or tab-separated values ",
+                                            "files (.tsv), with the former being easier to open and save ",
+                                            "in Microsoft Excel, while the later leads to less errors ",
+                                            "when opening in Microsoft Excel (as tabs are rare in texts).",
+                                            " Depending on the operating system the output files are ",
+                                            "opened in, it is recommended to choose the Microsoft Windows",
+                                            " (WINDOWS-1252), Mac (macintosh) or Linux (UTF-8) encoding."), 
+                                     l10.hint_outputformat)))
+    tcltk::tkbind(l8.hint_whattoextr, "<Enter>", 
+                  expression(tooltip(paste0("The PDE_analyzer has 2 main functions 1) PDF2TXT (extract ",
+                                            "sentences from PDF files) 2) PDF2TABLE (table of PDF to ",
+                                            "Microsoft Excel file) which can be combined or executed ",
+                                            "separately. Accoridngly, the algorithm can either extract",
+                                            " \"sentences\", \"tables\", ",
+                                            "or \"both\" with one of the search words ",
+                                            "present. Each function can be combined with filters ",
+                                            "and search words. "), 
+                                     l8.hint_whattoextr)))
+    tcltk::tkbind(l19.hint_extractallorsent, "<Enter>", 
+                  expression(tooltip(paste0("If the \"tables\" only analysis was chosen, the ",
+                                            "algorithm can also extract all tables detected in the paper."), 
+                                     l19.hint_extractallorsent)))
+    tcltk::tkbind(l20.hint_choose_sw, "<Enter>", 
+                  expression(tooltip(paste0("Type in the list of search words separated by \";\" without",
+                                            " spaces in between. The list of search words includes all ",
+                                            "aliases."), 
+                                     l20.hint_choose_sw)))
+    tcltk::tkbind(l21.hint_ignorecase_sw, "<Enter>", 
+                  expression(tooltip(paste0("Case-sensitivity (capitalization matters) can be disabled, ",
+                                            "e.g., for \"Word\", if \"no\"",
+                                            "was chosen then \"word\", \"WORD\", \"Word\", etc., will be ",
+                                            "detected, if \"yes\" was chosen only \"Word\" will be detected."), 
+                                     l21.hint_ignorecase_sw)))
+    tcltk::tkbind(l22.hint_context, "<Enter>", 
+                  expression(tooltip(paste0("When 0 is chosen, only the sentence with the search word is ",
+                                            "extracted. If any number n is chosen, n number of sentences ",
+                                            "before and n number of sentences after the sentence with the ",
+                                            "search word will be extracted. A sentence is currently defined ",
+                                            "by starting and ending with a \". \" (period with a ",
+                                            "subsequent space)."), 
+                                     l22.hint_context)))
+    tcltk::tkbind(l23.hint_evalabrev, "<Enter>", 
+                  expression(tooltip(paste0("If \"yes\" was chosen, all abbreviations that were used in ",
+                                            "the PDF documents for the search words will be saved and then ",
+                                            "replaced by the abbreviation (search word)$*, e.g., MTX will ",
+                                            "be replaced by MTX (Methotrexate)$*. In addition plural ",
+                                            "versions of the abbreviations, i.e., the abbreviation with ",
+                                            "an \"s\" at the end will be replaced accordingly as well."), 
+                                     l23.hint_evalabrev)))
+    tcltk::tkbind(l15.hint_fw_yesno, "<Enter>", 
+                  expression(tooltip(paste0("In some cases, only articles of a certain topic should be ",
+                                            "analyzed. Filter words provide a way to analyze only articles",
+                                            " which carry words from a list at least n times."), 
+                                     l15.hint_fw_yesno)))
+    tcltk::tkbind(l16.hint_choose_fw, "<Enter>", 
+                  expression(tooltip(paste0("Type in the list of filter words separated by \";\" without",
+                                            " spaces in between. A hit will be counted every time a word ",
+                                            "from the list is detected in the article."), 
+                                     l16.hint_choose_fw)))
+    tcltk::tkbind(l17.hint_igrnorecase_fw, "<Enter>", 
+                  expression(tooltip(paste0("Case-sensitivity (capitalization matters) can be disabled, ",
+                                            "e.g., for \"Word\", if \"no\"",
+                                            "was chosen then \"word\", \"WORD\", \"Word\", etc., will be ",
+                                            "detected, if \"yes\" was chosen only \"Word\" will be detected."), 
+                                     l17.hint_igrnorecase_fw)))
+    tcltk::tkbind(l18.1.hint_fwtimes, "<Enter>", 
+                  expression(tooltip(paste0("This represents the minimum number of hits described above ",
+                                            "which has to be detected for a paper to be further analyzed. ",
+                                            "If the threshold is not met, a documentation file can be ",
+                                            "exported if selected in the documentation section."), 
+                                     l18.1.hint_fwtimes)))
+    tcltk::tkbind(l12.hint_tableheading, "<Enter>", 
+                  expression(tooltip(paste0("Standard scientific articles have their tables labeled with ",
+                                            "\"TABLE\", \"TAB\", \"Table\" or \"table\" plus number ",
+                                            "and are detected accordingly. If a table is expected to ",
+                                            "have a different heading, it should be typed in this ",
+                                            "field. For multiple different heading use \";\" without",
+                                            " extra spaces. For most scientific papers, this option ",
+                                            "is not necessary to be populated as it is of greater use",
+                                            " in extracting tables from non-journal articles."), 
+                                     l12.hint_tableheading)))
+    tcltk::tkbind(l13.hint_ignorecase_th, "<Enter>", 
+                  expression(tooltip(paste0("Case-sensitivity (capitalization matters) can be disabled, ",
+                                            "e.g., for \"HEADING\", if \"no\"",
+                                            "was chosen then \"HEADING\", \"heading\", \"Heading\", etc., will be ",
+                                            "detected, if \"yes\" was chosen only \"HEADING\" will be detected."), 
+                                     l13.hint_ignorecase_th)))
+    tcltk::tkbind(l14.1.hint_devx, "<Enter>", 
+                  expression(tooltip(paste0("For some tables the heading is slightly indented which would ",
+                                            "make the algorithm assume it was a separated column. With ",
+                                            "the column pixel deviation the size of indention which would",
+                                            " be considered the same column can be adjusted."), 
+                                     l14.1.hint_devx)))
+    tcltk::tkbind(l14.2.hint_devy, "<Enter>", 
+                  expression(tooltip(paste0("For some tables elements even though in the same row can ",
+                                            "have slightly different vertical coordiates. With the row ",
+                                            "pixel deviation the variation of vertical coordinates which",
+                                            " would be considered the same row can be adjusted. It can ",
+                                            "be either a number or set to dynamic detection [9999], in ",
+                                            "which case the font size is used to detect which words are ",
+                                            "in the same row."), 
+                                     l14.2.hint_devy)))
+    tcltk::tkbind(l25.hint_wtl, "<Enter>", 
+                  expression(tooltip(paste0("This option is commonly not necessary to be selected! ",
+                                            "When \"tables\" detection/export is chosen, this option ",
+                                            "will be relevant. For \textbf{yes}, a separate file with ",
+                                            "the headings of all tables, their relative location in the",
+                                            " generated HTML and TXT files, as well as information if ",
+                                            "search words were found will be generated. The files will ",
+                                            "start with \"htmltablelines\", \"txttablelines\", ",
+                                            "\"keeplayouttablelines\" followed by the PDF file name and",
+                                            " can be found in html.docu, txt.docu, keeptxt.docu subfolders.",
+                                            "Nonetheless, it helps to identify if the PDE detects the ",
+                                            "tables and, if yes, if they are exported. When comparing ",
+                                            "the files starting with the PDF file name followed by ",
+                                            "\"htmltablelines\", \"txttablelines\", \"keeplayouttablelines\"",
+                                            ", it can be observed that all detected tables contained ",
+                                            "at least one of the search words."), 
+                                     l25.hint_wtl)))
+    tcltk::tkbind(l26.hint_exportnondetc, "<Enter>", 
+                  expression(tooltip(paste0("For \"yes\", if a table was detected in a PDF file ",
+                                            "but is an image or cannot be read, the page with the ",
+                                            "table will be exported as a portable network graphics ",
+                                            "(PNG) file. The documentation file will have the name ",
+                                            "format: [PDF file name]page[page number]w.table-[page number].png",
+                                            "This is recommended to capture all tables, even if the program ",
+                                            "cannot detect the table content. This applies especially, for ",
+                                            "older articles with scanned tables."), 
+                                     l26.hint_exportnondetc)))
+    tcltk::tkbind(l27.hint_writetabdoc, "<Enter>", 
+                  expression(tooltip(paste0("For \"yes\", if search words are used for table detection ",
+                                            "and no search words were found in the tables of a PDF file,",
+                                            " a file will be created with the PDF file name followed by ",
+                                            "\"no.table.w.search.words\" in the folder with the name ",
+                                            "no_tab_w_sw."), 
+                                     l27.hint_writetabdoc)))
+    tcltk::tkbind(l28.hint_writetxtdoc, "<Enter>", 
+                  expression(tooltip(paste0("For \"yes\", if no search words were found in the sentences",
+                                            " of a PDF file, a file will be created with the PDF file ",
+                                            "name followed by \"no.txt.w.search.words\" in the ",
+                                            "no_txt_w_sw folder. If the PDF file is empty, a file will ",
+                                            "be created with the PDF file name followed by \"non-readable\"",
+                                            " in the nr folder. Files that were filtered out using ",
+                                            "the filterwords will lead to the creation of a file with ",
+                                            "the PDF file name followed by \"no.txt.w.filter.words\" in ",
+                                            "the excl_by_fw folder. This option does not influence ",
+                                            "the creation of the [id]_is_secured.txt file in the ",
+                                            "\"secured folder\"."), 
+                                     l28.hint_writetxtdoc)))
+    tcltk::tkbind(l29.hint_delete, "<Enter>", 
+                  expression(tooltip(paste0("This option is primarily for debugging! ",
+                                            "The program generates a txt, keeplayouttxt and HTML ",
+                                            "copy of the PDF file, which will be deleted if ",
+                                            "intermediate files deletion is chosen. In case, this ",
+                                            "option was chosen accidentally, the user has two ",
+                                            "options to delete the .txt and .html file. 1) Slow & ",
+                                            "easy option: Rerun the analysis with this option being ",
+                                            "yes. 2) Quick and slightly more complicated option: ",
+                                            "Open the file explorer and search for *.txt and *.html ",
+                                            "in the PDF folder. Then select all files and folders of ",
+                                            "the search result and press delete. Having access to the .txt ",
+                                            "and .html files will allow the identification of ",
+                                            "undetected tables/sentences or conversion issues."), 
+                                     l29.hint_delete)))
+    
+    # tcltk::tkbind(l7.hint_choosepdf, "<Button-1>",
+    #               function() {
+    #                 utils::browseURL("https://cran.r-project.org/web/packages/PDE/index.html")
+    #               })
+    
     tcltk::tkpack(PDE.globals$le.progress.textbox, le.save.txt.but, side="left",fill="x", pady= 2)
     tcltk::tkpack(le.progress.bar.pb, PDE.globals$le.progress.textbox, side="top",fill="x", pady= 2)
     tcltk::tkpack(start.pause.but, quit.but, side="left",pady= 2, padx= 5)
@@ -6188,7 +7248,7 @@ PDE_analyzer_i <- function(verbose=TRUE) {
 #' @examples
 #'  if(PDE_check_Xpdf_install() == TRUE){
 #'    PDE_analyzer(paste0(system.file(package = "PDE"),
-#'    "/examples/tsvs/PDE_parameters_v1.3_all_files+-0.tsv"))
+#'    "/examples/tsvs/PDE_parameters_v1.4_all_files+-0.tsv"))
 #'  }
 #'
 #' \dontrun{
@@ -6200,7 +7260,7 @@ PDE_analyzer_i <- function(verbose=TRUE) {
 #'
 #'@export
 PDE_analyzer <- function(PDE_parameters_file_path = NA, verbose=TRUE){
-
+  
   ## give folder and automate analysis ----------------------------------------------
   if (!is.na(PDE_parameters_file_path)) {
     ### read in the content
@@ -6220,7 +7280,7 @@ PDE_analyzer <- function(PDE_parameters_file_path = NA, verbose=TRUE){
   }
   
   
-
+  
   ## the mandatory variables for running
   search.wds <- as.character(values_table[(grep("search.words",
                                                 values_table[, "variable"])), "value"])
@@ -6229,16 +7289,19 @@ PDE_analyzer <- function(PDE_parameters_file_path = NA, verbose=TRUE){
   } else {
     search.for <- search.wds
   }
-
+  ## reg.sw
+  regex.sw <- as.logical(values_table[(grep("regex.sw",
+                                            values_table[, "variable"])), "value"])
+  
   ## ignore.case.sw
   ic.sw <- as.logical(values_table[(grep("ignore.case.sw",
                                          values_table[, "variable"])), "value"])
   if (length(ic.sw) == 0 || is.na(ic.sw)) ic.sw <- FALSE
-
+  
   ## write.table.locations (generates 3 tables with
   ## the locations of the tables within the txt/html
   ## files)
-
+  
   whattoextr <- sub(" ", "", as.character(values_table[(grep("whattoextr",
                                                              values_table[, "variable"])), "value"]))
   wtl <- as.logical(values_table[(grep("write.table.locations",
@@ -6248,7 +7311,7 @@ PDE_analyzer <- function(PDE_parameters_file_path = NA, verbose=TRUE){
                                                   values_table[, "variable"])), "value"])
   
   if (!(length(outputfolder) == 0 || is.na(outputfolder))) {
-    if (grepl("examples/MTX", outputfolder)){
+    if (grepl("^/examples/MTX", outputfolder) || grepl("^examples/MTX", outputfolder)){
       outputfolder <- paste0(system.file(package = "PDE"),"/",outputfolder)
     } else {
       ## outputfolder stays the same
@@ -6283,12 +7346,12 @@ PDE_analyzer <- function(PDE_parameters_file_path = NA, verbose=TRUE){
              file.exists(paste0(system.file(package = "PDE"),"/",pdfs))) {
     pdfs <- paste0(system.file(package = "PDE"),"/",pdfs)
   } else if (all(file.exists(paste0(system.file(package = "PDE"),"/",unlist(strsplit(pdfs,
-                                                                 ";")))))) {
+                                                                                     ";")))))) {
     pdfs <- paste0(paste0(system.file(package = "PDE"),"/",unlist(strsplit(pdfs,
-                                                        ";"))), collapse = ";")
+                                                                           ";"))), collapse = ";")
   }
-
-
+  
+  
   ## test if whattoextr files exist
   if (!(whattoextr == "txtandtab" ||
         whattoextr == "tabandtxt" ||
@@ -6297,31 +7360,34 @@ PDE_analyzer <- function(PDE_parameters_file_path = NA, verbose=TRUE){
         whattoextr == "txt")) {
     tcltk::tkmessageBox(title = "Warning",
                         type = "ok", icon = "warning",
-                        message = "Please check your PDE_parameters_v1.3_all_files+-0.tsv file for the correct whattoextr")
-    stop("Please check your PDE_parameters_v1.3_all_files+-0.tsv file for the correct whattoextr")
+                        message = "Please check your PDE_parameters_v1.4_all_files+-0.tsv file for the correct whattoextr")
+    stop("Please check your PDE_parameters_v1.4_all_files+-0.tsv file for the correct whattoextr")
   }
-
-
+  
+  
   ## preset the additional parameters filter words
   filter.wds <- as.character(values_table[(grep("^filter.words$",
                                                 values_table[, "variable"])), "value"])
+  ## reg.fw
+  regex.fw <- as.logical(values_table[(grep("regex.fw",
+                                            values_table[, "variable"])), "value"])
   if (length(filter.wds) == 0 || is.na(filter.wds)) filter.wds <- ""
   if (length(grep(";", filter.wds)) > 0) {
     filter.for <- strsplit(filter.wds, ";")[[1]]
   } else {
     filter.for <- filter.wds
   }
-
+  
   ## ignore.case.fw
   ic.fw <- as.logical(values_table[(grep("ignore.case.fw",
                                          values_table[, "variable"])), "value"])
   if (length(ic.fw) == 0 || is.na(ic.fw)) ic.fw <- FALSE
-
+  
   ## filter.word.times
   filter.word.times <- strtoi(values_table[(grep("filter.word.times",
                                                  values_table[, "variable"])), "value"])
   if (length(filter.word.times) == 0 || is.na(filter.word.times)) filter.word.times <- 1
-
+  
   ## table headings
   table.heading.wds <- as.character(values_table[(grep("table.heading.words",
                                                        values_table[, "variable"])), "value"])
@@ -6335,66 +7401,72 @@ PDE_analyzer <- function(PDE_parameters_file_path = NA, verbose=TRUE){
   ic.th <- as.logical(values_table[(grep("ignore.case.th",
                                          values_table[, "variable"])), "value"])
   if (length(ic.th) == 0 || is.na(ic.th)) ic.th <- FALSE
-
+  
   id <- as.character(values_table[(grep("id", values_table[,
                                                            "variable"])), "value"])
   if (length(id) == 0 || is.na(id)) id <- NA
-
+  
   write.table.locations <- as.logical(values_table[(grep("write.table.locations",
                                                          values_table[, "variable"])), "value"])
   if (length(write.table.locations) == 0 || is.na(write.table.locations)) write.table.locations <- FALSE
-
+  
   out.table.format <- as.character(values_table[(grep("out.table.format",
                                                       values_table[, "variable"])), "value"])
   if (length(out.table.format) == 0 || is.na(out.table.format)) out.table.format <- ".csv (WINDOWS-1252)"
-
+  
   dev_x <- strtoi(values_table[(grep("dev_x", values_table[,
-                                                       "variable"])), "value"])
+                                                           "variable"])), "value"])
   if (length(dev_x) == 0 || is.na(dev_x)) dev_x <- 20
   
   dev_y <- strtoi(values_table[(grep("dev_y", values_table[,
                                                            "variable"])), "value"])
   if (length(dev_y) == 0 || is.na(dev_y)) dev_y <- 9999
-
+  
   context <- strtoi(values_table[(grep("context", values_table[,
                                                                "variable"])), "value"])
   if (length(context) == 0 || is.na(context)) context <- 2
-
+  
   eval.abbrevs <- strtoi(values_table[(grep("eval.abbrevs", values_table[,
-                                                               "variable"])), "value"])
+                                                                         "variable"])), "value"])
   if (length(eval.abbrevs) == 0 || is.na(eval.abbrevs)) eval.abbrevs <- TRUE
-
+  
   write.tab.doc.file <- as.logical(values_table[(grep("write.tab.doc.file",
                                                       values_table[, "variable"])), "value"])
   if (length(write.tab.doc.file) == 0 || is.na(write.tab.doc.file)) write.tab.doc.file <- FALSE
-
+  
   write.txt.doc.file <- as.logical(values_table[(grep("write.txt.doc.file",
                                                       values_table[, "variable"])), "value"])
   if (length(write.txt.doc.file) == 0 || is.na(write.txt.doc.file)) write.txt.doc.file <- FALSE
-
+  
   exp.nondetc.tabs <- as.logical(values_table[(grep("exp.nondetc.tabs",
                                                     values_table[, "variable"])), "value"])
   if (length(exp.nondetc.tabs) == 0 || is.na(exp.nondetc.tabs)) exp.nondetc.tabs <- TRUE
-
+  
+  cpy_mv <- as.character(values_table[(grep("cpy_mv", values_table[,
+                                                                 "variable"])), "value"])
+  if (length(cpy_mv) == 0 || is.na(cpy_mv)) cpy_mv <- "nocpymv"
+  
   delete <- as.logical(values_table[(grep("delete", values_table[,
                                                                  "variable"])), "value"])
   if (length(delete) == 0 || is.na(delete)) delete <- TRUE
-
+  
   ## as control show content of variables --------------------------------------------------
   if (verbose){
     cat(c("whattoextr", dQuote(whattoextr)),
         sep = "\n")
-    cat(c("filter.words:", filter.for, "ignore.case.fw:",
+    cat(c("filter.words:", filter.for, "regex.fw:", 
+          regex.fw, "ignore.case.fw:",
           ic.fw, "filter.word.times:", filter.word.times,
           "table.heading.words:", table.heading.for, "ignore.case.th:",
           ic.th), sep = "\n")
-    cat(c("search.words:", search.for, "ignore.case.sw:",
+    cat(c("search.words:", search.for, "regex.sw:", 
+          regex.sw,"ignore.case.sw:",
           ic.sw, "eval.abbrevs:",
           eval.abbrevs, "write.table.locations:", wtl, "out.table.format:",
           dQuote(out.table.format)), sep = "\n")
     cat(c("dev_x:", dev_x, "dev_y:", dev_y, "context:", context, "write.tab.doc.file:",
           write.tab.doc.file, "write.txt.doc.file:", write.txt.doc.file,
-          "delete", delete, "exp.nondetc.tabs:", exp.nondetc.tabs),
+          "cpy_mv", cpy_mv, "delete", delete, "exp.nondetc.tabs:", exp.nondetc.tabs),
         sep = "\n")
   }
   
@@ -6409,37 +7481,71 @@ PDE_analyzer <- function(PDE_parameters_file_path = NA, verbose=TRUE){
   } else if (all(file.exists(unlist(strsplit(pdfs, ";"))))) {
     pdf.files <- unlist(strsplit(pdfs, ";"))
   }
-
+  
   output <- NULL
-
+  
   ## run the analysis ----------------------------------------------------------------
   for (pdf in pdf.files) {
-
+    
     tablelines <- .PDE_extr_data_from_pdf(pdf = pdf,
                                           whattoextr = whattoextr, 
                                           out = outputfolder, context = context,
                                           dev_x = dev_x, dev_y = dev_y, filter.words = filter.for,
+                                          regex.fw = regex.fw,
                                           ignore.case.fw = ic.fw, filter.word.times = filter.word.times,
                                           table.heading.words = table.heading.for,
                                           ignore.case.th = ic.th, search.words = search.for,
+                                          regex.sw = regex.sw,
                                           ignore.case.sw = ic.sw, eval.abbrevs = eval.abbrevs,
                                           write.table.locations = wtl,
                                           write.tab.doc.file = write.tab.doc.file,
                                           write.txt.doc.file = write.txt.doc.file,
                                           exp.nondetc.tabs = exp.nondetc.tabs,
                                           out.table.format = out.table.format,
-                                          delete = delete, verbose = verbose)
-
+                                          delete = delete, cpy_mv = cpy_mv, verbose = verbose)
+    
     ## if the algorithm was not run in table detection
     ## setting tablelines is NULL
     if (length(tablelines) > 0) {
-
-      ## add new tablelines to output
-      output[[length(output) + 1]] <- tablelines
+      
+      # ## add new tablelines to output
+      # output[[length(output) + 1]] <- tablelines
+      ##make stat_output mastertable
+      if (is.null(output)){
+        output <- tablelines$stat_output
+      } else {
+        output[setdiff(names(tablelines$stat_output), names(output))] <- NA
+        tablelines$stat_output[setdiff(names(output), names(tablelines$stat_output))] <- NA
+        output <- rbind(output,tablelines$stat_output)
+      }
     }
-
+    
   }  ## end for each pdf
-
+  
+  ## write the PDE_analyzer_word_stats table
+  if ("pdf_searchword_total" %in% colnames(output)){
+    if ("pdf_filterword_total" %in% colnames(output)){
+      output <- output[order(output$pdf_searchword_total,
+                             output$pdf_filterword_total, decreasing = TRUE),,drop=FALSE]
+    } else {
+      output <- output[order(output$pdf_searchword_total, decreasing = TRUE),,drop=FALSE]
+    }
+  }
+  todays.date_time <- paste0(format(Sys.Date(), "%Y-%m-%d"),format(Sys.time(), "-%Hh-%Mm"))
+  if (grepl("csv", out.table.format)) {
+    out.table.separator <- ","
+    out.table.ext <- ".csv"
+  }
+  if (grepl("tsv", out.table.format)) {
+    out.table.separator <- "\t"
+    out.table.ext <- ".tsv"
+  }
+  output_table <- cbind(pdf_file_name = rownames(output), output)
+  utils::write.table(output_table, file = paste0(outputfolder,"/",todays.date_time,"_PDE_analyzer_word_stats",
+                                                 out.table.ext),
+                     sep = out.table.separator,
+                     row.names = FALSE)
+  
   return(output)
 }
 
@@ -6461,7 +7567,7 @@ PDE_analyzer <- function(PDE_parameters_file_path = NA, verbose=TRUE){
 #'  
 #' @export
 PDE_reader_i <- function(verbose=TRUE) {
-
+  
   ## general functions ------------------------------------------
   read.problemtable <- function(filelocation, header,
                                 quote, sep) {
@@ -6476,14 +7582,14 @@ PDE_reader_i <- function(verbose=TRUE) {
                                      sep = sep, header = FALSE, stringsAsFactors = FALSE,
                                      encoding = "UTF-8"),
                    silent = TRUE)
-        if (class(res) == "try-error") {
+        if (inherits(res,"try-error")) {
           quotnumb <- unlist(gregexpr("\"", text[l]))
           ## if the number of quotations is odd
           if ((length(quotnumb) %% 2) != 0) {
             ## test for multibyte string
             res_mbs <- try(substr(text[l], quotnumb[2], quotnumb[2]),
-                       silent = TRUE)
-            if (class(res_mbs) == "try-error") {
+                           silent = TRUE)
+            if (inherits(res_mbs,"try-error")) {
               text[l] = iconv(text[l], 'UTF-8', 'latin1', 'bit')
             }
             quotnumb <- unlist(gregexpr("\"", text[l]))
@@ -6503,18 +7609,18 @@ PDE_reader_i <- function(verbose=TRUE) {
           if ((length(quotnumb) %% 2) != 0) {
             ## test for multibyte string
             res_mbs <- try(substr(text[l], quotnumb[2], quotnumb[2]),
-                            silent = TRUE)
-            if (class(res_mbs) == "try-error") {
+                           silent = TRUE)
+            if (inherits(res_mbs,"try-error")) {
               text[l] = iconv(text[l], 'UTF-8', 'latin1', 'bit')
             }
             substr(text[l], quotnumb[2], quotnumb[2]) <- "'"
           } else {
             ## test for multibyte string
             res_mbs1 <- try(substr(text[l], quotnumb[2], quotnumb[2]),
-                           silent = TRUE)
+                            silent = TRUE)
             res_mbs2 <- try(substr(text[l], quotnumb[3], quotnumb[3]),
                             silent = TRUE)
-            if (class(res_mbs1) == "try-error" || class(res_mbs2) == "try-error") {
+            if (inherits(res_mbs1,"try-error") || inherits(res_mbs2,"try-error")) {
               text[l] = iconv(text[l], 'UTF-8', 'latin1', 'bit')
             }
             quotnumb <- unlist(gregexpr("\"", text[l]))
@@ -6529,21 +7635,21 @@ PDE_reader_i <- function(verbose=TRUE) {
           } else {
             colnumbtext <- colnumbheader
           }
-  
+          
         }
-  
+        
       }
-  
+      
       table <- utils::read.table(text = text, quote = quote,
                                  sep = sep, fill = TRUE, header = header, stringsAsFactors = FALSE,
                                  encoding = "UTF-8")
-    ## if file does not exist
+      ## if file does not exist
     } else {
       table <- ""
     }
-      return(table)
+    return(table)
   }
-
+  
   ## set the variables ----------------------------------------------------------------
   out_msg <- NULL
   filename.var <- tcltk::tclVar("")
@@ -6569,7 +7675,7 @@ PDE_reader_i <- function(verbose=TRUE) {
   ignore.case.sw.var <- tcltk::tclVar("")
   hotkey.mode.var <- tcltk::tclVar("standard")
   sent.count.indicator.var <- tcltk::tclVar("0")
-
+  
   ## find os.font
   if (Sys.info()["sysname"] == "Windows") {
     os.font <- "Arial"
@@ -6588,11 +7694,11 @@ PDE_reader_i <- function(verbose=TRUE) {
     os.font.ten.bold <- "Arial 10 bold"
     os.font.twelve.bold <- "Arial 12 bold"
   }
-
+  
   ## components of the form ----------------------------------------------------
   tcltk.test <- try(test <- tcltk::tktoplevel(bg = "#05F2DB"), silent = TRUE)
   tcltk.test2 <- try(tcltk::tkdestroy(test), silent = TRUE)
-  if (class(tcltk.test) == "try-error"){
+  if (inherits(tcltk.test,"try-error")){
     out_msg <- c(out_msg, paste("Package tcltk is not working properly.",
                                 "If you are on a Mac try installing the latest version of xquartz to use tcltk correctly."))
     if (verbose) cat(utils::tail(out_msg,1), sep="\n")
@@ -6601,7 +7707,7 @@ PDE_reader_i <- function(verbose=TRUE) {
     ttreader <- tcltk::tktoplevel(bg = "#05F2DB")
     tcltk::tkwm.geometry(ttreader, "+0+0")
     tcltk::tkwm.title(ttreader, "PDE reader")
-  
+    
     ## style ---------------------------------------------------------------------
     themes <- try(tcltk2::tk2theme.list(), silent = TRUE)
     if (!inherits(themes, "try-error")) {
@@ -6615,13 +7721,13 @@ PDE_reader_i <- function(verbose=TRUE) {
         try(tcltk2::tk2theme("aquaTk"), silent = TRUE)
       }
     }
-  
+    
     ## min size so that no buttons disappear vertically
     tcltk::tkwm.minsize(ttreader, 750, 0)
-  
-  
+    
+    
     ## frames ---------------------------------------------------
-  
+    
     ## right frame
     top <- tcltk::tkframe(ttreader, bg = "#05F2DB")
     ## line 1 with buttons
@@ -6640,15 +7746,15 @@ PDE_reader_i <- function(verbose=TRUE) {
     
     ## test os.font ------------------------------------------------------------------------
     res <- try(tcltk2::tk2label(l1, text = "test", font = os.font.ten.bold),silent = TRUE)
-    if (class(res)[1] == "try-error") {
+    if (inherits(res[1],"try-error")) {
       out_msg <- c(out_msg, "There is an error with the allocation of tcl system fonts.")
       if (verbose) cat(utils::tail(out_msg,1), sep="\n")
       os.font <- ""
       os.font.ten.bold <- ""
       os.font.twelve.bold <- ""
     }
-  
-  
+    
+    
     ## labels -----------------------------------------------------------------
     l1.progress.label <- tcltk2::tk2label(l1, text = tcltk::tclvalue(progress.var),
                                           background = "#05F2DB")
@@ -6675,13 +7781,13 @@ PDE_reader_i <- function(verbose=TRUE) {
                                          width = 3)
     l4.pdfname.entry <- tcltk2::tk2entry(l4, textvariable = pdfname.var,
                                          width = 10, state = "readonly")
-  
-  
+    
+    
     ## progress bar ---------------------------------------------------
     ## e
     l1.progress.bar.pb <- tcltk2::tk2progress(l1, value = 0,
                                               maximum = 100, length = 50)
-  
+    
     ## scroll bar ----------------------------------------------------
     scroll.y <- tcltk2::tk2scrollbar(l8, orient = "vertical",
                                      command = function(...) tcltk::tkyview(l8.analysis.file.table,
@@ -6690,12 +7796,12 @@ PDE_reader_i <- function(verbose=TRUE) {
                                                    exportselection = 0, stripebackground = "lightgrey",
                                                    stretch = "anchor", selecttype = "cell", 
                                                    yscrollcommand = function(...) tcltk::tkset(scroll.y,...))
-  
-  
+    
+    
     ## buttons 1 -----------------------------------------------------------
     ## Here what happens when the buttons are pressed
     ## buttons 1
-  
+    
     renamefile <- function(completefilename, checkfor,
                            replacewith) {
       filebase <- basename(completefilename)
@@ -6718,7 +7824,7 @@ PDE_reader_i <- function(verbose=TRUE) {
                                                                                    newfilename, sep = "/"))
       return(newfilename)
     }
-  
+    
     flagfile <- function() {
       if (tcltk::tclvalue(mark.var) == "Mark analysis file only" ||
           tcltk::tclvalue(mark.var) == "Mark analysis file & PDF") {
@@ -6734,7 +7840,7 @@ PDE_reader_i <- function(verbose=TRUE) {
         ## change filename also in jumpto.var
         numb <- gsub("-.*", "", tcltk::tclvalue(jumpto.var))
         PDE.globals$jumpto.list[as.numeric(numb)] <- paste0(numb, "-",
-                                                                          tcltk::tclvalue(filename.var))
+                                                            tcltk::tclvalue(filename.var))
         tcltk::tclvalue(jumpto.var) <- paste0(numb, "-",
                                               tcltk::tclvalue(filename.var))
         if (length(PDE.globals$jumpto.list) > 1) {
@@ -6743,7 +7849,7 @@ PDE_reader_i <- function(verbose=TRUE) {
           tcltk::tkconfigure(l5.jumpto.cb, values = tcltk::as.tclObj(PDE.globals$jumpto.list,
                                                                      drop = FALSE))
         }
-  
+        
       }
       if (tcltk::tclvalue(mark.var) == "Mark PDF file only" ||
           tcltk::tclvalue(mark.var) == "Mark analysis file & PDF") {
@@ -6762,7 +7868,7 @@ PDE_reader_i <- function(verbose=TRUE) {
     l9.flagfile.but <- tcltk2::tk2button(l9, text = "Flag file",
                                          width = 9, command = flagfile, state = "disabled",
                                          underline = "0")
-  
+    
     xmarkfile <- function() {
       if (tcltk::tclvalue(mark.var) == "Mark analysis file only" ||
           tcltk::tclvalue(mark.var) == "Mark analysis file & PDF") {
@@ -6778,7 +7884,7 @@ PDE_reader_i <- function(verbose=TRUE) {
         ## change filename also in jumpto.var
         numb = gsub("-.*", "", tcltk::tclvalue(jumpto.var))
         PDE.globals$jumpto.list[as.numeric(numb)] <- paste0(numb, "-",
-                                                                          tcltk::tclvalue(filename.var))
+                                                            tcltk::tclvalue(filename.var))
         tcltk::tclvalue(jumpto.var) <- paste0(numb, "-",
                                               tcltk::tclvalue(filename.var))
         if (length(PDE.globals$jumpto.list) > 1) {
@@ -6805,7 +7911,7 @@ PDE_reader_i <- function(verbose=TRUE) {
     l9.xmarkfile.but <- tcltk2::tk2button(l9, text = "x mark file",
                                           width = 11, command = xmarkfile, state = "disabled",
                                           underline = "0")
-  
+    
     unmarkfile <- function() {
       if (tcltk::tclvalue(mark.var) == "Mark analysis file only" ||
           tcltk::tclvalue(mark.var) == "Mark analysis file & PDF") {
@@ -6821,7 +7927,7 @@ PDE_reader_i <- function(verbose=TRUE) {
         ## change filename also in jumpto.var
         numb <- gsub("-.*", "", tcltk::tclvalue(jumpto.var))
         PDE.globals$jumpto.list[as.numeric(numb)] <- paste0(numb, "-",
-                                                                          tcltk::tclvalue(filename.var))
+                                                            tcltk::tclvalue(filename.var))
         tcltk::tclvalue(jumpto.var) <- paste0(numb, "-",
                                               tcltk::tclvalue(filename.var))
         if (length(PDE.globals$jumpto.list) > 1) {
@@ -6830,7 +7936,7 @@ PDE_reader_i <- function(verbose=TRUE) {
           tcltk::tkconfigure(l5.jumpto.cb, values = tcltk::as.tclObj(PDE.globals$jumpto.list,
                                                                      drop = FALSE))
         }
-  
+        
       }
       if (tcltk::tclvalue(mark.var) == "Mark PDF file only" ||
           tcltk::tclvalue(mark.var) == "Mark analysis file & PDF") {
@@ -6849,7 +7955,7 @@ PDE_reader_i <- function(verbose=TRUE) {
     l9.unmarkfile.but <- tcltk2::tk2button(l9, text = "Unmark file",
                                            width = 11, command = unmarkfile, state = "disabled",
                                            underline = "0")
-  
+    
     ## functions --------------------------------------------------
     fill.table <- function(table, analysis.file_location) {
       included.columns <- !(colnames(table) %in% "search.word.loc_total")
@@ -6859,11 +7965,11 @@ PDE_reader_i <- function(verbose=TRUE) {
       table <- table[, included.columns]
       ## clear table
       tcltk::tkdelete(l8.analysis.file.table, 0, "end")
-  
+      
       ## change the header
       tcltk::tclvalue(filename.var) <- as.character(basename(analysis.file_location))
       tcltk::tkwm.title(ttreader, paste0("PDE reader - ",tcltk::tclvalue(filename.var)))
-  
+      
       if (tcltk::tclvalue(txtcontent.only.var) == "0") {
         ## fill the header
         columnhead <- NULL
@@ -6873,7 +7979,7 @@ PDE_reader_i <- function(verbose=TRUE) {
         }
         tcltk::tkconfigure(l8.analysis.file.table, columns = paste0("1 \"",
                                                                     colnames(table)[1], columnhead, "\""))
-  
+        
         ## make columns editable and wrap
         for (c in 0:(ncol(table) - 1)) {
           tcltk::tcl(l8.analysis.file.table, "columnconfigure",
@@ -6881,7 +7987,7 @@ PDE_reader_i <- function(verbose=TRUE) {
           tcltk::tcl(l8.analysis.file.table, "columnconfigure",
                      c, wrap = tcltk::tclvalue(wrap.var))
         }
-  
+        
         ## fill table
         for (r in 1:nrow(table)) {
           rowlist <- NULL
@@ -6892,9 +7998,9 @@ PDE_reader_i <- function(verbose=TRUE) {
           tcltk::tkinsert(l8.analysis.file.table, "end",
                           rowlist)
         }
-  
+        
         tcltk::tclvalue(columnnumber.var) <- ncol(table)
-  
+        
       } else {
         ## fill the header
         tcltk::tkconfigure(l8.analysis.file.table, columns = paste0("1 \"",
@@ -6904,7 +8010,7 @@ PDE_reader_i <- function(verbose=TRUE) {
                    0, editable = 1)
         tcltk::tcl(l8.analysis.file.table, "columnconfigure",
                    0, wrap = tcltk::tclvalue(wrap.var))
-  
+        
         ## fill table
         for (r in 1:length(table)) {
           tcltk::tkinsert(l8.analysis.file.table, "end",
@@ -6912,7 +8018,7 @@ PDE_reader_i <- function(verbose=TRUE) {
         }
         tcltk::tclvalue(columnnumber.var) <- 1
       }
-  
+      
       ## add mark option to combobox
       if (PDE.globals$mark.list[1] == "") {
         if (!tcltk::tclvalue(pdffolder.var) == "") {
@@ -6928,14 +8034,14 @@ PDE_reader_i <- function(verbose=TRUE) {
         tcltk::tkconfigure(l9.xmarkfile.but, state = "normal")
         tcltk::tkconfigure(l9.unmarkfile.but, state = "normal")
       }
-  
+      
     }
-  
+    
     ## combobox list -------------------------------------------------------
-  
+    
     l5.jumpto.cb <- tcltk2::tk2combobox(l5, textvariable = jumpto.var,
                                         values = PDE.globals$jumpto.list, width = 30, state = "readonly")
-  
+    
     ## onchange combobox
     tcltk::tkbind(l5.jumpto.cb, "<<ComboboxSelected>>",
                   function() {
@@ -6943,7 +8049,7 @@ PDE_reader_i <- function(verbose=TRUE) {
                     pos <- as.numeric(numb)
                     loc <- PDE.globals$tables.masterlist[["analysis.file_location"]][[pos]]
                     res <- try(PDE.globals$tables.masterlist[["values_table"]][[pos]], silent = TRUE)
-                    if (class(res) != "try-error" && !is.null(res)) {
+                    if (!inherits(res,"try-error") && !is.null(res)) {
                       tab <- PDE.globals$tables.masterlist[["values_table"]][[pos]]
                       loc <- PDE.globals$tables.masterlist[["analysis.file_location"]][[pos]]
                       ## highlight search words if highlighting is on
@@ -6951,7 +8057,7 @@ PDE_reader_i <- function(verbose=TRUE) {
                                                     loc, pos)
                       ## update display of sentences
                       display.values_table <- adjust.sent.display(hightlighted.tab)
-  
+                      
                       fill.table(table = display.values_table,
                                  analysis.file_location = loc)
                       ## match PDF files if pdffolder was chosen
@@ -6970,11 +8076,11 @@ PDE_reader_i <- function(verbose=TRUE) {
                       open.analysis.file(analysis.file_location = fullfilename)
                     }
                   })
-  
+    
     l9.mark.cb <- tcltk2::tk2combobox(l9, textvariable = mark.var,
                                       values = PDE.globals$mark.list, width = 20, state = "readonly")
-  
-  
+    
+    
     fill.folder.infos <- function(table, analysis.file_location) {
       filename <- as.character(basename(analysis.file_location))
       
@@ -7006,7 +8112,7 @@ PDE_reader_i <- function(verbose=TRUE) {
         ## add value_table to masterlist of tables if not
         ## already in there
         res <- try(PDE.globals$tables.masterlist[["values_table"]][[pos]], silent = TRUE)
-        if (class(res) == "try-error") {
+        if (inherits(res,"try-error")) {
           PDE.globals$tables.masterlist[["values_table"]][pos] <- list(table)
           PDE.globals$tables.masterlist[["markedtables"]][pos][[1]][["tsvfile"]] <- list()
           PDE.globals$tables.masterlist[["markedtables"]][pos][[1]][["table"]] <- list()
@@ -7032,7 +8138,7 @@ PDE_reader_i <- function(verbose=TRUE) {
       }
       
     }
-  
+    
     searchfolder <- function(analysis.folder_location) {
       analysis.tsv.files <- list.files(analysis.folder_location,
                                        pattern = ".*(txt\\+-).*\\.tsv", full.names = TRUE,
@@ -7043,7 +8149,7 @@ PDE_reader_i <- function(verbose=TRUE) {
       analysis.files <- c(analysis.tsv.files, analysis.csv.files)
       return(analysis.files)
     }
-  
+    
     smaller.font <- function() {
       newfontsize <- as.integer(tcltk::tkfont.actual("TkDefaultFont",
                                                      "-size")) - 1
@@ -7052,14 +8158,14 @@ PDE_reader_i <- function(verbose=TRUE) {
     }
     l6.smaller.font.but <- tcltk2::tk2button(l6, text = "-",
                                              command = smaller.font, width = 2)
-  
+    
     default.font <- function() {
       tcltk::tkfont.configure("TkDefaultFont", size = tcltk::tclvalue(defaultfontsize.var))
       tcltk::tclvalue(fontsize.var) <- tcltk::tclvalue(defaultfontsize.var)
     }
     l6.default.font.but <- tcltk2::tk2button(l6, text = "o",
                                              command = default.font, width = 2)
-  
+    
     larger.font <- function() {
       newfontsize <- as.integer(tcltk::tkfont.actual("TkDefaultFont",
                                                      "-size")) + 1
@@ -7068,7 +8174,7 @@ PDE_reader_i <- function(verbose=TRUE) {
     }
     l6.larger.font.but <- tcltk2::tk2button(l6, text = "+",
                                             command = larger.font, width = 2)
-  
+    
     adjust.sent.display <- function(input_table){
       output_table <- input_table
       if (as.numeric(tcltk::tclvalue(sent.count.indicator.var)) == 0){
@@ -7081,37 +8187,37 @@ PDE_reader_i <- function(verbose=TRUE) {
           sent.count.indicator <- as.numeric(tcltk::tclvalue(sent.count.indicator.var))
           period.pos <- c(1,gregexpr("\\. [0-9A-Z]",input_table[r,"txtcontent"])[[1]],
                           nchar(input_table[r,"txtcontent"]))
-  
+          
           ##adjust front of the sentences
           ## if there are enough sentences in the front to be removed
           ## --> (search.word.pos + sent.count.indicator) > 0
           if ((search.word.pos + sent.count.indicator) > 0){
             start.new.txt <- period.pos[search.word.pos + sent.count.indicator + 1]
-  
+            
             ## if all sentences in the front are to be removed
             ## --> (search.word.pos + sent.count.indicator) <= 0
           } else if ((search.word.pos + sent.count.indicator) <= 0){
             start.new.txt <- period.pos[search.word.pos]
           }
-  
+          
           ##adjust end of the sentences
           ## if there are enough sentences in the end to be removed
           ## --> (search.word.pos + sent.count.indicator) > 0
           if ((sent.number - search.word.pos + sent.count.indicator) > 0){
             end.new.txt <- period.pos[sent.number + sent.count.indicator + 1]
-  
+            
             ## if all sentences in the end are to be removed
             ## --> (search.word.pos + sent.count.indicator) <= 0
           } else if ((sent.number - search.word.pos + sent.count.indicator) <= 0){
             end.new.txt <- period.pos[search.word.pos + 1]
           }
-  
+          
           output_table[r,"txtcontent"] <- substr(input_table[r,"txtcontent"],(start.new.txt+2),end.new.txt)
         } ## end for (r in 1:nrow(input_table)){
         return(output_table)
       } ## end if removal counter == 0
     }
-  
+    
     ## radiobuttons -----------------------------------------------------
     changewrapping <- function() {
       if (!tcltk::tclvalue(columnnumber.var) == "0") {
@@ -7121,12 +8227,12 @@ PDE_reader_i <- function(verbose=TRUE) {
         }
       }
     }
-  
+    
     l6.wrap.rb <- tcltk::tkradiobutton(l6, variable = wrap.var,
                                        value = "1", background = "#05F2C7", command = changewrapping)
     l6.no.wrap.rb <- tcltk::tkradiobutton(l6, variable = wrap.var,
                                           value = "0", background = "#05F2C7", command = changewrapping)
-  
+    
     ## checkbuttons -----------------------------------------------------
     change.txtcontent.only <- function() {
       ##save scroll position
@@ -7146,12 +8252,12 @@ PDE_reader_i <- function(verbose=TRUE) {
       ## reset scroll position
       tcltk::tkyview.moveto(l8.analysis.file.table,save.scroll.pos)
     }
-  
+    
     l7.txtcontent.only.cbtn <- tcltk::tkcheckbutton(l7, variable = txtcontent.only.var, 
-                                                  text = "show txtcontent only",
-                                                  state = "normal", background = "#05F2C7", 
-                                                  command = change.txtcontent.only)
-  
+                                                    text = "show txtcontent only",
+                                                    state = "normal", background = "#05F2C7", 
+                                                    command = change.txtcontent.only)
+    
     change.collapse.abbrev <- function() {
       ##save scroll position
       save.scroll.pos <- as.character(tcltk::tkyview(l8.analysis.file.table))[1]
@@ -7170,21 +8276,21 @@ PDE_reader_i <- function(verbose=TRUE) {
       ## reset scroll position
       tcltk::tkyview.moveto(l8.analysis.file.table,save.scroll.pos)
     }
-  
+    
     l7.collapse.abbrev.cb <- tcltk::tkcheckbutton(l7, variable = collapse.abbrev.var, 
                                                   text = "show original text (abbrev. collapsed)",
                                                   state = "normal", background = "#05F2C7", 
                                                   command = change.collapse.abbrev)
-  
+    
     ## buttons 2 -----------------------------------------------------------------
-  
+    
     save.memory <- function() {
       todays.date <- format(Sys.Date(), "%Y-%m-%d")
       PDE_parameters_filename <- paste0(todays.date,
-                                            "_", "memory.RData")
+                                        "_", "memory.RData")
       savefilelocation <- tcltk::tclvalue(tcltk::tkgetSaveFile(initialfile = PDE_parameters_filename,
-                                               defaultextension = ".RData", 
-                                               filetypes = "{ {RData Files} {.RData} } { {All Files} * }"))
+                                                               defaultextension = ".RData", 
+                                                               filetypes = "{ {RData Files} {.RData} } { {All Files} * }"))
       if (!savefilelocation == ""){
         jumpto.saved <-  tcltk::tclvalue(jumpto.var)
         pdffolder.saved <- tcltk::tclvalue(pdffolder.var)
@@ -7193,14 +8299,14 @@ PDE_reader_i <- function(verbose=TRUE) {
         PDE.globals.jumpto.list <- PDE.globals$jumpto.list
         PDE.globals.mark.list <- PDE.globals$mark.list
         PDE.globals.tables.masterlist <- PDE.globals$tables.masterlist
-  
+        
         save("PDE.globals.jumpto.list", "PDE.globals.mark.list", "PDE.globals.tables.masterlist",
              "jumpto.saved", "pdffolder.saved", "tsvfile.saved", 
              "analysis.folder_location.saved", file = paste(savefilelocation,
-                                                       collapse = " "))
+                                                            collapse = " "))
       }
     }
-  
+    
     load.memory <- function() {
       ## reset loaded variables
       PDE.globals.jumpto.list <-NULL
@@ -7213,28 +8319,28 @@ PDE_reader_i <- function(verbose=TRUE) {
       
       todays.date <- format(Sys.Date(), "%Y-%m-%d")
       PDE_parameters_filename <- paste0(todays.date,
-                                            "_", "memory.RData")
+                                        "_", "memory.RData")
       openfilelocation <- tcltk::tclvalue(tcltk::tkgetOpenFile(initialfile = PDE_parameters_filename,
-                                               defaultextension = ".RData", 
-                                               filetypes = "{ {RData Files} {.RData} } { {All Files} * }"))
+                                                               defaultextension = ".RData", 
+                                                               filetypes = "{ {RData Files} {.RData} } { {All Files} * }"))
       if (!openfilelocation == ""){
         load(file = paste(openfilelocation, collapse = " "))
-  
+        
         ## test if PDE.globals was loaded
         if (is.null(PDE.globals.tables.masterlist)) {
-           PDE.globals$jumpto.list <- PDE.globals.jumpto.list
-           ## update marklist
-           PDE.globals$mark.list <- PDE.globals.mark.list
-           if (PDE.globals$mark.list != ""){
-              tcltk::tkconfigure(l9.mark.cb, values = tcltk::as.tclObj(PDE.globals$mark.list,
-                                                                    drop = FALSE))
-              tcltk::tclvalue(mark.var) <- PDE.globals$mark.list[1]
-              tcltk::tkconfigure(l9.flagfile.but, state = "normal")
-              tcltk::tkconfigure(l9.xmarkfile.but, state = "normal")
-              tcltk::tkconfigure(l9.unmarkfile.but, state = "normal")
-           }
-           ##
-           PDE.globals$tables.masterlist <- PDE.globals.tables.masterlist
+          PDE.globals$jumpto.list <- PDE.globals.jumpto.list
+          ## update marklist
+          PDE.globals$mark.list <- PDE.globals.mark.list
+          if (PDE.globals$mark.list != ""){
+            tcltk::tkconfigure(l9.mark.cb, values = tcltk::as.tclObj(PDE.globals$mark.list,
+                                                                     drop = FALSE))
+            tcltk::tclvalue(mark.var) <- PDE.globals$mark.list[1]
+            tcltk::tkconfigure(l9.flagfile.but, state = "normal")
+            tcltk::tkconfigure(l9.xmarkfile.but, state = "normal")
+            tcltk::tkconfigure(l9.unmarkfile.but, state = "normal")
+          }
+          ##
+          PDE.globals$tables.masterlist <- PDE.globals.tables.masterlist
           
           ## fill in tsv file
           tcltk::tclvalue(tsvfile.var) <- tsvfile.saved
@@ -7268,12 +8374,12 @@ PDE_reader_i <- function(verbose=TRUE) {
         }
       }
     }
-  
+    
     l1.save.memory.but <- tcltk2::tk2button(l1, text = "Save memory to file",
                                             command = save.memory)
     l1.load.memory.but <- tcltk2::tk2button(l1, text = "Load memory from file",
                                             command = load.memory)
-  
+    
     markwords <- function(table, analysis.file_location, pos) {
       analysis.file_location <- gsub("\\\\", "/",
                                      analysis.file_location)
@@ -7307,7 +8413,7 @@ PDE_reader_i <- function(verbose=TRUE) {
                   gsub(search.for[w],
                        paste0("\U2588\U25B6", regmatches(x, 
                                                          regexpr(search.for[w], x, 
-                                                          ignore.case = as.logical(tcltk::tclvalue(ignore.case.sw.var)))),
+                                                                 ignore.case = as.logical(tcltk::tclvalue(ignore.case.sw.var)))),
                               "\U25C0\U2588"), x, ignore.case = as.logical(tcltk::tclvalue(ignore.case.sw.var)))
                 }))
               }
@@ -7345,7 +8451,7 @@ PDE_reader_i <- function(verbose=TRUE) {
                   gsub(search.for[w],
                        paste0("\U2588\U25B6", regmatches(x, 
                                                          regexpr(search.for[w], x, 
-                                                      ignore.case = as.logical(tcltk::tclvalue(ignore.case.sw.var)))),
+                                                                 ignore.case = as.logical(tcltk::tclvalue(ignore.case.sw.var)))),
                               "\U25C0\U2588"), x, ignore.case = as.logical(tcltk::tclvalue(ignore.case.sw.var)))
                 }))
                 ## replace abbreviations
@@ -7374,7 +8480,7 @@ PDE_reader_i <- function(verbose=TRUE) {
         if (tcltk::tclvalue(collapse.abbrev.var) == "1"){
           ## test if woabbrev_values_table already exists
           res <- try(PDE.globals$tables.masterlist[["woabbrev_values_table"]][[pos]], silent = TRUE)
-          if (class(res) != "try-error" && !is.null(res)) {
+          if (!inherits(res,"try-error") && !is.null(res)) {
             ## check position of TSV file (if table was skipped it becomes NA)
             newtable <- PDE.globals$tables.masterlist[["woabbrev_values_table"]][[pos]]
             if (is.null(newtable)) newtable <- NA
@@ -7407,20 +8513,20 @@ PDE_reader_i <- function(verbose=TRUE) {
         return(table)
       }
     }
-  
-  
+    
+    
     load.loadtsv <- function(loadfile) {
       if (loadfile == "%loadfile") {
         tsvfile <- tcltk::tk_choose.files(default = tcltk::tclvalue(tsvfile.var),
-                                                               caption = "Choose the TSV file",
-                                                               multi = FALSE)
+                                          caption = "Choose the TSV file",
+                                          multi = FALSE)
         if (length(tsvfile) > 0) {
           tcltk::tclvalue(tsvfile.var) <- tsvfile
         } else {
           tcltk::tclvalue(tsvfile.var) <- ""
         }
       }
-  
+      
       ## enable extract table if TSV file is chosen
       if (!(tcltk::tclvalue(tsvfile.var) == "") && file.exists(tcltk::tclvalue(fullpdfname.var))) {
         tcltk::tkconfigure(l4.extract.table.but, state = "normal")
@@ -7477,7 +8583,7 @@ PDE_reader_i <- function(verbose=TRUE) {
         }
       } ## end if TSV file was chosen
     }
-  
+    
     tsv.onoff <- function() {
       ##save scroll position
       save.scroll.pos <- as.character(tcltk::tkyview(l8.analysis.file.table))[1]
@@ -7493,7 +8599,7 @@ PDE_reader_i <- function(verbose=TRUE) {
       ## reset scroll position
       tcltk::tkyview.moveto(l8.analysis.file.table,save.scroll.pos)
     }
-  
+    
     tsv.loadall <- function() {
       analysis.files <- PDE.globals$tables.masterlist[["analysis.file_location"]]
       if (length(analysis.files) > 0) {
@@ -7508,21 +8614,21 @@ PDE_reader_i <- function(verbose=TRUE) {
           tcltk::tkconfigure(l1.progress.label, text = paste0(tcltk::tclvalue(progress.var),
                                                               "%"))
           tcltk::tcl("update")
-  
+          
           ## load values table
           res <- try(PDE.globals$tables.masterlist[["values_table"]][[pos]], silent = TRUE)
-          if (class(res) != "try-error" && !is.null(res)) {
-              values_table <- PDE.globals$tables.masterlist[["values_table"]][[pos]]
-              if (is.null(values_table)) {
-                if (grepl("\\.csv$", analysis.files[pos])) {
-                  values_table <- read.problemtable(analysis.files[pos],
-                                                    header = TRUE, quote = "\"",
-                                                    sep = ",")
-                } else if (grepl("\\.tsv$", analysis.files[pos])) {
-                  values_table <- read.problemtable(analysis.files[pos],
-                                                    sep = "\t", header = TRUE, quote = "\"")
-                }
+          if (!inherits(res,"try-error") && !is.null(res)) {
+            values_table <- PDE.globals$tables.masterlist[["values_table"]][[pos]]
+            if (is.null(values_table)) {
+              if (grepl("\\.csv$", analysis.files[pos])) {
+                values_table <- read.problemtable(analysis.files[pos],
+                                                  header = TRUE, quote = "\"",
+                                                  sep = ",")
+              } else if (grepl("\\.tsv$", analysis.files[pos])) {
+                values_table <- read.problemtable(analysis.files[pos],
+                                                  sep = "\t", header = TRUE, quote = "\"")
               }
+            }
           } else {
             if (grepl("\\.csv$", analysis.files[pos])) {
               values_table <- read.problemtable(analysis.files[pos],
@@ -7547,17 +8653,17 @@ PDE_reader_i <- function(verbose=TRUE) {
         tcltk::tclvalue(tsv.onoff.var) <- "off"
       }
     }
-  
+    
     l2.loadtsv.but <- tcltk2::tk2button(l2, text = "Load TSV file (for search word highlighting)",
                                         command = load.loadtsv)
-  
+    
     l2.tsv.loadall.but <- tcltk2::tk2button(l2, text = "load all",
                                             command = tsv.loadall, state = "disabled",
                                             width = 8)
-  
+    
     l2.tsv.onoff.but <- tcltk2::tk2button(l2, text = tcltk::tclvalue(tsv.onoff.var),
                                           command = tsv.onoff, state = "disabled", width = 3)
-  
+    
     resetformnopdf <- function() {
       return("")
       tcltk::tkconfigure(l5.jumpto.cb, values = "")
@@ -7568,7 +8674,7 @@ PDE_reader_i <- function(verbose=TRUE) {
       PDE.globals$tables.masterlist <- NULL
       tcltk::tclvalue(analysis.folder_location.var) <- ""
     }
-  
+    
     resetform <- function() {
       tcltk::tclvalue(filename.var) <- ""
       tcltk::tkwm.title(ttreader, "PDE reader")
@@ -7602,8 +8708,8 @@ PDE_reader_i <- function(verbose=TRUE) {
     }
     l1.reset.but <- tcltk2::tk2button(l1, text = "Reset form",
                                       command = resetform)
-  
-  
+    
+    
     ## line2
     load.pdffolder <- function(pdffolder) {
       if (length(pdffolder) == 0 || pdffolder == "%pdffolder") {
@@ -7624,7 +8730,7 @@ PDE_reader_i <- function(verbose=TRUE) {
         pdfname <- paste0(substr(tsv.filename,
                                  pdfnamestart, (txtstart - 1)),
                           ".pdf")
-  
+        
         ## find pdf
         pdfs <- list.files(tcltk::tclvalue(pdffolder.var),
                            pattern = "*.pdf", full.names = TRUE,
@@ -7659,7 +8765,7 @@ PDE_reader_i <- function(verbose=TRUE) {
     }
     l3.loadpdffolder.but <- tcltk2::tk2button(l3, text = "Load PDF folder",
                                               command = load.pdffolder)
-  
+    
     ## line4
     openpdf <- function() {
       if (!tcltk::tclvalue(pdfname.var) == "")
@@ -7668,13 +8774,13 @@ PDE_reader_i <- function(verbose=TRUE) {
     }
     l4.openpdf.but <- tcltk2::tk2button(l4, text = "Open current PDF",
                                         command = openpdf, state = "disabled", underline = "0")
-  
+    
     extract_table <- function() {
       if (!(tcltk::tclvalue(tsvfile.var) == "") && file.exists(tcltk::tclvalue(fullpdfname.var))) {
         tsv_table <- utils::read.table(tcltk::tclvalue(tsvfile.var),
                                        sep = "\t", header = TRUE, quote = "\"",
                                        stringsAsFactors = FALSE)
-  
+        
         ## set required variables
         pdf <- tcltk::tclvalue(fullpdfname.var)
         whattoextr <- "tab"
@@ -7687,11 +8793,11 @@ PDE_reader_i <- function(verbose=TRUE) {
           outputdir.created <- TRUE
         }
         outputfolder <- tcltk::tk_choose.dir(default = outputdir,
-                                            caption = "Choose the outputfolder for the extracted tables.")
+                                             caption = "Choose the outputfolder for the extracted tables.")
         if (outputdir != outputfolder && outputdir.created == TRUE) {
           unlink(outputdir, recursive = TRUE)
         }
-  
+        
         ##continue when correct output folder was chosen
         if (!is.na(outputfolder) && outputfolder != "") {
           if (!exists(outputfolder)){
@@ -7699,7 +8805,7 @@ PDE_reader_i <- function(verbose=TRUE) {
           }
           context <- 0
           dev_x <- as.numeric(tsv_table[(grep("dev_x",
-                                            tsv_table[, "variable"])), "value"])
+                                              tsv_table[, "variable"])), "value"])
           dev_y <- as.numeric(tsv_table[(grep("dev_y",
                                               tsv_table[, "variable"])), "value"])
           filter.for <- ""
@@ -7714,6 +8820,7 @@ PDE_reader_i <- function(verbose=TRUE) {
           write.tab.doc.file <- TRUE
           write.txt.doc.file <- FALSE
           exp.nondetc.tabs <- TRUE
+          cpy_mv <- "nocpymv"
           out.table.format <- as.character(tsv_table[(grep("out.table.format",
                                                            tsv_table[, "variable"])), "value"])
           delete <- TRUE
@@ -7730,11 +8837,8 @@ PDE_reader_i <- function(verbose=TRUE) {
                                                 write.txt.doc.file = write.txt.doc.file,
                                                 exp.nondetc.tabs = exp.nondetc.tabs,
                                                 out.table.format = out.table.format,
-                                                delete = delete, verbose = verbose)
-  
-          ## open folder
-          system(paste0("open ", "\"", tcltk::tclvalue(analysis.folder_location.var),
-                        "\""))
+                                                delete = delete, cpy_mv = cpy_mv, verbose = verbose)
+          
         } else {
           out_msg <- c(out_msg, "Please choose a correct output folder.")
           if (verbose) cat(utils::tail(out_msg,1), sep="\n")
@@ -7746,24 +8850,24 @@ PDE_reader_i <- function(verbose=TRUE) {
     }
     l4.extract.table.but <- tcltk2::tk2button(l4, text = "Extract tables",
                                               command = extract_table, state = "disabled")
-  
-  
+    
+    
     ## line 1 open analysis file
     open.analysis.file <- function(analysis.file_location = NULL) {
       values_table <- NULL
       if (length(analysis.file_location) == 0 ||
           grepl("%", analysis.file_location)) {
         analysis.file_location <- paste(tcltk::tk_choose.files(default = tcltk::tclvalue(analysis.folder_location.var),
-                                                         caption = "Choose the analysis file",
-                                                         multi = FALSE), collapse = " ")
+                                                               caption = "Choose the analysis file",
+                                                               multi = FALSE), collapse = " ")
       }
       filename <- as.character(basename(analysis.file_location))
       ## if no file was selected do nothing
       if (length(analysis.file_location) == 0) {
-      ## if correct file (with txt+-) was chosen
+        ## if correct file (with txt+-) was chosen
       } else if ((analysis.file_location != "") && (grepl("txt+-",
-                                                   filename, fixed = TRUE))) {
-  
+                                                          filename, fixed = TRUE))) {
+        
         ## if a new folder is loaded, reset form
         if (!dirname(analysis.file_location) ==
             tcltk::tclvalue(analysis.folder_location.var)) {
@@ -7801,32 +8905,32 @@ PDE_reader_i <- function(verbose=TRUE) {
                                               pos)
         ## update display of sentences
         display.values_table <- adjust.sent.display(highlighted.values_table)
-  
+        
         fill.table(display.values_table, analysis.file_location)
-  
-  
+        
+        
         tcltk::tclvalue(jumpto.var) <- grep(filename, PDE.globals$jumpto.list,
                                             value = TRUE, fixed = TRUE)
-  
+        
         ## match PDF files if pdffolder was chosen
         if (!tcltk::tclvalue(pdffolder.var) == "") {
           load.pdffolder(tcltk::tclvalue(pdffolder.var))
         }
-  
+        
       } else {
         tcltk::tkmessageBox(title = "Error", type = "ok",
                             icon = "error", message = "No accepted analysis file was chosen.")
       }
-  
+      
       ## enable extract table if TSV file is chosen
       if (!(tcltk::tclvalue(tsvfile.var) == "") && file.exists(tcltk::tclvalue(fullpdfname.var))) {
         tcltk::tkconfigure(l4.extract.table.but, state = "normal")
       }
-  
+      
     }
     l1.open.analysis.file.but <- tcltk2::tk2button(l1, text = "Open analysis file",
                                                    command = open.analysis.file)
-  
+    
     ## open analysis folder
     load.analysis.folder <- function() {
       analysis.folder_location <- tcltk::tk_choose.dir(default = tcltk::tclvalue(analysis.folder_location.var),
@@ -7838,7 +8942,7 @@ PDE_reader_i <- function(verbose=TRUE) {
           PDE.globals$jumpto.list <- resetformnopdf()
         }
         tcltk::tclvalue(analysis.folder_location.var) <- analysis.folder_location
-  
+        
         analysis.files <- searchfolder(tcltk::tclvalue(analysis.folder_location.var))
         for (f in 1:length(analysis.files)) {
           ## update progressbar
@@ -7859,7 +8963,7 @@ PDE_reader_i <- function(verbose=TRUE) {
           }
           ## fill infos for all
           fill.folder.infos(values_table, analysis.files[f])
-  
+          
           ## fill the form for the first file
           if (f == 1) {
             ## highlight search words if highlighting is on
@@ -7867,12 +8971,12 @@ PDE_reader_i <- function(verbose=TRUE) {
                                                  analysis.files[1], 1)
             ## update display of sentences
             display.values_table <- adjust.sent.display(highlighted.values_table)
-  
+            
             fill.table(display.values_table, analysis.files[1])
-  
+            
             tcltk::tclvalue(jumpto.var) <- grep(basename(analysis.files[1]),
                                                 PDE.globals$jumpto.list, value = TRUE, fixed = TRUE)
-  
+            
             ## match PDF files if pdffolder was chosen
             if (!tcltk::tclvalue(pdffolder.var) == "") {
               load.pdffolder(tcltk::tclvalue(pdffolder.var))
@@ -7885,23 +8989,23 @@ PDE_reader_i <- function(verbose=TRUE) {
         tcltk::tcl("update")
         tcltk::tkfocus(ttreader)
         tcltk::tkraise(ttreader)
-  
+        
         ## update the list
         tcltk::tkconfigure(l5.jumpto.cb, values = PDE.globals$jumpto.list)
       } else {
         tcltk::tkmessageBox(title = "Error", type = "ok",
                             icon = "error", message = "No analysis folder was chosen.")
       }
-  
+      
       ## enable extract table if TSV file is chosen
       if (!(tcltk::tclvalue(tsvfile.var) == "") && file.exists(tcltk::tclvalue(fullpdfname.var))) {
         tcltk::tkconfigure(l4.extract.table.but, state = "normal")
       }
-  
+      
     }
     l1.load.analysis.folder.but <- tcltk2::tk2button(l1, text = "Load analysis folder",
                                                      command = load.analysis.folder)
-  
+    
     ## line 5
     previous.file <- function() {
       if (!tcltk::tclvalue(jumpto.var) == "") {
@@ -7917,7 +9021,7 @@ PDE_reader_i <- function(verbose=TRUE) {
           pos <- as.numeric(numb)
           ## test if table exists
           res <- try(PDE.globals$tables.masterlist[["values_table"]][[pos]],silent = TRUE)
-          if (class(res) != "try-error" && !is.null(res)) {
+          if (!inherits(res,"try-error") && !is.null(res)) {
             tab <- PDE.globals$tables.masterlist[["values_table"]][[pos]]
             loc <- PDE.globals$tables.masterlist[["analysis.file_location"]][[pos]]
             ## highlight search words if highlighting is on
@@ -7925,7 +9029,7 @@ PDE_reader_i <- function(verbose=TRUE) {
                                           loc, pos)
             ## update display of sentences
             display.values_table <- adjust.sent.display(hightlighted.tab)
-  
+            
             fill.table(table = display.values_table,
                        analysis.file_location = loc)
             ## match PDF files if pdffolder was chosen
@@ -7951,9 +9055,9 @@ PDE_reader_i <- function(verbose=TRUE) {
     }
     l9.prev.but <- tcltk2::tk2button(l9, text = "Prev", width = 4,
                                      command = previous.file, underline = "0")
-  
+    
     next.file <- function() {
-  
+      
       if (!tcltk::tclvalue(jumpto.var) == "") {
         
         numb = gsub("-.*", "", tcltk::tclvalue(jumpto.var))
@@ -7967,7 +9071,7 @@ PDE_reader_i <- function(verbose=TRUE) {
           pos <- as.numeric(numb)
           ## test if table exists
           res <- try(PDE.globals$tables.masterlist[["values_table"]][[pos]],silent = TRUE)
-          if (class(res) != "try-error" && !is.null(res)) {
+          if (!inherits(res,"try-error") && !is.null(res)) {
             tab <- PDE.globals$tables.masterlist[["values_table"]][[pos]]
             loc <- PDE.globals$tables.masterlist[["analysis.file_location"]][[pos]]
             ## highlight search words if highlighting is on
@@ -7975,7 +9079,7 @@ PDE_reader_i <- function(verbose=TRUE) {
                                           loc, pos)
             ## update display of sentences
             display.values_table <- adjust.sent.display(hightlighted.tab)
-  
+            
             fill.table(table = display.values_table,
                        analysis.file_location = loc)
             ## match PDF files if pdffolder was chosen
@@ -7996,13 +9100,13 @@ PDE_reader_i <- function(verbose=TRUE) {
                                      recursive = TRUE)[1]
           fullfilename <- gsub("\\\\", "/", fullfilename)
           open.analysis.file(analysis.file_location = fullfilename)
-  
+          
         }
       }
     }
     l9.next.but <- tcltk2::tk2button(l9, text = "Next", width = 4,
                                      command = next.file, underline = "0")
-  
+    
     show.more.sentences <- function() {
       ##save scroll position
       save.scroll.pos <- as.character(tcltk::tkyview(l8.analysis.file.table))[1]
@@ -8017,7 +9121,7 @@ PDE_reader_i <- function(verbose=TRUE) {
       } else {
         tcltk::tclvalue(sent.count.indicator.var) <- as.numeric(tcltk::tclvalue(sent.count.indicator.var)) + 1
       }
-  
+      
       ## reload the table
       if (!(tcltk::tclvalue(jumpto.var) == "")) {
         filename <- gsub("^[^-]*-", "", tcltk::tclvalue(jumpto.var))
@@ -8035,13 +9139,13 @@ PDE_reader_i <- function(verbose=TRUE) {
     }
     l7.show.more.sentences.but  <- tcltk2::tk2button(l7, text = "+",
                                                      command = show.more.sentences, width = 2)
-  
+    
     default.sentences <- function() {
       ##save scroll position
       save.scroll.pos <- as.character(tcltk::tkyview(l8.analysis.file.table))[1]
       ## subtract a value
       tcltk::tclvalue(sent.count.indicator.var) <- "0"
-  
+      
       ## reload the table
       if (!(tcltk::tclvalue(jumpto.var) == "")) {
         filename <- gsub("^[^-]*-", "", tcltk::tclvalue(jumpto.var))
@@ -8059,13 +9163,13 @@ PDE_reader_i <- function(verbose=TRUE) {
     }
     l7.default.sentences.but <- tcltk2::tk2button(l7, text = "o",
                                                   command = default.sentences, width = 2)
-  
+    
     show.less.sentences <- function() {
       ##save scroll position
       save.scroll.pos <- as.character(tcltk::tkyview(l8.analysis.file.table))[1]
       ## subtract a value
       tcltk::tclvalue(sent.count.indicator.var) <- as.numeric(tcltk::tclvalue(sent.count.indicator.var)) - 1
-  
+      
       ## reload the table
       if (!(tcltk::tclvalue(jumpto.var) == "")) {
         filename <- gsub("^[^-]*-", "", tcltk::tclvalue(jumpto.var))
@@ -8083,9 +9187,9 @@ PDE_reader_i <- function(verbose=TRUE) {
     }
     l7.show.less.sentences.but  <- tcltk2::tk2button(l7, text = "-",
                                                      command = show.less.sentences, width = 2)
-  
+    
     ## set hotkeys ---------------------------------------------------
-  
+    
     tcltk::tkbind(ttreader, "<p>", function() previous.file())
     tcltk::tkbind(ttreader, "<Left>", function() previous.file())
     tcltk::tkbind(ttreader, "<Up>", function() tcltk::tkyview.scroll(l8.analysis.file.table,
@@ -8109,9 +9213,9 @@ PDE_reader_i <- function(verbose=TRUE) {
     tcltk::tkbind(ttreader, "<o>", function() {
       if (!tcltk::tclvalue(pdfname.var) == "") openpdf()
     })
-  
+    
     change.hotkey.mode <- function() {
-  
+      
       if (tcltk::tclvalue(hotkey.mode.var) == "standard") {
         ## change to onehand
         tcltk::tclvalue(hotkey.mode.var) <- "one hand"
@@ -8303,12 +9407,12 @@ PDE_reader_i <- function(verbose=TRUE) {
       ## update button caption
       tcltk::tkconfigure(l6.hotkey.but, text = tcltk::tclvalue(hotkey.mode.var))
     }
-  
+    
     l6.hotkey.but <- tcltk2::tk2button(l6, text = tcltk::tclvalue(hotkey.mode.var),
                                        width = 8, command = change.hotkey.mode)
-  
+    
     ## How the form looks --------------------------------------------
-  
+    
     ## top ----------------------------------------------------------
     tcltk::tkpack(l1.open.analysis.file.but, l1.load.analysis.folder.but,
                   l1.save.memory.but, l1.load.memory.but, side = "left",
@@ -8340,7 +9444,7 @@ PDE_reader_i <- function(verbose=TRUE) {
     tcltk::tkpack(l1, l2, l3, l4, l5, side = "top",
                   anchor = "nw", fill = "x")
     tcltk::tkpack(top, side = "top", fill = "x")
-  
+    
     ## mid -------------------------------------------------
     tcltk::tkpack(l6.caption.label, side = "left", pady = 2,
                   padx = 20, anchor = "nw")
@@ -8362,7 +9466,7 @@ PDE_reader_i <- function(verbose=TRUE) {
     tcltk::tkpack(l6, l7, side = "top", fill = "both")
     tcltk::tkpack(l8, side = "top", expand = TRUE, fill = "both")
     tcltk::tkpack(mid, side = "top", expand = TRUE, fill = "both")
-  
+    
     ## bottom -------------------------------------------------
     tcltk::tkpack(l9.prev.but, expand = TRUE, fill = "x",
                   side = "left", pady = 2, padx = 5)
@@ -8372,13 +9476,13 @@ PDE_reader_i <- function(verbose=TRUE) {
     tcltk::tkpack(l9.next.but, expand = TRUE, fill = "x",
                   side = "left", pady = 2, padx = 5)
     tcltk::tkpack(l9, side = "top", anchor = "nw", fill = "x")
-  
+    
     tcltk::tkpack(bot, side = "top", fill = "x")
-  
+    
     tcltk::tkfocus(ttreader)
     tcltk::tkraise(ttreader)
     tcltk::tcl("update")
-  
+    
     ## default font size --------------------------------------
     current.font <- as.numeric(tcltk::tkfont.actual("TkDefaultFont",
                                                     "-size"))
