@@ -27,7 +27,7 @@ PDE_pdfs2table(
 \item{table.heading.words}{List of strings. Different than standard (TABLE,
 TAB or table plus number) headings to be detected. Regex rules apply (see
 also
-\url{https://github.com/erikstricker/PDE/blob/master/inst/examples/cheetsheets/regex.pdf}).
+\url{https://github.com/erikstricker/PDE/blob/master/inst/examples/cheatsheets/regex.pdf}).
  Default = \code{""}.}
 
 \item{ignore.case.th}{Logical. Are the additional table headings (see

@@ -4,7 +4,12 @@
 \alias{PDE_install_Xpdftools4.02}
 \title{Install the Xpdf command line tools 4.02}
 \usage{
-PDE_install_Xpdftools4.02(sysname = NULL, bin = NULL, verbose = TRUE)
+PDE_install_Xpdftools4.02(
+  sysname = NULL,
+  bin = NULL,
+  verbose = TRUE,
+  permission = 0
+)
 }
 \arguments{
 \item{sysname}{String. In case the function returns "Unknown OS" the sysname can be set manually. 
@@ -14,6 +19,9 @@ Allowed options are "Windows", "Linux", "SunOS" for Solaris, and "Darwin" for Ma
 can be set manually. Allowed options are "64", and "32". Default: \code{NULL}.}
 
 \item{verbose}{Logical. Indicates whether messages will be printed in the console. Default: \code{TRUE}.}
+
+\item{permission}{Numerical. If set to 0 the user is ask for a permission to
+download Xpdftools. If set to 1, no user input is required. Default: \code{0}.}
 }
 \value{
 The function returns a Boolean for the installation status and a message in case 

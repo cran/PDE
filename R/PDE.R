@@ -30,7 +30,7 @@
 NULL
 #> NULL
 
-## 1.4.0
+## 1.4.2
 
 ## declare global variables
 PDE.globals <- new.env()
@@ -108,13 +108,25 @@ PDE_check_Xpdf_install <- function(sysname=NULL, verbose=TRUE){
   
   if (file.exists(xpdf_config_location)){
     pdftotext_location <- grep("pdftotext",readLines(xpdf_config_location), value = TRUE)
-    if (length(file.exists(pdftotext_location)) == 0) pdftotext_location <- NULL
+    if (!length(pdftotext_location) > 0){
+      if (file.exists(pdftotext_location) == FALSE) pdftotext_location <- NULL
+    } else {
+      pdftotext_location <- NULL
+    }
     
     pdftohtml_location <- grep("pdftohtml",readLines(xpdf_config_location), value = TRUE)
-    if (length(file.exists(pdftohtml_location)) == 0) pdftohtml_location <- NULL
+    if (!length(pdftohtml_location) > 0){
+      if (file.exists(pdftohtml_location) == FALSE) pdftohtml_location <- NULL
+    } else {
+      pdftohtml_location <- NULL
+    }
     
     pdftopng_location <- grep("pdftopng",readLines(xpdf_config_location), value = TRUE)
-    if (length(file.exists(pdftopng_location)) == 0) pdftopng_location <- NULL
+    if (!length(pdftotext_location) > 0){
+      if (file.exists(pdftopng_location) == FALSE) pdftopng_location <- NULL
+    } else {
+      pdftotext_location <- NULL
+    }
   } 
   
   # if either the config file does not exist or the xpdf tool files do not exist
@@ -221,7 +233,8 @@ PDE_check_Xpdf_install <- function(sysname=NULL, verbose=TRUE){
         unlink(dirname(keeplayouttxtpath), recursive = TRUE)
         pdftotext_path <- pdftotext_location[i]
         break
-      }
+      } 
+      
       unlink(dirname(keeplayouttxtpath), recursive = TRUE)
     }
     
@@ -336,6 +349,8 @@ PDE_check_Xpdf_install <- function(sysname=NULL, verbose=TRUE){
 #'@param bin String. In case the function returns "Unknown OS" the bin of the operational system
 #' can be set manually. Allowed options are "64", and "32". Default: \code{NULL}.
 #'@param verbose Logical. Indicates whether messages will be printed in the console. Default: \code{TRUE}.
+#'@param permission Numerical. If set to 0 the user is ask for a permission to
+#' download Xpdftools. If set to 1, no user input is required. Default: \code{0}.
 #'
 #'
 #'@return The function returns a Boolean for the installation status and a message in case 
@@ -350,7 +365,7 @@ PDE_check_Xpdf_install <- function(sysname=NULL, verbose=TRUE){
 #'
 #'
 #'@export
-PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
+PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE, permission = 0){
   ## check if Xpdftools are installed
   install.test <- PDE_check_Xpdf_install(verbose=FALSE)
   downloadq <- FALSE
@@ -391,21 +406,26 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
   }
   
   ## determine operating system and download correct xpdf
-  if (download.test == FALSE){
-    ## determine operating system and download correct Xpdf command line tools
-    downloadq <- utils::menu(c("Y", "N"), title="Do you want to download and install xpdf version 4.02? (y/n)") == 1
-    installq <- downloadq
-  } else {
-    downloadq <- utils::menu(c("Y", "N"), title=paste("Xpdf command line tools 4.02 are already downloaded.",
-                                                      "Do you want to download the Xpdf command line tools version 4.02 again? (y/n)")) == 1
-    if (install.test == TRUE){
-      installq <- utils::menu(c("Y", "N"), title=paste("Working versions of Xpdf command line tools are already installed.",
-                                                       "Do you want to still (re)install",
-                                                       "the Xpdf command line tools version 4.02? (y/n)")) == 1
+  if (permission == 0){
+    if (download.test == FALSE){
+      ## determine operating system and download correct Xpdf command line tools
+      downloadq <- utils::menu(c("Y", "N"), title="Do you want to download and install xpdf version 4.02? (y/n)") == 1
+      installq <- downloadq
     } else {
-      installq <- utils::menu(c("Y", "N"), title=paste("Do you want to also install",
-                                                       "the Xpdf command line tools version 4.02? (y/n)")) == 1
+      downloadq <- utils::menu(c("Y", "N"), title=paste("Xpdf command line tools 4.02 are already downloaded.",
+                                                        "Do you want to download the Xpdf command line tools version 4.02 again? (y/n)")) == 1
+      if (install.test == TRUE){
+        installq <- utils::menu(c("Y", "N"), title=paste("Working versions of Xpdf command line tools are already installed.",
+                                                         "Do you want to still (re)install",
+                                                         "the Xpdf command line tools version 4.02? (y/n)")) == 1
+      } else {
+        installq <- utils::menu(c("Y", "N"), title=paste("Do you want to also install",
+                                                         "the Xpdf command line tools version 4.02? (y/n)")) == 1
+      }
     }
+  } else {
+    downloadq <- TRUE
+    installq <- TRUE
   }
   
   if (downloadq == TRUE){
@@ -502,24 +522,31 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
 #'  is detected in the article.
 #'   Default: \code{""}.
 #'@param regex.fw Logical. If TRUE filter words will follow the regex rules
-#' (see \url{https://github.com/erikstricker/PDE/blob/master/inst/examples/cheetsheets/regex.pdf}).
+#' (see \url{https://github.com/erikstricker/PDE/blob/master/inst/examples/cheatsheets/regex.pdf}).
 #'  Default = \code{TRUE}.
 #'@param ignore.case.fw Logical. Are the filter words case-sensitive (does
 #'  capitalization matter)? Default: \code{FALSE}.
-#'@param filter.word.times Numeric. The minimum number of hits described for
-#'  \code{filter.words} for a paper to be further analyzed. Default: \code{20}.
+#'@param filter.word.times Numeric or string. Can either be expressed as absolute number or percentage 
+#'  of the total number of words (by adding the "%" sign). The minimum number of hits described for
+#'  \code{filter.words} for a paper to be further analyzed. Default: \code{0.2\%}.
 #'@param table.heading.words List of strings. Different than standard (TABLE,
 #'  TAB or table plus number) headings to be detected. Regex rules apply (see
 #'  also
-#'  \url{https://github.com/erikstricker/PDE/blob/master/inst/examples/cheetsheets/regex.pdf}).
+#'  \url{https://github.com/erikstricker/PDE/blob/master/inst/examples/cheatsheets/regex.pdf}).
 #'   Default = \code{""}.
 #'@param ignore.case.th Logical. Are the additional table headings (see
 #'  \code{table.heading.words}) case-sensitive (does capitalization matter)?
 #'  Default = \code{FALSE}.
 #'@param search.words List of strings. List of search words. To extract all
 #'  tables from the PDF file leave \code{search.words = ""}. 
+#'@param search.word.categories List of strings. List of categories with the 
+#'  same length as the list of search words. Accordingly, each search word can be 
+#'  assigned to a category, of which the word counts will be summarized in the
+#'  \code{PDE_analyzer_word_stats.csv} file. If search.word.categories is a
+#'  different length than search.words the parameter will be ignored.
+#'  Default: \code{NULL}.
 #'@param regex.sw Logical. If TRUE search words will follow the regex rules
-#' (see \url{https://github.com/erikstricker/PDE/blob/master/inst/examples/cheetsheets/regex.pdf}).
+#' (see \url{https://github.com/erikstricker/PDE/blob/master/inst/examples/cheatsheets/regex.pdf}).
 #'  Default = \code{TRUE}.
 #'@param ignore.case.sw Logical. Are the search words case-sensitive (does
 #'  capitalization matter)? Default: \code{FALSE}.
@@ -605,7 +632,7 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
 #'  filter.words = strsplit("cohort;case-control;group;study population;study participants", ";")[[1]],
 #'  ignore.case.fw = TRUE,
 #'  regex.fw = FALSE,
-#'  filter.word.times = 20,
+#'  filter.word.times = "0.2%",
 #'  table.heading.words = "",
 #'  ignore.case.th = FALSE,
 #'  search.words = strsplit("(M|m)ethotrexate;(T|t)rexal;(R|r)heumatrex;(O|o)trexup", ";")[[1]],
@@ -627,8 +654,8 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
 #'
 #'@export
 .PDE_extr_data_from_pdf <- function(pdf, whattoextr,
-                                    out = ".", filter.words = "", regex.fw = TRUE, ignore.case.fw = FALSE, filter.word.times = 20,
-                                    table.heading.words = "", ignore.case.th = FALSE, search.words, regex.sw = TRUE,
+                                    out = ".", filter.words = "", regex.fw = TRUE, ignore.case.fw = FALSE, filter.word.times = "0.2%",
+                                    table.heading.words = "", ignore.case.th = FALSE, search.words, search.word.categories = NULL, regex.sw = TRUE,
                                     ignore.case.sw = FALSE, eval.abbrevs = TRUE, out.table.format = ".csv (WINDOWS-1252)", 
                                     dev_x = 20, dev_y = 9999, context = 0,write.table.locations = FALSE, exp.nondetc.tabs = TRUE, 
                                     write.tab.doc.file = TRUE,write.txt.doc.file = TRUE, delete = TRUE, cpy_mv = "nocpymv",
@@ -1333,11 +1360,14 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
   pdf_page_count <- 0
   pdf_filterwords <- NULL
   pdf_filterword_times <- NULL
+  pdf_filterword_names <- NULL
   pdf_filterword_total <- NULL
   pdf_searchwords <- NULL
   pdf_searchword_times <- NULL
+  pdf_searchword_names <- NULL
   pdf_searchword_total <- NULL
-  pdf_sentences_w_searchwords <- NULL
+  pdf_sentences_w_searchwords <- NA
+  search.word.category_total <- NULL
   
   ## set the paths of the files ---------------------------------
   output <- NULL
@@ -1345,6 +1375,29 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
   txtpath <- gsub(".pdf[^.pdf]*$", ".txt", pdfpath)
   keeplayouttxtpath <- gsub(".pdf[^.pdf]*$", "_keeplayout.txt",
                             pdfpath)
+  
+  ##make sure filter and search words do not have duplicates
+  stop_ind <- FALSE
+  if (any(duplicated(search.words))){
+    print_message <- paste0("Following search words are duplicated in list: ",
+                            paste(search.words[duplicated(search.words)], collapse = ";"),
+                            ". Please remove the duplicates and restart the analysis.")
+    out_msg <- c(out_msg, print_message)
+    update_progress_info(print_message)
+    stop_ind <- TRUE
+  }
+  if (any(duplicated(filter.words))){
+    print_message <- paste0("Following search words are duplicated in list: ",
+                            paste(filter.words[duplicated(filter.words)], collapse = ";"),
+                            ". Please remove the duplicates and restart the analysis.")
+    out_msg <- c(out_msg, print_message)
+    update_progress_info(print_message)
+    stop_ind <- TRUE
+  }
+  if (stop_ind == TRUE){
+    stop("Words were duplicated in the keyword list. Please remove the duplicates and restart the analysis.")
+  }
+  
   
   ## create the id and output dir ----------------------------------
   dir.create(out, showWarnings = FALSE)
@@ -1375,7 +1428,21 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
     install.test <- PDE_check_Xpdf_install(verbose=verbose)
   }
   if (install.test == FALSE) {
-    stop(attributes(install.test)$msg)
+    if (length(PDE.globals$le.progress.textbox) > 0){
+      result_install <- tk_messageBox(type = "yesno",
+                    paste0(attributes(install.test)$msg, 
+                           " Do you want to download and install xpdf now?"), caption = "xpdf not installed")
+      if (result_install == "yes"){
+        PDE_install_Xpdftools4.02(permission = 1)
+        update_progress_info("Please stop and restart the analysis.")
+        stop("Please stop and restart the analysis.")
+      } else {
+        update_progress_info(attributes(install.test)$msg)
+        stop(attributes(install.test)$msg)
+      }
+    } else {
+      stop(attributes(install.test)$msg)
+    }
   } else {
     pdftotext_location <- grep("pdftotext",readLines(xpdf_config_location), value = TRUE)
     
@@ -1395,6 +1462,42 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
   system(paste0("\"",pdftohtml_location,"\" \"", pdfpath,
                 "\" \"", htmlpath, "\""), wait = TRUE,
          ignore.stderr = TRUE)
+  
+  ## test if keeplayouttxt files were saved with funny name
+  fixed_basekeeplayouttxtpath1 <- iconv(basename(keeplayouttxtpath), from = "Windows-1252", to = "UTF-8")
+  fixed_keeplayouttxtpath1 <- paste0(dirname(keeplayouttxtpath),"/",fixed_basekeeplayouttxtpath1)
+  fixed_basekeeplayouttxtpath2 <- fixed_basekeeplayouttxtpath1
+  Encoding(fixed_basekeeplayouttxtpath2) <- "Windows-1252"
+  fixed_keeplayouttxtpath2 <- paste0(dirname(keeplayouttxtpath),"/",fixed_basekeeplayouttxtpath2)
+  if (file.exists(fixed_keeplayouttxtpath1)){
+    response <- file.rename(from=fixed_keeplayouttxtpath1, to=keeplayouttxtpath)
+  } else if (file.exists(fixed_keeplayouttxtpath2)){
+    response <- file.rename(from=fixed_keeplayouttxtpath2, to=keeplayouttxtpath)
+  }
+  
+  ## test if txt files were saved with funny name
+  fixed_basetxtpath1 <- iconv(basename(txtpath), from = "Windows-1252", to = "UTF-8")
+  fixed_txtpath1 <- paste0(dirname(txtpath),"/",fixed_basetxtpath1)
+  fixed_basetxtpath2 <- fixed_basetxtpath1
+  Encoding(fixed_basetxtpath2) <- "Windows-1252"
+  fixed_txtpath2 <- paste0(dirname(txtpath),"/",fixed_basetxtpath2)
+  if (file.exists(fixed_txtpath1)){
+    response <- file.rename(from=fixed_txtpath1, to=txtpath)
+  } else if (file.exists(fixed_txtpath2)){
+    response <- file.rename(from=fixed_txtpath2, to=txtpath)
+  }
+  
+  ## test if files were saved with funny name
+  fixed_basehtmlpath1 <- iconv(basename(htmlpath), from = "Windows-1252", to = "UTF-8")
+  fixed_htmlpath1 <- paste0(dirname(htmlpath),"/",fixed_basehtmlpath1)
+  fixed_basehtmlpath2 <- fixed_basehtmlpath1
+  Encoding(fixed_basehtmlpath2) <- "Windows-1252"
+  fixed_htmlpath2 <- paste0(dirname(htmlpath),"/",fixed_basehtmlpath2)
+  if (dir.exists(fixed_htmlpath1)){
+    htmlpath <- fixed_htmlpath1
+  } else if (file.exists(fixed_htmlpath2)){
+    htmlpath <- fixed_htmlpath2
+  }
   
   ## add completion  info
   update_progress_info(print_message)
@@ -1437,6 +1540,18 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
   } else {
     ## read in the txt files
     txtcontent <- readin_txt(txtpath)
+    ##split rows with double page splits
+    doublepagesplits <- grep("^\\f.*\\f", txtcontent)
+    counter <- 0
+    for (dbps in doublepagesplits){
+      new_rows <- strsplit(txtcontent[dbps + counter],"\\f")[[1]][-1]
+      for (r in length(new_rows):2){
+        txtcontent[dbps + counter] <- paste0("\f",new_rows[1])
+        txtcontent <- unlist(append(txtcontent, list(paste0("\f",new_rows[r])), dbps + counter))
+        counter <- counter + 1
+      }
+    }
+    
     splittxtcontent <- page_splits(txtcontent)
     keeplayouttxtcontent <- readin_txt(keeplayouttxtpath)
     indexcontent <- readLines(paste0(htmlpath, "/index.html"))
@@ -1631,10 +1746,67 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
   if (integrity.indicator == FALSE) {
     pdf_word_count <- 0
     pdf_page_count <- 0
-    stat_output <- data.frame(cbind(pdf_word_count = pdf_word_count,
-                                    pdf_page_count = pdf_page_count), check.names = FALSE)
+    pdf_filterwords <- NULL
+    pdf_searchwords <- NULL
+    search.word.category_total <- NULL
+    if (!filter.words[1] == "") {
+      for (i in 1:length(filter.words)) {
+        word <- filter.words[i]
+        ## add filterwords to output
+        if (ignore.case.fw == TRUE){
+          ic <- "ic"
+        } else {
+          ic <- "nic"
+        }
+        if (regex.fw == TRUE){
+          reg <- "regex"
+        } else {
+          reg <- "nregex"
+        }
+        pdf_filterwords <- c(pdf_filterwords, paste0("FW_",ic,"_",reg,":",word))
+        pdf_filterword_total <- NA
+        pdf_filterword_times <- rep(NA,length(pdf_filterwords))
+      }
+    }
+    if (!search.words[1] == "") {
+      for (i in 1:length(search.words)) {
+        word <- search.words[i]
+        ## add filterwords to output
+        if (ignore.case.sw == TRUE){
+          ic <- "ic"
+        } else {
+          ic <- "nic"
+        }
+        if (regex.sw == TRUE){
+          reg <- "regex"
+        } else {
+          reg <- "nregex"
+        }
+        pdf_searchwords <- c(pdf_searchwords, paste0("SW_",ic,"_",reg,":",word))
+        pdf_searchword_total <- NA
+        pdf_searchword_times <- rep(NA,length(pdf_searchwords))
+        search.word.category_total <- NULL
+        if (!is.null(search.word.categories) && length(search.words) == length(search.word.categories)){
+          for (swc in 1:length(unique(search.word.categories))){
+            search.word.category_total[swc] <- sum(pdf_searchword_times[search.word.categories %in% unique(search.word.categories)[swc]], na.rm = TRUE)
+          }
+        }
+      }
+    }
+    stat_output <- cbind(pdf_word_count = pdf_word_count, pdf_page_count = pdf_page_count,
+                         pdf_filterword_total = pdf_filterword_total, 
+                         pdf_filterword_percentage = paste0(as.character(as.numeric(pdf_filterword_total)/as.numeric(pdf_word_count)*100),"%"), 
+                         pdf_searchword_total = pdf_searchword_total,rbind(search.word.category_total),
+                         rbind(pdf_filterword_times), rbind(pdf_searchword_times))
+    extracol_num <- (ncol(stat_output) - 
+                       length(pdf_filterword_times) - 
+                       length(pdf_searchword_times) -
+                       length(search.word.category_total) + 1)
+    colnames(stat_output)[extracol_num:ncol(stat_output)] <- c(unique(search.word.categories),pdf_filterwords,pdf_searchwords)
     rownames(stat_output) <- id
-    output_files$stat_output <- data.frame(stat_output, check.names = FALSE)
+    output_files$stat_output <- data.frame(cbind(stat_output, 
+                                                 pdf_sentences_w_searchwords = NA),
+                                           check.names = FALSE)
     ##if everything is ok
   } else {
     ## determine word count of pdf file
@@ -1662,14 +1834,14 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
         filter.words[fw_pos] <- re.escape(filter.words[fw_pos])
       }
     }
-    if (is.null(ncol(filter.words))) filter.words <- data.frame(words = filter.words,
+    if (is.null(ncol(filter.words))) filter.word.table <- data.frame(words = filter.words,
                                                                 ignore.case.fw = ignore.case.fw)
-    if (!is.numeric(filter.word.times)) {
-      tcltk::tkmessageBox(title = "Warning",
-                          type = "ok", icon = "warning",
-                          message = "filter.word.times: has to be a number")
-      stop("filter.word.times: has to be a number")
-    }
+    # if (!is.numeric(filter.word.times)) {
+    #   tcltk::tkmessageBox(title = "Warning",
+    #                       type = "ok", icon = "warning",
+    #                       message = "filter.word.times: has to be a number")
+    #   stop("filter.word.times: has to be a number")
+    # }
     if (is.null(ncol(table.heading.words))) table.heading.words <- data.frame(words = table.heading.words,
                                                                               ignore.case.th = ignore.case.th)
     ## adjust search.words with regex
@@ -1678,7 +1850,7 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
         search.words[sw_pos] <- re.escape(search.words[sw_pos])
       }
     }
-    if (is.null(ncol(search.words))) search.words <- data.frame(words = search.words,
+    if (is.null(ncol(search.words))) search.word.table <- data.frame(words = search.words,
                                                                 ignore.case.sw = ignore.case.sw)
     if (write.table.locations == FALSE) write.table.locations <- FALSE
     else if (!write.table.locations == TRUE) {
@@ -1800,12 +1972,12 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
   list_of_abbrevs <- NULL
   
   ## 3.1) Filter Search ---------------------------------------
-  if (integrity.indicator == TRUE && !filter.words[1, "words"] == "") {
+  if (integrity.indicator == TRUE && !filter.word.table[1, "words"] == "") {
     word.txtline.fw <- NULL
-    for (i in 1:nrow(filter.words)) {
+    for (i in 1:nrow(filter.word.table)) {
       ## search for lines with filter word in [txtcontent]
-      word <- filter.words[i, "words"]
-      ignore.case.fw <- filter.words[i, "ignore.case.fw"]
+      word <- filter.word.table[i, "words"]
+      ignore.case.fw <- filter.word.table[i, "ignore.case.fw"]
       detected_line <- grep(word, txtcontent, ignore.case = ignore.case.fw)
       word.txtline.fw <- c(word.txtline.fw,
                            detected_line)
@@ -1876,7 +2048,7 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
   
   ## if filter word abbreviations were found replace the abbreviations in content
   if (eval.abbrevs == TRUE && integrity.indicator == TRUE &&
-      !filter.words[i, "words"] == "" && !is.null(list_of_abbrevs)) {
+      !filter.word.table[i, "words"] == "" && !is.null(list_of_abbrevs)) {
     txtcontent <- content[[1]]
     keeplayouttxtcontent <- content[[2]]
     
@@ -1889,12 +2061,13 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
   if (integrity.indicator == TRUE) {
     word.txtline.fw <- NULL
     word.txtpos.fw <- NULL
+    pdf_filterwords <- NULL
     ## if there are filter words
-    if (!filter.words[1, "words"] == "") {
-      for (i in 1:nrow(filter.words)) {
+    if (!filter.word.table[1, "words"] == "") {
+      for (i in 1:nrow(filter.word.table)) {
         ## search for lines with filter word in [txtcontent]
-        word <- filter.words[i, "words"]
-        ignore.case.fw <- filter.words[i, "ignore.case.fw"]
+        word <- filter.word.table[i, "words"]
+        ignore.case.fw <- filter.word.table[i, "ignore.case.fw"]
         ## add filterwords to output
         if (ignore.case.fw == TRUE){
           ic <- "ic"
@@ -1916,56 +2089,101 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
                                       gregexpr(word, txtcontent[li], ignore.case = ignore.case.fw)[[1]])
         }
         pdf_filterword_times <- c(pdf_filterword_times, length(current_word.txtpos.fw))
+        pdf_filterword_names <- c(pdf_filterword_names, word)
         pdf_filterword_total <- sum(pdf_filterword_times)
         word.txtpos.fw <- c(word.txtpos.fw,current_word.txtpos.fw)
       }
-      if (length(word.txtpos.fw) > filter.word.times - 1) {
-        filterwords.go <- TRUE
-        print_message <- paste0(length(word.txtpos.fw),
-                                " filter word(s) were detected in ", id, ".pdf.")
-        out_msg <- c(out_msg, print_message)
-        if (verbose) cat(utils::tail(out_msg,1), sep="\n")
-        update_progress_info(print_message)
-        
-        ## if cpymv is either cpy or mv
-        if (cpy_mv == "cpy"){
-          dir.create(paste0(out,"/pdfs"), showWarnings = FALSE)
-          dir.create(paste0(out,"/pdfs/incl_by_fw"), showWarnings = FALSE)
-          file.copy(pdf, paste0(out,"/pdfs/incl_by_fw"))
-          print_message <- paste0("\'",basename(pdf),
-                                  "\' was copied to \'", out,"/pdfs/incl_by_fw\'.")
+      ## test if percent or number
+      pdf_word_count <- sum(sapply(gregexpr("[[:alpha:]]+", txtcontent), function(x) sum(x > 0)))
+      if (grep("%",filter.word.times)){
+        if (length(word.txtpos.fw)/pdf_word_count >= (as.numeric(sub("%","",filter.word.times))/100)) {
+          filterwords.go <- TRUE
+          print_message <- paste0(round((length(word.txtpos.fw)/pdf_word_count*100),4),
+                                  "% of all words were filter word(s) in ", id, ".pdf.")
           out_msg <- c(out_msg, print_message)
           if (verbose) cat(utils::tail(out_msg,1), sep="\n")
           update_progress_info(print_message)
-        } else if (cpy_mv == "mv"){
-          dir.create(paste0(out,"/pdfs"), showWarnings = FALSE)
-          dir.create(paste0(out,"/pdfs/incl_by_fw"), showWarnings = FALSE)
-          file.copy(pdf, paste0(out,"/pdfs/incl_by_fw"))
-          unlink(pdf)
-          print_message <- paste0(basename(pdf),
-                                  " was moved to \'", out,"/pdfs/incl_by_fw\'.")
+        } else {
+          filterwords.go <- FALSE
+        }
+      } else {
+        if (length(word.txtpos.fw) >= as.numeric(filter.word.times)) {
+          filterwords.go <- TRUE
+          print_message <- paste0(length(word.txtpos.fw),
+                                  " filter word(s) were detected in ", id, ".pdf.")
+          out_msg <- c(out_msg, print_message)
+          if (verbose) cat(utils::tail(out_msg,1), sep="\n")
+          update_progress_info(print_message)
+          
+          
+        } else {
+          filterwords.go <- FALSE
+        }
+      }
+      
+      if (filterwords.go == FALSE){
+        pdf_word_count <- sum(sapply(gregexpr("[[:alpha:]]+", txtcontent), function(x) sum(x > 0)))
+        if (grep("%",filter.word.times)){
+          print_message <- paste0("\'",id,".pdf\' was filtered out due to a lack of the filter words. ",
+                                  round((length(word.txtpos.fw)/pdf_word_count*100),4),
+                                  "% of all words were filter word(s) in ", id, ".pdf.")
+          out_msg <- c(out_msg, print_message)
+          if (verbose) cat(utils::tail(out_msg,1), sep="\n")
+          update_progress_info(print_message)
+        } else {
+          print_message <- paste0("\'",id,".pdf\' was filtered out due to a lack of the filter words. ",
+                                  length(word.txtpos.fw),
+                                  " filter word(s) were detected in ", id, ".pdf.")
           out_msg <- c(out_msg, print_message)
           if (verbose) cat(utils::tail(out_msg,1), sep="\n")
           update_progress_info(print_message)
         }
-        
-      } else {
-        filterwords.go <- FALSE
-        print_message <- paste0("\'",id,".pdf\' was filtered out due to a lack of the filter words. ",
-                                length(word.txtpos.fw),
-                                " filter word(s) were detected in ", id, ".pdf.")
-        out_msg <- c(out_msg, print_message)
-        if (verbose) cat(utils::tail(out_msg,1), sep="\n")
-        update_progress_info(print_message)
+        ## write 0 search words
+        if (!search.word.table[1, "words"] == "") {
+          for (i in 1:nrow(search.word.table)) {
+            word <- search.word.table[i, "words"]
+            ## add filterwords to output
+            if (ignore.case.sw == TRUE){
+              ic <- "ic"
+            } else {
+              ic <- "nic"
+            }
+            if (regex.sw == TRUE){
+              reg <- "regex"
+            } else {
+              reg <- "nregex"
+            }
+            pdf_searchwords <- c(pdf_searchwords, paste0("SW_",ic,"_",reg,":",word))
+            pdf_searchword_total <- 0
+            pdf_searchword_times <- rep(0,length(pdf_searchwords))
+            search.word.category_total <- NULL
+            if (!is.null(search.word.categories) && length(search.words) == length(search.word.categories)){
+              for (swc in 1:length(unique(search.word.categories))){
+                search.word.category_total[swc] <- sum(pdf_searchword_times[search.word.categories %in% unique(search.word.categories)[swc]], na.rm = TRUE)
+              }
+            }
+          }
+        }
         if (write.txt.doc.file == TRUE) {
           dir.create(paste0(out,"/excl_by_fw"), showWarnings = FALSE)
-          utils::write.table(paste0("Not enough txt lines with filter word found. ",
-                                    length(word.txtpos.fw),
-                                    " filter word(s) were detected in ", id, ".pdf."),
-                             paste0(out,"/excl_by_fw/",id,"_too_few_fwds",
-                                    out.table.ext),
-                             sep = out.table.separator, row.names = FALSE,
-                             col.names = FALSE, na = "")
+          pdf_word_count <- sum(sapply(gregexpr("[[:alpha:]]+", txtcontent), function(x) sum(x > 0)))
+          if (grep("%",filter.word.times)){
+            utils::write.table(paste0("Not enough txt lines with filter word found. ",
+                                      round((length(word.txtpos.fw)/pdf_word_count*100),4),
+                                      "% of words were filter word(s) in ", id, ".pdf."),
+                               paste0(out,"/excl_by_fw/",id,"_too_few_fwds",
+                                      out.table.ext),
+                               sep = out.table.separator, row.names = FALSE,
+                               col.names = FALSE, na = "")
+          } else {
+            utils::write.table(paste0("Not enough txt lines with filter word found. ",
+                                      length(word.txtpos.fw),
+                                      " filter word(s) were detected in ", id, ".pdf."),
+                               paste0(out,"/excl_by_fw/",id,"_too_few_fwds",
+                                      out.table.ext),
+                               sep = out.table.separator, row.names = FALSE,
+                               col.names = FALSE, na = "")
+          }
         }
         ## if cpymv is either cpy or mv
         if (cpy_mv == "cpy"){
@@ -2007,14 +2225,14 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
     searchwords.go <- FALSE
     ## search for lines with search word
     word.txtline <- NULL
-    for (i in 1:nrow(search.words)) {
+    for (i in 1:nrow(search.word.table)) {
       ## 4.1) Search for lines with search word -------------------------
-      word <- search.words[i, "words"]
-      ignore.case.sw <- search.words[i, "ignore.case.sw"]
+      word <- search.word.table[i, "words"]
+      ignore.case.sw <- search.word.table[i, "ignore.case.sw"]
       word.txtline <- NULL
       word.keeplayoutline <- NULL
       ## if search words were not chosen write all lines in txtline
-      if (search.words[i, "words"] == ""){
+      if (search.word.table[i, "words"] == ""){
         word.txtline <- 1:length(txtcontent)
         word.keeplayoutline <- 1:length(word.keeplayoutline)
       } else {
@@ -2030,7 +2248,7 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
       
       ## 4.3) Replace abbreviations -----------------------------------------------------
       if (eval.abbrevs == TRUE && length(word.txtline) > 0 &&
-          !search.words[i, "words"] == ""){
+          !search.word.table[i, "words"] == ""){
         ## Check if any occurences (heading + text) of the
         ## search word are defining and abbreviation
         ## go through each txtcontent line that the searchword was found
@@ -2094,7 +2312,7 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
   ## if search words were found replace the abbreviations in content
   if (searchwords.go == TRUE && filterwords.go == TRUE &&
       eval.abbrevs == TRUE && integrity.indicator == TRUE &&
-      !search.words[i, "words"] == "") {
+      !search.word.table[i, "words"] == "") {
     txtcontent <- content[[1]]
     keeplayouttxtcontent <- content[[2]]
     
@@ -2174,6 +2392,7 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
           ## get the left position
           pos.left.start <- regexpr("left:",
                                     out.htmlcontent[line.number, 1])[[1]] + 5
+          out.htmlcontent[line.number, 1] <- iconv(out.htmlcontent[line.number, 1],"latin1","ASCII",sub="")
           pos.left.end <- regexpr("px",
                                   substr(out.htmlcontent[line.number, 1],
                                          pos.left.start,
@@ -2189,6 +2408,7 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
           ## get the top information
           pos.top.start <- regexpr("top:",
                                    out.htmlcontent[line.number, 1])[[1]] + 4
+          out.htmlcontent[line.number, 1] <- iconv(out.htmlcontent[line.number, 1],"latin1","ASCII",sub="")
           pos.top.end <- regexpr("px",
                                  substr(out.htmlcontent[line.number, 1],
                                         pos.top.start,
@@ -2204,6 +2424,7 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
           ## get font_size information
           pos.fontsize.start <- regexpr("font-size:",
                                         out.htmlcontent[line.number, 1])[[1]] + 10
+          out.htmlcontent[line.number, 1] <- iconv(out.htmlcontent[line.number, 1],"latin1","ASCII",sub="")
           pos.fontsize.end <- regexpr("px;",substr(out.htmlcontent[line.number, 1],
                                                    pos.fontsize.start, 
                                                    nchar(out.htmlcontent[line.number, 1])))[[1]] + pos.fontsize.start - 2
@@ -2730,7 +2951,6 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
     ## do for each table row
     nexti <- FALSE
     htmltablelines <-  htmltablelines[!(is.na(htmltablelines[,"page"])),]
-    
     for (i in 1:nrow(htmltablelines)) {
       ## ignore the lines with txtonly
       if ((htmltablelines[i, "detected.in"] == "txtonly.notabledetected") ||
@@ -2795,6 +3015,15 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
               #                                   output.for.match = "txtonly.notabledetected",
               #                                   output.column.name = "detected.in")$targettablelines
               htmltablelines[i, "tableend.pos"] <- currentline.pos - 1
+              htmltablelines[i, "legendend.pos"] <- currentline.pos - 1
+              ## fill the txtcontent columns
+              htmltablelines[i, "tablelastline"] <- txthtmlcontent[[currentline.page]][as.numeric(htmltablelines[i, 
+                                                                                                                 "tableend.pos"])]
+              htmltablelines[i, "legendlastline"] <- txthtmlcontent[[currentline.page]][as.numeric(htmltablelines[i, 
+                                                                                                                  "legendend.pos"])]
+              htmltablelines[i, "txtfirstline"] <- txthtmlcontent[[currentline.page]][as.numeric(htmltablelines[i, 
+                                                                                                                "legendend.pos"]) + 1]
+              
             }
             currentline.pos <- currentline.pos - 1
             all.left.found <- TRUE
@@ -2893,6 +3122,13 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
       
       ## make a toplist
       top.list <- NULL
+      out.left.list <- out.left.list[out.left.list != "left:NApx"]
+      
+      ## if out.left.list is empty go to the next table
+      if (length(out.left.list) == 0) {
+        nexti <- FALSE
+        next
+      }
       for (left.item in out.left.list) {
         max.line <- max(grep(left.item,
                              htmlcontent[[currentline.page]][1:nexttablestartpos, 1]))
@@ -3295,9 +3531,9 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
               i_num <- as.character(i)
             }
             
-            outputtable.name <- gsub(" ","_",paste0(out,"/tables/",id,
+            outputtable.name <- paste0(out,gsub(" ","_",paste0("/tables/",id,
                                                     "_#", i_num, "_",
-                                                    tablenum))
+                                                    tablenum)))
             if (nchar(outputtable.name) > 255) {
               print_message <- paste0("The file path of ",paste0(outputtable.name,
                                                                  out.table.ext),
@@ -3406,13 +3642,14 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
     word.table <- NULL
     ## start search only when search words are in the
     ## list
-    if (!is.na(search.words[1, "words"])) {
-      if (search.words[1, "words"] != "") {
+    if (!is.na(search.word.table[1, "words"])) {
+      if (search.word.table[1, "words"] != "") {
+        pdf_searchwords <- NULL
         ## go through each word
-        for (i in 1:nrow(search.words)) {
+        for (i in 1:nrow(search.word.table)) {
           ## search for tables with searchword ##
-          word <- search.words[i, "words"]
-          ignore.case.sw <- search.words[i,
+          word <- search.word.table[i, "words"]
+          ignore.case.sw <- search.word.table[i,
                                          "ignore.case.sw"]
           word.table <- c(word.table,
                           grep(word, htmltables, ignore.case = ignore.case.sw))
@@ -3442,8 +3679,15 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
             }
           }
           pdf_searchword_times <- c(pdf_searchword_times, length(current_word.tabpos.sw))
+          pdf_searchword_names <- c(pdf_searchword_names, word)
           pdf_searchword_total <- sum(pdf_searchword_times)
           sw_in_tab_counted <- TRUE
+          search.word.category_total <- NULL
+          if (!is.null(search.word.categories) && length(search.words) == length(search.word.categories)){
+            for (swc in 1:length(unique(search.word.categories))){
+              search.word.category_total[swc] <- sum(pdf_searchword_times[search.word.categories %in% unique(search.word.categories)[swc]], na.rm = TRUE)
+            }
+          }
         }
         
         ## choose tables with search word
@@ -3477,6 +3721,12 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
         pdf_searchword_total <- NA
         pdf_searchword_times <- NA
         pdf_searchwords <- "search_word_list"
+        search.word.category_total <- NULL
+        if (!is.null(search.word.categories) && length(search.words) == length(search.word.categories)){
+          for (swc in 1:length(unique(search.word.categories))){
+            search.word.category_total[swc] <- sum(pdf_searchword_times[search.word.categories %in% unique(search.word.categories)[swc]], na.rm = TRUE)
+          }
+        }
       }
       
     } else {
@@ -3485,6 +3735,12 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
       pdf_searchword_times <- NA
       pdf_searchword_total <- NA
       pdf_searchwords <- "search_word_list"
+      search.word.category_total <- NULL
+      if (!is.null(search.word.categories) && length(search.words) == length(search.word.categories)){
+        for (swc in 1:length(unique(search.word.categories))){
+          search.word.category_total[swc] <- sum(pdf_searchword_times[search.word.categories %in% unique(search.word.categories)[swc]], na.rm = TRUE)
+        }
+      }
     }
   }
   
@@ -3528,9 +3784,9 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
             t_num <- as.character(t)
           }
           
-          outputtable.name <- gsub(" ","_",paste0(out,"/tables/",id,
+          outputtable.name <- paste0(out,gsub(" ","_",paste0("/tables/",id,
                                                   "_#", t_num, "_",
-                                                  tablenum))
+                                                  tablenum)))
           if (nchar(outputtable.name) > 255) {
             print_message <- paste0("The file path of ",paste0(outputtable.name,
                                                                out.table.ext),
@@ -3657,9 +3913,9 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
           t_num <- as.character(t)
         }
         
-        outputtable.name <- gsub(" ","_",paste0(out,"/tables/",id,
+        outputtable.name <- paste0(out,gsub(" ","_",paste0("/tables/",id,
                                                 "_#", t_num, "_",
-                                                tablenum))
+                                                tablenum)))
         if (nchar(outputtable.name) > 255) {
           print_message <- paste0("The file path of ",paste0(outputtable.name,
                                                              out.table.ext),
@@ -3761,14 +4017,20 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
     ## keeplayouttxttablelines ##
     stat_output <- cbind(pdf_word_count = pdf_word_count, pdf_page_count = pdf_page_count,
                          pdf_filterword_total = pdf_filterword_total, 
-                         pdf_searchword_total = pdf_searchword_total,
+                         pdf_filterword_percentage = paste0(as.character(as.numeric(pdf_filterword_total)/as.numeric(pdf_word_count)*100),"%"),
+                         pdf_searchword_total = pdf_searchword_total,rbind(search.word.category_total),
                          rbind(pdf_filterword_times), rbind(pdf_searchword_times))
     extracol_num <- (ncol(stat_output) - 
                        length(pdf_filterword_times) - 
-                       length(pdf_searchword_times) + 1)
-    colnames(stat_output)[extracol_num:ncol(stat_output)] <- c(pdf_filterwords,pdf_searchwords)
+                       length(pdf_searchword_times) -
+                       length(search.word.category_total) + 1)
+    colnames(stat_output)[extracol_num:ncol(stat_output)] <- c(unique(search.word.categories),pdf_filterwords,pdf_searchwords)
     rownames(stat_output) <- id
-    output_files <- list(stat_output = data.frame(stat_output, check.names = FALSE),
+    stat_output <- data.frame(cbind(stat_output, 
+                              pdf_sentences_w_searchwords = NA),
+                                           check.names = FALSE)
+
+    output_files <- list(stat_output = stat_output,
                          htmltablelines = htmltablelines,
                          txttablelines = txttablelines,
                          keeplayouttxttablelines = keeplayouttxttablelines,
@@ -3786,11 +4048,12 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
     txtpositionstable <- NULL
     pdf_searchwords <- NULL
     ## if there are search words
-    if (!search.words[1, "words"] == "") {
-      for (i in 1:nrow(search.words)) {
+    if (!search.word.table[1, "words"] == "") {
+      word_added <- FALSE
+      for (i in 1:nrow(search.word.table)) {
       ## search for lines with searchword ##
-      word <- search.words[i, "words"]
-      ignore.case.sw <- search.words[i, "ignore.case.sw"]
+      word <- search.word.table[i, "words"]
+      ignore.case.sw <- search.word.table[i, "ignore.case.sw"]
       words.found.in.lines <- txtlines[grep(word, txtlines[, "txtcontent"],
                                             ignore.case = ignore.case.sw),
                                        "rownumber"]
@@ -3805,159 +4068,178 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
       } else {
         reg <- "nregex"
       }
-      #TODEL
-      print(pdf_searchwords)
       pdf_searchwords <- c(pdf_searchwords, paste0("SW_",ic,"_",reg,":",word))
       ## search each line for the exact position of the
       ## word
       current_word.txtpos.sw <- NULL
       if (length(words.found.in.lines)==0) {
-        ## if tables were not searched
-        if (sw_in_tab_counted == FALSE){
+        ## if tables were not searched/if search word were found in tables
+        if (sw_in_tab_counted == FALSE && word_added == FALSE){
           pdf_searchword_times <- c(pdf_searchword_times, 0)
+          pdf_searchword_names <- c(pdf_searchword_names, word)
+          word_added <- TRUE
           ## if tables were searched (add to existing numbers)
         } else {
           pdf_searchword_times[i] <- pdf_searchword_times[i] + 0
-        }
-      }
-      for (line in words.found.in.lines) {
-        ## detect all the positions of the word
-        word.positions <- as.vector(gregexpr(word,
-                                             txtcontent[strtoi(line)],
-                                             ignore.case = ignore.case.sw)[[1]])
-        ## if tables were not searched
-        if (sw_in_tab_counted == FALSE){
-          pdf_searchword_times <- c(pdf_searchword_times, length(word.positions))
-          ## if tables were searched (add to existing numbers)
-        } else {
-          pdf_searchword_times[i] <- pdf_searchword_times[i] + length(word.positions)
+          pdf_searchword_names[i] <- word
         }
         pdf_searchword_total <- sum(pdf_searchword_times)
-        ## loop through all the positions
-        for (word.pos in word.positions) {
-          ## A) Detect sentences after
-          postword.current.line <- strtoi(line)
-          postword.current.sent.end <- word.pos
-          postword.txtcontent <- ""
-          ## search for the sentence beginning till context-th
-          ## sentence is found
-          for (x in 1:(context + 1)) {
-            ## do till sentence begninning is found or postword
-            ## of document test if sentence postword is in this
-            ## line
-            while (grepl("\\. [0-9A-Z]",
-                         substr(txtcontent[postword.current.line],
-                                postword.current.sent.end,
-                                nchar(txtcontent[postword.current.line]))) == FALSE) {
-              ## if there is no postword sentence end, add everthing till end of line
-              # everthing till end of line
+        search.word.category_total <- NULL
+        if (!is.null(search.word.categories) && length(search.words) == length(search.word.categories)){
+          for (swc in 1:length(unique(search.word.categories))){
+            search.word.category_total[swc] <- sum(pdf_searchword_times[search.word.categories %in% unique(search.word.categories)[swc]], na.rm = TRUE)
+          }
+        }
+      } else {
+        word_added <- FALSE
+        for (line in words.found.in.lines) {
+          ## detect all the positions of the word
+          word.positions <- as.vector(gregexpr(word,
+                                               txtcontent[strtoi(line)],
+                                               ignore.case = ignore.case.sw)[[1]])
+          ## if tables were not searched
+          if (sw_in_tab_counted == FALSE && word_added == FALSE){
+            pdf_searchword_times <- c(pdf_searchword_times, length(word.positions))
+            pdf_searchword_names <- c(pdf_searchword_names, word)
+            word_added <- TRUE
+            ## if tables were searched (add to existing numbers)
+          } else {
+            pdf_searchword_times[i] <- pdf_searchword_times[i] + length(word.positions)
+            pdf_searchword_names[i] <- word
+          }
+          pdf_searchword_total <- sum(pdf_searchword_times)
+          search.word.category_total <- NULL
+          if (!is.null(search.word.categories) && length(search.words) == length(search.word.categories)){
+            for (swc in 1:length(unique(search.word.categories))){
+              search.word.category_total[swc] <- sum(pdf_searchword_times[search.word.categories %in% unique(search.word.categories)[swc]], na.rm = TRUE)
+            }
+          }
+          ## loop through all the positions
+          for (word.pos in word.positions) {
+            ## A) Detect sentences after
+            postword.current.line <- strtoi(line)
+            postword.current.sent.end <- word.pos
+            postword.txtcontent <- ""
+            ## search for the sentence beginning till context-th
+            ## sentence is found
+            for (x in 1:(context + 1)) {
+              ## do till sentence begninning is found or postword
+              ## of document test if sentence postword is in this
+              ## line
+              while (grepl("\\. [0-9A-Z]",
+                           substr(txtcontent[postword.current.line],
+                                  postword.current.sent.end,
+                                  nchar(txtcontent[postword.current.line]))) == FALSE) {
+                ## if there is no postword sentence end, add everthing till end of line
+                # everthing till end of line
+                postword.txtcontent <- paste0(postword.txtcontent,
+                                              substr(txtcontent[postword.current.line],
+                                                     postword.current.sent.end,
+                                                     nchar(txtcontent[postword.current.line])),
+                                              " ")
+                ## if the end of the document is reached, end
+                if (postword.current.line >= length(txtcontent)) {
+                  postword.current.sent.end <- nchar(txtcontent[postword.current.line])
+                  break
+                } else {
+                  ## set the beginning of the new line as begnning
+                  postword.current.sent.end <- 1
+                  postword.current.line <- postword.current.line + 1
+                }
+              }
+              ## new start point is set to the postword of the
+              ## sentence +1
+              new.postword.current.sent.end <- postword.current.sent.end +
+                as.vector(regexpr("\\. [0-9A-Z]",
+                                  substr(txtcontent[postword.current.line],
+                                         postword.current.sent.end,
+                                         nchar(txtcontent[postword.current.line])))) + 1
               postword.txtcontent <- paste0(postword.txtcontent,
                                             substr(txtcontent[postword.current.line],
                                                    postword.current.sent.end,
-                                                   nchar(txtcontent[postword.current.line])),
-                                            " ")
-              ## if the end of the document is reached, end
-              if (postword.current.line >= length(txtcontent)) {
-                postword.current.sent.end <- nchar(txtcontent[postword.current.line])
-                break
-              } else {
-                ## set the beginning of the new line as begnning
-                postword.current.sent.end <- 1
-                postword.current.line <- postword.current.line + 1
-              }
-            }
-            ## new start point is set to the postword of the
-            ## sentence +1
-            new.postword.current.sent.end <- postword.current.sent.end +
-              as.vector(regexpr("\\. [0-9A-Z]",
-                                substr(txtcontent[postword.current.line],
-                                       postword.current.sent.end,
-                                       nchar(txtcontent[postword.current.line])))) + 1
-            postword.txtcontent <- paste0(postword.txtcontent,
-                                          substr(txtcontent[postword.current.line],
-                                                 postword.current.sent.end,
-                                                 new.postword.current.sent.end - 1))
-            postword.current.sent.end <- new.postword.current.sent.end
-          }  ## postword context loop
-          numb.sentences.after <- x - 1
-          postword.txtcontent <- substr(postword.txtcontent, 1, nchar(postword.txtcontent) - 1)
-          postword.current.sent.end <- postword.current.sent.end - 1
-          
-          ## A) Detect sentences before
-          preword.current.line <- strtoi(line)
-          preword.current.sent.start <- word.pos - 1
-          preword.txtcontent <- NULL
-          for (y in 1:(context + 1)) {
-            ## do till sentence begninning is found or beginning
-            ## of document test if sentence pre.word is in this
-            ## line
-            while (grepl("\\. [0-9A-Z]",
-                         substr(txtcontent[preword.current.line], 1,
-                                preword.current.sent.start)) == FALSE) {
-              ## only add if the whole paragraph has sentences in
-              ## it if (grepl('\\.
-              ## [:alnum:]',txtcontent[preword.current.line])) if
-              ## there is no preword sentence start, add everthing
-              ## till current position
-              preword.txtcontent <- paste0(" ",
-                                           substr(txtcontent[preword.current.line],
-                                                  1, preword.current.sent.start),
-                                           preword.txtcontent)
-              ## if the beeginning of the document is reached, end
-              if (preword.current.line == 1) {
-                preword.current.sent.start <- 1
-                break
-              } else {
-                ## set the ends of sentence as of the new line as
-                ## begnning
-                preword.current.line <- preword.current.line - 1
-                preword.current.sent.start <- nchar(txtcontent[preword.current.line])
-              }
-            }
+                                                   new.postword.current.sent.end - 1))
+              postword.current.sent.end <- new.postword.current.sent.end
+            }  ## postword context loop
+            numb.sentences.after <- x - 1
+            postword.txtcontent <- substr(postword.txtcontent, 1, nchar(postword.txtcontent) - 1)
+            postword.current.sent.end <- postword.current.sent.end - 1
             
-            ## new sent.start point is set to the sent.start of
-            ## the sentence +1
-            new.preword.current.sent.start <- max(as.vector(gregexpr("\\. [0-9A-Z]",
-                                                                     substr(txtcontent[preword.current.line],
-                                                                            1, preword.current.sent.start))[[1]]))
-            preword.txtcontent <- paste0(substr(txtcontent[preword.current.line],
-                                                new.preword.current.sent.start + 1,
-                                                preword.current.sent.start),
-                                         preword.txtcontent)
-            preword.current.sent.start <- new.preword.current.sent.start
-          }  ## sent.start context loop
-          numb.sentences.before <- y - 1
-          preword.txtcontent <- substr(preword.txtcontent,
-                                       2, nchar(preword.txtcontent))
-          preword.current.sent.start <- preword.current.sent.start + 1
-          
-          ## find the page info
-          currentlinenumb <- 0
-          page_numb <- 0
-          maxlinenumb <- sum(lengths(splittxtcontent))
-          while ((currentlinenumb < preword.current.line) && (currentlinenumb != maxlinenumb)){
-            page_numb <- page_numb + 1
-            currentlinenumb <- currentlinenumb + length(splittxtcontent[[page_numb]])
-          }
-          start.paragraph <- preword.current.line - currentlinenumb + length(splittxtcontent[[page_numb]])
-          end.paragraph <- postword.current.line - currentlinenumb + length(splittxtcontent[[page_numb]])
-          #count sentences number (search word location_total sentences)
-          outputrow <- data.frame(txtcontent = paste0(preword.txtcontent,
-                                                      postword.txtcontent),
-                                  page = page_numb,
-                                  start.line = preword.current.line,
-                                  start.pos = preword.current.sent.start,
-                                  start.paragraph = start.paragraph,
-                                  end.line = postword.current.line,
-                                  end.pos = postword.current.sent.end,
-                                  end.paragraph = end.paragraph,
-                                  search.word.loc_total = paste0(as.character(numb.sentences.before + 1),"_",
-                                                                 as.character(numb.sentences.before + 1 + numb.sentences.after)))
-          txtpositionstable <- rbind(txtpositionstable,
-                                     outputrow)
-          txtpositionstable <- unique(txtpositionstable)
-        }  ## end each search word
-      }  ## end for each line
+            ## A) Detect sentences before
+            preword.current.line <- strtoi(line)
+            preword.current.sent.start <- word.pos - 1
+            preword.txtcontent <- NULL
+            for (y in 1:(context + 1)) {
+              ## do till sentence begninning is found or beginning
+              ## of document test if sentence pre.word is in this
+              ## line
+              while (grepl("\\. [0-9A-Z]",
+                           substr(txtcontent[preword.current.line], 1,
+                                  preword.current.sent.start)) == FALSE) {
+                ## only add if the whole paragraph has sentences in
+                ## it if (grepl('\\.
+                ## [:alnum:]',txtcontent[preword.current.line])) if
+                ## there is no preword sentence start, add everthing
+                ## till current position
+                preword.txtcontent <- paste0(" ",
+                                             substr(txtcontent[preword.current.line],
+                                                    1, preword.current.sent.start),
+                                             preword.txtcontent)
+                ## if the beeginning of the document is reached, end
+                if (preword.current.line == 1) {
+                  preword.current.sent.start <- 1
+                  break
+                } else {
+                  ## set the ends of sentence as of the new line as
+                  ## begnning
+                  preword.current.line <- preword.current.line - 1
+                  preword.current.sent.start <- nchar(txtcontent[preword.current.line])
+                }
+              }
+              
+              ## new sent.start point is set to the sent.start of
+              ## the sentence +1
+              new.preword.current.sent.start <- max(as.vector(gregexpr("\\. [0-9A-Z]",
+                                                                       substr(txtcontent[preword.current.line],
+                                                                              1, preword.current.sent.start))[[1]]))
+              preword.txtcontent <- paste0(substr(txtcontent[preword.current.line],
+                                                  new.preword.current.sent.start + 1,
+                                                  preword.current.sent.start),
+                                           preword.txtcontent)
+              preword.current.sent.start <- new.preword.current.sent.start
+            }  ## sent.start context loop
+            numb.sentences.before <- y - 1
+            preword.txtcontent <- substr(preword.txtcontent,
+                                         2, nchar(preword.txtcontent))
+            preword.current.sent.start <- preword.current.sent.start + 1
+            
+            ## find the page info
+            currentlinenumb <- 0
+            page_numb <- 0
+            maxlinenumb <- sum(lengths(splittxtcontent))
+            while ((currentlinenumb < preword.current.line) && (currentlinenumb != maxlinenumb)){
+              page_numb <- page_numb + 1
+              currentlinenumb <- currentlinenumb + length(splittxtcontent[[page_numb]])
+            }
+            start.paragraph <- preword.current.line - currentlinenumb + length(splittxtcontent[[page_numb]])
+            end.paragraph <- postword.current.line - currentlinenumb + length(splittxtcontent[[page_numb]])
+            #count sentences number (search word location_total sentences)
+            outputrow <- data.frame(txtcontent = paste0(preword.txtcontent,
+                                                        postword.txtcontent),
+                                    page = page_numb,
+                                    start.line = preword.current.line,
+                                    start.pos = preword.current.sent.start,
+                                    start.paragraph = start.paragraph,
+                                    end.line = postword.current.line,
+                                    end.pos = postword.current.sent.end,
+                                    end.paragraph = end.paragraph,
+                                    search.word.loc_total = paste0(as.character(numb.sentences.before + 1),"_",
+                                                                   as.character(numb.sentences.before + 1 + numb.sentences.after)))
+            txtpositionstable <- rbind(txtpositionstable,
+                                       outputrow)
+            txtpositionstable <- unique(txtpositionstable)
+          }  ## end each search word
+        }  ## end for each line
+      } ## else if length(words.found.in.lines)==0
     }  ## end for each search word again
     
     
@@ -3969,19 +4251,41 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
                                          "start.paragraph","end.paragraph",
                                          "search.word.loc_total")]
       
-      sw_id <- create_id_from_stringlist(search.words[, "words"])
+      sw_id <- create_id_from_stringlist(search.word.table[, "words"])
       pdf_sentences_w_searchwords <- nrow(outputtable)
-      output_files$stat_output <- data.frame(cbind(output_files$stat_output, 
-                                                   pdf_sentences_w_searchwords = pdf_sentences_w_searchwords),
-                                             check.names = FALSE)
+      stat_output <- cbind(pdf_word_count = pdf_word_count, pdf_page_count = pdf_page_count,
+                           pdf_filterword_total = pdf_filterword_total, 
+                           pdf_filterword_percentage = paste0(as.character(as.numeric(pdf_filterword_total)/as.numeric(pdf_word_count)*100),"%"),
+                           pdf_searchword_total = pdf_searchword_total,rbind(search.word.category_total),
+                           rbind(pdf_filterword_times), rbind(pdf_searchword_times))
+      extracol_num <- (ncol(stat_output) - 
+                         length(pdf_filterword_times) - 
+                         length(pdf_searchword_times) -
+                         length(search.word.category_total) + 1)
+      colnames(stat_output)[extracol_num:ncol(stat_output)] <- c(unique(search.word.categories),pdf_filterwords,pdf_searchwords)
+      rownames(stat_output) <- id
+      stat_output <- data.frame(cbind(stat_output, 
+                                      pdf_sentences_w_searchwords = pdf_sentences_w_searchwords),
+                                check.names = FALSE)
+      if (sw_in_tab_counted == TRUE){
+        ## output_files exist then just overwrite
+        output_files$stat_output <- stat_output
+      } else{
+        ##otherwise generate
+        output_files <- list(stat_output = stat_output,
+                             htmltablelines = htmltablelines,
+                             txttablelines = txttablelines,
+                             keeplayouttxttablelines = keeplayouttxttablelines,
+                             id = id)
+      }
       print_message <- paste0(nrow(outputtable)," sentences with search words were found in \'",id,".pdf\'.")
       out_msg <- c(out_msg, print_message)
       if (verbose) cat(utils::tail(out_msg,1), sep="\n")
       update_progress_info(print_message)
       dir.create(paste0(out,"/txt+-", context), showWarnings = FALSE)
       ## create file with all searchwords
-      utils::write.table(c(paste(search.words[, "words"], collapse = ","),
-                           search.words[, "words"]), 
+      utils::write.table(c(paste(search.word.table[, "words"], collapse = ","),
+                           search.word.table[, "words"]), 
                          file = paste0(out,"/txt+-", context,"/search_word_list_ID_",sw_id,
                                        ".txt"),
                          quote = FALSE,
@@ -4012,23 +4316,31 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
                              na = "")
         }
       }
-      ##update output
+      # ##update output
       stat_output <- cbind(pdf_word_count = pdf_word_count, pdf_page_count = pdf_page_count,
                            pdf_filterword_total = pdf_filterword_total, 
-                           pdf_searchword_total = pdf_searchword_total,
+                           pdf_filterword_percentage = paste0(as.character(as.numeric(pdf_filterword_total)/as.numeric(pdf_word_count)*100),"%"),
+                           pdf_searchword_total = pdf_searchword_total,rbind(search.word.category_total),
                            rbind(pdf_filterword_times), rbind(pdf_searchword_times))
       extracol_num <- (ncol(stat_output) - 
                          length(pdf_filterword_times) - 
-                         length(pdf_searchword_times) + 1)
-      colnames(stat_output)[extracol_num:ncol(stat_output)] <- c(pdf_filterwords,pdf_searchwords)
+                         length(pdf_searchword_times) -
+                         length(search.word.category_total) + 1)
+      colnames(stat_output)[extracol_num:ncol(stat_output)] <- c(unique(search.word.categories),pdf_filterwords,pdf_searchwords)
       rownames(stat_output) <- id
-      stat_output <- cbind(stat_output, pdf_sentences_w_searchwords = pdf_sentences_w_searchwords)
-      
-      output_files$stat_output <- data.frame(stat_output, check.names = FALSE)
-    } else { ## end if (!search.words[1, "words"] == "") {
+      output_files$stat_output <- data.frame(cbind(stat_output,
+                                                   pdf_sentences_w_searchwords = pdf_sentences_w_searchwords),
+                                             check.names = FALSE)
+    } else { ## end if (!search.word.table[1, "words"] == "") {
       pdf_searchword_total <- NA
       pdf_searchword_times <- NA
       pdf_searchwords <- "search_word_list"
+      search.word.category_total <- NULL
+      if (!is.null(search.word.categories) && length(search.words) == length(search.word.categories)){
+        for (swc in 1:length(unique(search.word.categories))){
+          search.word.category_total[swc] <- sum(pdf_searchword_times[search.word.categories %in% unique(search.word.categories)[swc]], na.rm = TRUE)
+        }
+      }
     }
   }  ## end if (whattoextr == 'tabandtxt' || whattoextr == 'txt' || whattoextr == 'txtandtab')
   
@@ -4062,20 +4374,92 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
   out_msg <- c(out_msg, print_message)
   if (verbose) cat(utils::tail(out_msg,1), sep="\n")
   update_progress_info(print_message)
+  if (filterwords.go == TRUE){
+    ## if cpymv is either cpy or mv
+    if (cpy_mv == "cpy"){
+      dir.create(paste0(out,"/pdfs"), showWarnings = FALSE)
+      dir.create(paste0(out,"/pdfs/incl_by_fw"), showWarnings = FALSE)
+      if (!is.null(search.word.categories) && length(search.words) == length(search.word.categories)){
+        ## 1) Determine best category
+        search.word.category_total <- NULL
+        for (swc in 1:length(unique(search.word.categories))){
+          search.word.category_total[swc] <- sum(pdf_searchword_times[search.word.categories %in% unique(search.word.categories)[swc]], na.rm = TRUE)
+        }
+        max_position <- which(search.word.category_total == max(search.word.category_total))
+        if (length(max_position) > 1){
+          best_fit_category <- "mixed_categ"
+        } else {
+          best_fit_category <- unique(search.word.categories)[max_position]
+        }
+        ## 2) create folder for category
+        dir.create(paste0(out,"/pdfs/incl_by_fw/",best_fit_category), showWarnings = FALSE)
+        ## 3) move file into folder
+        file.copy(pdf, paste0(out,"/pdfs/incl_by_fw/",best_fit_category))
+        print_message <- paste0("\'",basename(pdf),
+                                "\' was copied to \'", out,"/pdfs/incl_by_fw/",best_fit_category,"\'.")
+        out_msg <- c(out_msg, print_message)
+        if (verbose) cat(utils::tail(out_msg,1), sep="\n")
+        update_progress_info(print_message)
+      } else {
+        file.copy(pdf, paste0(out,"/pdfs/incl_by_fw"))
+        print_message <- paste0("\'",basename(pdf),
+                                "\' was copied to \'", out,"/pdfs/incl_by_fw\'.")
+        out_msg <- c(out_msg, print_message)
+        if (verbose) cat(utils::tail(out_msg,1), sep="\n")
+        update_progress_info(print_message)
+      }
+    } else if (cpy_mv == "mv"){
+      dir.create(paste0(out,"/pdfs"), showWarnings = FALSE)
+      dir.create(paste0(out,"/pdfs/incl_by_fw"), showWarnings = FALSE)
+      if (is.null(search.word.categories)){
+        ## 1) Determine best category
+        search.word.category_total <- NULL
+        for (swc in 1:length(unique(search.word.categories))){
+          search.word.category_total[swc] <- sum(pdf_searchword_times[search.word.categories %in% unique(search.word.categories)[swc]], na.rm = TRUE)
+        }
+        max_position <- which(search.word.category_total == max(search.word.category_total))
+        if (length(max_position) > 1){
+          best_fit_category <- "mixed_categ"
+        } else{
+          best_fit_category <- unique(search.word.categories)[max_position]
+        }
+        ## 2) create folder for category
+        dir.create(paste0(out,"/pdfs/incl_by_fw/",best_fit_category), showWarnings = FALSE)
+        ## 3) move file into folder
+        file.copy(pdf, paste0(out,"/pdfs/incl_by_fw/",best_fit_category))
+        unlink(pdf)
+        print_message <- paste0("\'",basename(pdf),
+                                "\' was moved to \'", out,"/pdfs/incl_by_fw/",best_fit_category,"\'.")
+        out_msg <- c(out_msg, print_message)
+        if (verbose) cat(utils::tail(out_msg,1), sep="\n")
+        update_progress_info(print_message)
+      } else {
+        file.copy(pdf, paste0(out,"/pdfs/incl_by_fw"))
+        unlink(pdf)
+        print_message <- paste0("\'",basename(pdf),
+                                "\' was moved to \'", out,"/pdfs/incl_by_fw\'.")
+        out_msg <- c(out_msg, print_message)
+        if (verbose) cat(utils::tail(out_msg,1), sep="\n")
+        update_progress_info(print_message)
+      }
+    }
+  } # end filterwords.go
   
+  ##update stats one last time
   stat_output <- cbind(pdf_word_count = pdf_word_count, pdf_page_count = pdf_page_count,
                        pdf_filterword_total = pdf_filterword_total, 
-                       pdf_searchword_total = pdf_searchword_total,
+                       pdf_filterword_percentage = paste0(as.character(as.numeric(pdf_filterword_total)/as.numeric(pdf_word_count)*100),"%"),
+                       pdf_searchword_total = pdf_searchword_total,rbind(search.word.category_total),
                        rbind(pdf_filterword_times), rbind(pdf_searchword_times))
-  if (length(pdf_filterword_times) > 0 || length(pdf_searchword_times) > 0){
-    extracol_num <- (ncol(stat_output) - 
-                       length(pdf_filterword_times) - 
-                       length(pdf_searchword_times) + 1)
-    colnames(stat_output)[extracol_num:ncol(stat_output)] <- c(pdf_filterwords,pdf_searchwords)
-  }
+  extracol_num <- (ncol(stat_output) - 
+                     length(pdf_filterword_times) - 
+                     length(pdf_searchword_times) -
+                     length(search.word.category_total) + 1)
+  colnames(stat_output)[extracol_num:ncol(stat_output)] <- c(unique(search.word.categories),pdf_filterwords,pdf_searchwords)
   rownames(stat_output) <- id
-  stat_output <- cbind(stat_output, pdf_sentences_w_searchwords = pdf_sentences_w_searchwords)
-  output_files$stat_output <- data.frame(stat_output, check.names = FALSE)
+  output_files$stat_output <- data.frame(cbind(stat_output, 
+                                               pdf_sentences_w_searchwords = pdf_sentences_w_searchwords),
+                                         check.names = FALSE)
   output_files$out_msg <- out_msg
   return(output_files)
 }  ## end function
@@ -4098,24 +4482,31 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
 #'  is detected in the article.
 #'   Default: \code{""}.
 #'@param regex.fw Logical. If TRUE filter words will follow the regex rules
-#' (see \url{https://github.com/erikstricker/PDE/blob/master/inst/examples/cheetsheets/regex.pdf}).
+#' (see \url{https://github.com/erikstricker/PDE/blob/master/inst/examples/cheatsheets/regex.pdf}).
 #'  Default = \code{TRUE}.
 #'@param ignore.case.fw Logical. Are the filter words case-sensitive (does
 #'  capitalization matter)? Default: \code{FALSE}.
-#'@param filter.word.times Numeric. The minimum number of hits described for
-#'  \code{filter.words} for a paper to be further analyzed. Default: \code{20}.
+#'@param filter.word.times Numeric or string. Can either be expressed as absolute number or percentage 
+#'  of the total number of words (by adding the "%" sign). The minimum number of hits described for
+#'  \code{filter.words} for a paper to be further analyzed. Default: \code{0.2\%}.
 #'@param table.heading.words List of strings. Different than standard (TABLE,
 #'  TAB or table plus number) headings to be detected. Regex rules apply (see
 #'  also
-#'  \url{https://github.com/erikstricker/PDE/blob/master/inst/examples/cheetsheets/regex.pdf}).
+#'  \url{https://github.com/erikstricker/PDE/blob/master/inst/examples/cheatsheets/regex.pdf}).
 #'   Default = \code{""}.
 #'@param ignore.case.th Logical. Are the additional table headings (see
 #'  \code{table.heading.words}) case-sensitive (does capitalization matter)?
 #'  Default = \code{FALSE}.
 #'@param search.words List of strings. List of search words. To extract all
-#'  tables from the PDF files leave \code{search.words = ""}. 
+#'  tables from the PDF files leave \code{search.words = ""}.
+#'@param search.word.categories List of strings. List of categories with the 
+#'  same length as the list of search words. Accordingly, each search word can be 
+#'  assigned to a category, of which the word counts will be summarized in the
+#'  \code{PDE_analyzer_word_stats.csv} file. If search.word.categories is a
+#'  different length than search.words the parameter will be ignored.
+#'  Default: \code{NULL}. 
 #'@param regex.sw Logical. If TRUE search words will follow the regex rules
-#' (see \url{https://github.com/erikstricker/PDE/blob/master/inst/examples/cheetsheets/regex.pdf}).
+#' (see \url{https://github.com/erikstricker/PDE/blob/master/inst/examples/cheatsheets/regex.pdf}).
 #'  Default = \code{TRUE}.
 #'@param ignore.case.sw Logical. Are the search words case-sensitive (does
 #'  capitalization matter)? Default: \code{FALSE}.
@@ -4205,7 +4596,7 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
 #'  filter.words = strsplit("cohort;case-control;group;study population;study participants",";")[[1]],
 #'  ignore.case.fw = TRUE,
 #'  regex.fw = FALSE,
-#'  filter.word.times = 20,
+#'  filter.word.times = "0.2%",
 #'  table.heading.words = "",
 #'  ignore.case.th = FALSE,
 #'  search.words = strsplit("(M|m)ethotrexate;(T|t)rexal;(R|r)heumatrex;(O|o)trexup", ";")[[1]],
@@ -4227,8 +4618,8 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE){
 #'@export
 PDE_extr_data_from_pdfs <- function(pdfs, whattoextr,
                                     out = ".", filter.words = "", regex.fw = TRUE, ignore.case.fw = FALSE, 
-                                    filter.word.times = 20,
-                                    table.heading.words = "", ignore.case.th = FALSE, search.words,regex.sw = TRUE,
+                                    filter.word.times = "0.2%",
+                                    table.heading.words = "", ignore.case.th = FALSE, search.words, search.word.categories = NULL, regex.sw = TRUE,
                                     ignore.case.sw = FALSE, eval.abbrevs = TRUE, 
                                     out.table.format = ".csv (WINDOWS-1252)", dev_x = 20, dev_y = 9999, context = 0,
                                     write.table.locations = FALSE, exp.nondetc.tabs = TRUE, write.tab.doc.file = TRUE,
@@ -4246,7 +4637,8 @@ PDE_extr_data_from_pdfs <- function(pdfs, whattoextr,
                                             ignore.case.fw = ignore.case.fw,
                                             filter.word.times = filter.word.times, 
                                             table.heading.words = table.heading.words,
-                                            ignore.case.th = ignore.case.th, search.words = search.words,
+                                            ignore.case.th = ignore.case.th, 
+                                            search.words = search.words,search.word.categories = search.word.categories,
                                             regex.sw = regex.sw,
                                             ignore.case.sw = ignore.case.sw, eval.abbrevs = eval.abbrevs,
                                             write.table.locations = write.table.locations,
@@ -4280,6 +4672,19 @@ PDE_extr_data_from_pdfs <- function(pdfs, whattoextr,
         output <- rbind(output,tablelines$stat_output)
       }
     }
+    if (grepl("csv", out.table.format)) {
+      out.table.separator <- ","
+      out.table.ext <- ".csv"
+    }
+    if (grepl("tsv", out.table.format)) {
+      out.table.separator <- "\t"
+      out.table.ext <- ".tsv"
+    }
+    output_table <- cbind(pdf_file_name = rownames(output), output)
+    utils::write.table(output_table, file = paste0(out,"/",todays.date_time,"_PDE_analyzer_word_stats",
+                                                   out.table.ext),
+                       sep = out.table.separator,
+                       row.names = FALSE)
     
   }  ## end for each PDF file
   
@@ -4322,7 +4727,7 @@ PDE_extr_data_from_pdfs <- function(pdfs, whattoextr,
 #'@param table.heading.words List of strings. Different than standard (TABLE,
 #'  TAB or table plus number) headings to be detected. Regex rules apply (see
 #'  also
-#'  \url{https://github.com/erikstricker/PDE/blob/master/inst/examples/cheetsheets/regex.pdf}).
+#'  \url{https://github.com/erikstricker/PDE/blob/master/inst/examples/cheatsheets/regex.pdf}).
 #'   Default = \code{""}.
 #'@param ignore.case.th Logical. Are the additional table headings (see
 #'  \code{table.heading.words}) case-sensitive (does capitalization matter)?
@@ -4394,10 +4799,10 @@ PDE_pdfs2table <- function(pdfs, out = ".", table.heading.words = "", ignore.cas
                                            out = out,
                                            filter.words = "",
                                            ignore.case.fw = FALSE,
-                                           filter.word.times = 20,
+                                           filter.word.times = "0.2%",
                                            table.heading.words = table.heading.words,
                                            ignore.case.th = ignore.case.th,
-                                           search.words = "",
+                                           search.words = "",search.word.categories = NULL,
                                            ignore.case.sw = FALSE,
                                            eval.abbrevs = FALSE,
                                            out.table.format = out.table.format,
@@ -4428,24 +4833,31 @@ PDE_pdfs2table <- function(pdfs, out = ".", table.heading.words = "", ignore.cas
 #'  is detected in the article.
 #'   Default: \code{""}.
 #'@param regex.fw Logical. If TRUE filter words will follow the regex rules
-#' (see \url{https://github.com/erikstricker/PDE/blob/master/inst/examples/cheetsheets/regex.pdf}).
+#' (see \url{https://github.com/erikstricker/PDE/blob/master/inst/examples/cheatsheets/regex.pdf}).
 #'  Default = \code{TRUE}.
 #'@param ignore.case.fw Logical. Are the filter words case-sensitive (does
 #'  capitalization matter)? Default: \code{FALSE}.
-#'@param filter.word.times Numeric. The minimum number of hits described for
-#'  \code{filter.words} for a paper to be further analyzed. Default: \code{20}.
+#'@param filter.word.times Numeric or string. Can either be expressed as absolute number or percentage 
+#'  of the total number of words (by adding the "%" sign). The minimum number of hits described for
+#'  \code{filter.words} for a paper to be further analyzed. Default: \code{0.2\%}.
 #'@param table.heading.words List of strings. Different than standard (TABLE,
 #'  TAB or table plus number) headings to be detected. Regex rules apply (see
 #'  also
-#'  \url{https://github.com/erikstricker/PDE/blob/master/inst/examples/cheetsheets/regex.pdf}).
+#'  \url{https://github.com/erikstricker/PDE/blob/master/inst/examples/cheatsheets/regex.pdf}).
 #'   Default = \code{""}.
 #'@param ignore.case.th Logical. Are the additional table headings (see
 #'  \code{table.heading.words}) case-sensitive (does capitalization matter)?
 #'  Default = \code{FALSE}.
 #'@param search.words List of strings. List of search words. To extract all
 #'  tables from the PDF file leave \code{search.words = ""}.
+#'@param search.word.categories List of strings. List of categories with the 
+#'  same length as the list of search words. Accordingly, each search word can be 
+#'  assigned to a category, of which the word counts will be summarized in the
+#'  \code{PDE_analyzer_word_stats.csv} file. If search.word.categories is a
+#'  different length than search.words the parameter will be ignored.
+#'  Default: \code{NULL}.
 #'@param regex.sw Logical. If TRUE search words will follow the regex rules
-#' (see \url{https://github.com/erikstricker/PDE/blob/master/inst/examples/cheetsheets/regex.pdf}).
+#' (see \url{https://github.com/erikstricker/PDE/blob/master/inst/examples/cheatsheets/regex.pdf}).
 #'  Default = \code{TRUE}.
 #'@param ignore.case.sw Logical. Are the search words case-sensitive (does
 #'  capitalization matter)? Default: \code{FALSE}.
@@ -4518,7 +4930,7 @@ PDE_pdfs2table <- function(pdfs, out = ".", table.heading.words = "", ignore.cas
 #'  filter.words = strsplit("cohort;case-control;group;study population;study participants", ";")[[1]],
 #'  regex.fw = FALSE,
 #'  ignore.case.fw = TRUE,
-#'  filter.word.times = 20,
+#'  filter.word.times = "0.2%",
 #'  table.heading.words = "",
 #'  ignore.case.th = FALSE,
 #'  search.words = strsplit("(M|m)ethotrexate;(T|t)rexal;(R|r)heumatrex;(O|o)trexup", ";")[[1]],
@@ -4537,8 +4949,8 @@ PDE_pdfs2table <- function(pdfs, out = ".", table.heading.words = "", ignore.cas
 #'
 #'@export
 PDE_pdfs2table_searchandfilter <- function(pdfs, out = ".", filter.words = "", regex.fw = TRUE, 
-                                           ignore.case.fw = FALSE, filter.word.times = 20,
-                                           table.heading.words = "", ignore.case.th = FALSE, search.words,
+                                           ignore.case.fw = FALSE, filter.word.times = "0.2%",
+                                           table.heading.words = "", ignore.case.th = FALSE, search.words,search.word.categories = NULL,
                                            regex.sw = TRUE, ignore.case.sw = FALSE, eval.abbrevs = TRUE, 
                                            out.table.format = ".csv (WINDOWS-1252)", dev_x = 20, dev_y = 9999,
                                            write.table.locations = FALSE, exp.nondetc.tabs = TRUE, 
@@ -4557,7 +4969,7 @@ PDE_pdfs2table_searchandfilter <- function(pdfs, out = ".", filter.words = "", r
                                             filter.word.times = filter.word.times,
                                             table.heading.words = table.heading.words,
                                             ignore.case.th = ignore.case.th,
-                                            search.words = search.words,
+                                            search.words = search.words,search.word.categories = search.word.categories,
                                             ignore.case.sw = ignore.case.sw,
                                             eval.abbrevs = eval.abbrevs,
                                             out.table.format = out.table.format,
@@ -4636,15 +5048,22 @@ PDE_pdfs2table_searchandfilter <- function(pdfs, out = ".", filter.words = "", r
 #'  is detected in the article.
 #'   Default: \code{""}.
 #'@param regex.fw Logical. If TRUE filter words will follow the regex rules
-#' (see \url{https://github.com/erikstricker/PDE/blob/master/inst/examples/cheetsheets/regex.pdf}).
+#' (see \url{https://github.com/erikstricker/PDE/blob/master/inst/examples/cheatsheets/regex.pdf}).
 #'  Default = \code{TRUE}.
 #'@param ignore.case.fw Logical. Are the filter words case-sensitive (does
 #'  capitalization matter)? Default: \code{FALSE}.
-#'@param filter.word.times Numeric. The minimum number of hits described for
-#'  \code{filter.words} for a paper to be further analyzed. Default: \code{20}.
+#'@param filter.word.times Numeric or string. Can either be expressed as absolute number or percentage 
+#'  of the total number of words (by adding the "%" sign). The minimum number of hits described for
+#'  \code{filter.words} for a paper to be further analyzed. Default: \code{0.2\%}.
 #'@param search.words List of strings. List of search words. 
+#'@param search.word.categories List of strings. List of categories with the 
+#'  same length as the list of search words. Accordingly, each search word can be 
+#'  assigned to a category, of which the word counts will be summarized in the
+#'  \code{PDE_analyzer_word_stats.csv} file. If search.word.categories is a
+#'  different length than search.words the parameter will be ignored.
+#'  Default: \code{NULL}.
 #'@param regex.sw Logical. If TRUE search words will follow the regex rules
-#' (see \url{https://github.com/erikstricker/PDE/blob/master/inst/examples/cheetsheets/regex.pdf}).
+#' (see \url{https://github.com/erikstricker/PDE/blob/master/inst/examples/cheatsheets/regex.pdf}).
 #'  Default = \code{TRUE}.
 #'@param ignore.case.sw Logical. Are the search words case-sensitive (does
 #'  capitalization matter)? Default: \code{FALSE}.
@@ -4702,7 +5121,7 @@ PDE_pdfs2table_searchandfilter <- function(pdfs, out = ".", filter.words = "", r
 #'  filter.words = strsplit("cohort;case-control;group;study population;study participants", ";")[[1]],
 #'  regex.fw = FALSE,
 #'  ignore.case.fw = TRUE,
-#'  filter.word.times = 20,
+#'  filter.word.times = "0.2%",
 #'  search.words = strsplit("(M|m)ethotrexate;(T|t)rexal;(R|r)heumatrex;(O|o)trexup", ";")[[1]],
 #'  regex.sw = TRUE,
 #'  ignore.case.sw = FALSE,
@@ -4717,7 +5136,7 @@ PDE_pdfs2table_searchandfilter <- function(pdfs, out = ".", filter.words = "", r
 #'
 #'@export
 PDE_pdfs2txt_searchandfilter = function(pdfs, out = ".", filter.words = "", regex.fw = TRUE,
-                                        ignore.case.fw = FALSE, filter.word.times = 20, search.words,
+                                        ignore.case.fw = FALSE, filter.word.times = "0.2%", search.words,search.word.categories = NULL,
                                         regex.sw = TRUE,
                                         ignore.case.sw = FALSE, eval.abbrevs = TRUE, 
                                         out.table.format = ".csv (WINDOWS-1252)", context = 0,
@@ -4736,7 +5155,7 @@ PDE_pdfs2txt_searchandfilter = function(pdfs, out = ".", filter.words = "", rege
                                            filter.word.times = filter.word.times,
                                            table.heading.words = "",
                                            ignore.case.th = FALSE,
-                                           search.words = search.words,
+                                           search.words = search.words,search.word.categories = search.word.categories,
                                            ignore.case.sw = ignore.case.sw,
                                            eval.abbrevs = eval.abbrevs,
                                            out.table.format = out.table.format,
@@ -4827,11 +5246,13 @@ PDE_analyzer_i <- function(verbose=TRUE) {
   dev_x.var <- tcltk::tclVar("20")
   dev_y.var <- tcltk::tclVar("9999")
   dynamic.dev_y.var <- tcltk::tclVar("1")
+  percentage.fw.var <- tcltk::tclVar("1")
   regex.sw.var <- tcltk::tclVar("0")
   regex.fw.var <- tcltk::tclVar("0")
   l15.filter.words.rbValue <- tcltk::tclVar("no")
   filter.words.var <- tcltk::tclVar("")
   filter.word.times.var <- tcltk::tclVar("20")
+  filter.word.times_value.var <- tcltk::tclVar("20")
   ignore.case.fw.var <- tcltk::tclVar("FALSE")
   copy_move_pdfs.var <- tcltk::tclVar("nocpymv")
   l19.rbValue <- tcltk::tclVar("all")
@@ -5034,13 +5455,19 @@ PDE_analyzer_i <- function(verbose=TRUE) {
     ## l18.1.filter.word.times slider A function that
     ## changes the label
     l18.1.onChange <- function(...) {
-      l18.1.value <- as.integer(tcltk::tclvalue(filter.word.times.var))
-      l18.1.entry <- sprintf("%s", l18.1.value)
-      tcltk::tclvalue(filter.word.times.var) <- l18.1.entry
+      if (tcltk::tclvalue(percentage.fw.var) == "1"){
+        l18.1.value <- as.integer(tcltk::tclvalue(filter.word.times_value.var))
+        tcltk::tclvalue(filter.word.times.var) <- paste0(l18.1.value/100,"%")
+      } else {
+        l18.1.value <- as.integer(tcltk::tclvalue(filter.word.times_value.var))
+        l18.1.entry <- sprintf("%s", l18.1.value)
+        tcltk::tclvalue(filter.word.times.var) <- l18.1.entry
+        tcltk::tclvalue(filter.word.times_value.var) <- l18.1.entry
+      }
     }
     ## Add the slider
     l18.1.filter.word.times.slider <- tcltk2::tk2scale(l18.1,
-                                                     from = 0, to = 500, variable = filter.word.times.var,
+                                                     from = 0, to = 500, variable = filter.word.times_value.var,
                                                      orient = "horizontal", length = 100, command = l18.1.onChange)
     
     ## l22.context slider A function that changes the
@@ -5069,6 +5496,20 @@ PDE_analyzer_i <- function(verbose=TRUE) {
                                                      text = "dynamic",
                                                      state = "normal", background = "#05F2C7", 
                                                      command = change.dynamic.dev_y)
+    change.pecentage.fw <- function() {
+      if (tcltk::tclvalue(percentage.fw.var) == "1"){
+        tcltk::tclvalue(filter.word.times.var) <- paste0(as.numeric(tcltk::tclvalue(filter.word.times.var))/100,"%")
+        tcltk::tkconfigure(l18.1.filter.word.times.slider,to = 2000)
+      } else {
+        tcltk::tclvalue(filter.word.times.var) <- as.numeric(gsub("%","",tcltk::tclvalue(filter.word.times.var)))*100
+        tcltk::tkconfigure(l18.1.filter.word.times.slider,to = 500)
+      }
+    }
+    
+    l18.1.percentage.fw.cbtn <- tcltk::tkcheckbutton(l18.1, variable = percentage.fw.var, 
+                                                text = "%",
+                                                state = "normal", background = "#05F2C7", 
+                                                command = change.pecentage.fw)
     change.regex.sw <- function() {
       
     }
@@ -5339,7 +5780,7 @@ PDE_analyzer_i <- function(verbose=TRUE) {
     l16.2.filter.words.entry <- tcltk2::tk2entry(l16.2, textvariable = filter.words.var,
                                                  width = 10)
     l18.1.filter.word.times.entry <- tcltk2::tk2entry(l18.1,
-                                                    textvariable = filter.word.times.var, width = 4)
+                                                    textvariable = filter.word.times.var, width = 6)
     l20.2.search.words.entry <- tcltk2::tk2entry(l20.2, textvariable = search.words.var,
                                                  width = 10)
     l22.context.entry <- tcltk2::tk2entry(l22, textvariable = context.var,
@@ -5380,13 +5821,15 @@ PDE_analyzer_i <- function(verbose=TRUE) {
       tcltk::tkconfigure(l17.ignore.case.fw.yes.label, state = "normal")
       tcltk::tkconfigure(l17.ignore.case.fw.no.label, state = "normal")
       tcltk::tkconfigure(l17.ignore.case.fw.no.rb, state = "normal")
+      tcltk::tkconfigure(l18.1.percentage.fw.cbtn, state = "normal")
       tcltk::tkconfigure(l18.1.filter.word.times.label,
                          state = "normal")
       tcltk::tkconfigure(l18.1.filter.word.times.entry,
                          state = "normal")
       tcltk::tkconfigure(l18.1.filter.word.times.slider,
                          to = "500")
-      tcltk::tclvalue(filter.word.times.var) = "20"
+      tcltk::tclvalue(filter.word.times.var) = "0.2%"
+      tcltk::tclvalue(percentage.fw.var) = "1"
       tcltk::tkconfigure(l18.2.fw.label,
                          state = "normal")
       tcltk::tkconfigure(l18.2.fw.nocpymv.label,
@@ -5411,11 +5854,13 @@ PDE_analyzer_i <- function(verbose=TRUE) {
       tcltk::tkconfigure(l17.ignore.case.fw.no.rb, state = "disabled")
       tcltk::tkconfigure(l17.ignore.case.fw.yes.label, state = "disabled")
       tcltk::tkconfigure(l17.ignore.case.fw.no.label, state = "disabled")
+      tcltk::tkconfigure(l18.1.percentage.fw.cbtn, state = "disabled")
       tcltk::tkconfigure(l18.1.filter.word.times.label,
                          state = "disabled")
       tcltk::tkconfigure(l18.1.filter.word.times.entry,
                          state = "disabled")
-      tcltk::tclvalue(filter.word.times.var) <- "0"
+      tcltk::tclvalue(filter.word.times.var) <- "0%"
+      tcltk::tclvalue(percentage.fw.var) = "1"
       tcltk::tkconfigure(l18.1.filter.word.times.slider,
                          to = "0")
       tcltk::tkconfigure(l18.2.fw.label,
@@ -5553,6 +5998,11 @@ PDE_analyzer_i <- function(verbose=TRUE) {
       tcltk::tclvalue(l19.rbValue) <- "searchwords"
       tcltk::tkconfigure(l20.2.search.words.entry, state = "normal")
       tcltk::tkconfigure(l20.2.regex.sw.cbtn, state = "normal")
+      tcltk::tkconfigure(l21.ignore.case.sw.label, state = "normal")
+      tcltk::tkconfigure(l21.ignore.case.sw.yes.label, state = "normal")
+      tcltk::tkconfigure(l21.ignore.case.sw.no.label, state = "normal")
+      tcltk::tkconfigure(l21.ignore.case.sw.yes.rb, state = "normal")
+      tcltk::tkconfigure(l21.ignore.case.sw.no.rb, state = "normal")
       tcltk::tkconfigure(l25.write.table.locations.label, state = "disabled")
       tcltk::tkconfigure(l25.write.table.locations.yes.rb, state = "disabled")
       tcltk::tkconfigure(l25.write.table.locations.no.rb, state = "disabled")
@@ -5659,6 +6109,11 @@ PDE_analyzer_i <- function(verbose=TRUE) {
       tcltk::tkconfigure(l20.search.words.label, state="normal")
       tcltk::tkconfigure(l20.2.search.words.entry, state = "normal")
       tcltk::tkconfigure(l20.2.regex.sw.cbtn, state = "normal")
+      tcltk::tkconfigure(l21.ignore.case.sw.label, state = "normal")
+      tcltk::tkconfigure(l21.ignore.case.sw.yes.label, state = "normal")
+      tcltk::tkconfigure(l21.ignore.case.sw.no.label, state = "normal")
+      tcltk::tkconfigure(l21.ignore.case.sw.yes.rb, state = "normal")
+      tcltk::tkconfigure(l21.ignore.case.sw.no.rb, state = "normal")
       tcltk::tkconfigure(l25.write.table.locations.label, state = "normal")
       tcltk::tkconfigure(l25.write.table.locations.yes.rb, state = "normal")
       tcltk::tkconfigure(l25.write.table.locations.no.rb, state = "normal")
@@ -5902,10 +6357,16 @@ PDE_analyzer_i <- function(verbose=TRUE) {
           }
           
           ## filter.word.times
-          filter.word.times <- strtoi(values_table[(grep("filter.word.times",
-                                                         values_table[, "variable"])), "value"])
+          filter.word.times <- values_table[(grep("filter.word.times",
+                                                         values_table[, "variable"])), "value"]
           if (!(length(filter.word.times) == 0 ||
                 is.na(filter.word.times))) tcltk::tclvalue(filter.word.times.var) <- filter.word.times
+          
+          if (grepl("%",filter.word.times)){
+            tcltk::tclvalue(percentage.fw.var) <- "1"
+          } else {
+            tcltk::tclvalue(percentage.fw.var) <- "0"
+          }
           
           ## table headings
           table.heading.wds <- as.character(values_table[(grep("table.heading.words",
@@ -5984,7 +6445,7 @@ PDE_analyzer_i <- function(verbose=TRUE) {
       todays.date <- format(Sys.Date(), "%Y-%m-%d")
       if (tcltk::tclvalue(tsv_location.var) == ""){
         PDE_parameters_filename <- paste0(todays.date, 
-                                          "_", "PDE_parameters_v1.3.tsv")
+                                          "_", "PDE_parameters_v1.4.tsv")
       } else {
         PDE_parameters_filename <-  basename(tcltk::tclvalue(tsv_location.var))
       }
@@ -6100,7 +6561,8 @@ PDE_analyzer_i <- function(verbose=TRUE) {
       l15.onno.click()
       tcltk::tclvalue(filter.words.var) <- ""
       tcltk::tclvalue(regex.fw.var) <- "0"
-      tcltk::tclvalue(filter.word.times.var) <- "20"
+      tcltk::tclvalue(filter.word.times.var) <- "0.2%"
+      tcltk::tclvalue(percentage.fw.var) = "1"
       tcltk::tclvalue(ignore.case.fw.var) <- "FALSE"
       tcltk::tclvalue(copy_move_pdfs.var) <- "nocpymv"
       ## paras
@@ -6141,7 +6603,9 @@ PDE_analyzer_i <- function(verbose=TRUE) {
       if (is.na(default.pdffolder)) default.pdffolder <- ""
       if (!dir.exists(default.pdffolder)) default.pdffolder <- dirname(default.pdffolder)
       pdfs <- tcltk::tk_choose.dir(default = default.pdffolder, caption = "Choose folder with PDF files")
-      tcltk::tclvalue(pdfs.var) <- pdfs
+      if (!is.na(pdfs)){
+        tcltk::tclvalue(pdfs.var) <- pdfs
+      }
       tcltk::tkfocus(PDE.globals$ttanalyzer)
       tcltk::tkraise(PDE.globals$ttanalyzer)
       
@@ -6156,12 +6620,14 @@ PDE_analyzer_i <- function(verbose=TRUE) {
       pdfs <- tcltk::tk_choose.files(default = default.pdffolder,
                                      caption = "Choose all PDF files",
                                      multi = TRUE)
-      ## sometimes tk_choose.files produces additional paths that don't exists which are removed below
-      for (pdffile in pdfs){
-        if (!file.exists(pdffile)) pdfs <- pdfs[!(pdfs %in% pdffile)]
+      if (length(pdfs) > 0){
+        ## sometimes tk_choose.files produces additional paths that don't exists which are removed below
+        for (pdffile in pdfs){
+          if (!file.exists(pdffile)) pdfs <- pdfs[!(pdfs %in% pdffile)]
+        }
+        
+        tcltk::tclvalue(pdfs.var) <- paste(pdfs, collapse = ";")
       }
-      
-      tcltk::tclvalue(pdfs.var) <- paste(pdfs, collapse = ";")
       tcltk::tkfocus(PDE.globals$ttanalyzer)
       tcltk::tkraise(PDE.globals$ttanalyzer)
     }
@@ -6236,11 +6702,37 @@ PDE_analyzer_i <- function(verbose=TRUE) {
           ######### search words? #############
           if (tcltk::tclvalue(l19.rbValue) == "l19.rbValue") {
             search.for <- ""
+            search.word.categories <- NULL
           } else {
+            ## if there is %:category:%
             if (length(grep(";", tcltk::tclvalue(search.words.var))) > 0) {
               search.for <- strsplit(tcltk::tclvalue(search.words.var), ";")[[1]]
             } else {
               search.for <- tcltk::tclvalue(search.words.var)
+            }
+            search.word.categories <- NULL
+            ## if categories are in the search word list
+            if (grepl("%:(.)+:%",tcltk::tclvalue(search.words.var))){
+              category <- NULL
+              for (sf in 1:length(search.for)){
+                if (grepl("%:(.)+:%",search.for[sf])){
+                  category <- gsub("%:(.+):%.*", "\\1", search.for[sf])
+                  search.for[sf] <- sub(paste0("%:",category,":%"),"",search.for[sf])
+                  search.word.categories <- c(search.word.categories,category)
+                } else {
+                  if (is.null(category)){
+                    tcltk::tkmessageBox(title = "Warning",
+                                        type = "ok", icon = "warning",
+                                        message = paste0("Choose the correct formating",
+                                                         " for categories ",
+                                                         "(e.g. %:category:%first search word)"))
+                    stop(paste0("Choose the correct formating",
+                                " for categories ",
+                                "(e.g. %:category:%first search word)"))
+                  }
+                  search.word.categories <- c(search.word.categories,category)
+                }
+              }
             }
           }
           
@@ -6269,7 +6761,7 @@ PDE_analyzer_i <- function(verbose=TRUE) {
           ic.fw <- tcltk::tclvalue(ignore.case.fw.var)
           ic.sw <- tcltk::tclvalue(ignore.case.sw.var)
           eval.abbrevs <- tcltk::tclvalue(eval.abbrevs.var)
-          filter.word.times <- as.numeric(tcltk::tclvalue(filter.word.times.var))
+          filter.word.times <- tcltk::tclvalue(filter.word.times.var)
           context <- as.numeric(tcltk::tclvalue(context.var))
           dev_x <- as.numeric(tcltk::tclvalue(dev_x.var))
           dev_y <- as.numeric(tcltk::tclvalue(dev_y.var))
@@ -6299,6 +6791,7 @@ PDE_analyzer_i <- function(verbose=TRUE) {
             }
             
             output <- NULL
+            todays.date_time <- paste0(format(Sys.Date(), "%Y-%m-%d"),format(Sys.time(), "-%Hh-%Mm"))
             
             for (pdf in pdf.files) {
               
@@ -6349,6 +6842,7 @@ PDE_analyzer_i <- function(verbose=TRUE) {
                                                     filter.word.times = filter.word.times,
                                                     table.heading.words = table.heading.for,
                                                     ignore.case.th = ic.th, search.words = search.for,
+                                                    search.word.categories = search.word.categories,
                                                     regex.sw = regex.sw,
                                                     ignore.case.sw = ic.sw, eval.abbrevs = eval.abbrevs,
                                                     write.table.locations = wtl,
@@ -6377,6 +6871,21 @@ PDE_analyzer_i <- function(verbose=TRUE) {
                   output <- rbind(output,tablelines$stat_output)
                 }
               }
+              ## write the PDE_analyzer_word_stats table
+              
+              if (grepl("csv", out.table.format)) {
+                out.table.separator <- ","
+                out.table.ext <- ".csv"
+              }
+              if (grepl("tsv", out.table.format)) {
+                out.table.separator <- "\t"
+                out.table.ext <- ".tsv"
+              }
+              output_table <- cbind(pdf_file_name = rownames(output), output)
+              utils::write.table(output_table, file = paste0(outputfolder,"/",todays.date_time,"_PDE_analyzer_word_stats",
+                                                             out.table.ext),
+                                 sep = out.table.separator,
+                                 row.names = FALSE)
             }
             
             ## write the PDE_analyzer_word_stats table
@@ -6388,7 +6897,7 @@ PDE_analyzer_i <- function(verbose=TRUE) {
                 output <- output[order(output$pdf_searchword_total, decreasing = TRUE),,drop=FALSE]
               }
             }
-            todays.date_time <- paste0(format(Sys.Date(), "%Y-%m-%d"),format(Sys.time(), "-%Hh-%Mm"))
+
             if (grepl("csv", out.table.format)) {
               out.table.separator <- ","
               out.table.ext <- ".csv"
@@ -6902,6 +7411,7 @@ PDE_analyzer_i <- function(verbose=TRUE) {
                   side = "left", pady = 2)
     ## line 18.1
     tcltk::tkpack(l18.1.filter.word.times.label, l18.1.filter.word.times.entry,
+                  l18.1.percentage.fw.cbtn,
                   side = "left", pady = 2, padx = 5)
     tcltk::tkpack(l18.1.filter.word.times.slider, expand = TRUE,
                   fill = "x", side = "left", pady = 2, padx = 5)
@@ -7061,7 +7571,11 @@ PDE_analyzer_i <- function(verbose=TRUE) {
     tcltk::tkbind(l20.hint_choose_sw, "<Enter>", 
                   expression(tooltip(paste0("Type in the list of search words separated by \";\" without",
                                             " spaces in between. The list of search words includes all ",
-                                            "aliases."), 
+                                            "aliases. Additionally, search word categories can be added",
+                                            " by including the category name before the first search word,",
+                                            " of each category surrounded by \"%:\" and \":%\", e.g., ",
+                                            "%:category:%first search word. For each category word counts ",
+                                            "will be summarized in the PDE_analyzer_word_stats.csv file."), 
                                      l20.hint_choose_sw)))
     tcltk::tkbind(l21.hint_ignorecase_sw, "<Enter>", 
                   expression(tooltip(paste0("Case-sensitivity (capitalization matters) can be disabled, ",
@@ -7105,7 +7619,9 @@ PDE_analyzer_i <- function(verbose=TRUE) {
                   expression(tooltip(paste0("This represents the minimum number of hits described above ",
                                             "which has to be detected for a paper to be further analyzed. ",
                                             "If the threshold is not met, a documentation file can be ",
-                                            "exported if selected in the documentation section."), 
+                                            "exported if selected in the documentation section. ",
+                                            "If \"5\" is selected the number of hits is divided ",
+                                            "by the total number of words"), 
                                      l18.1.hint_fwtimes)))
     tcltk::tkbind(l12.hint_tableheading, "<Enter>", 
                   expression(tooltip(paste0("Standard scientific articles have their tables labeled with ",
@@ -7289,6 +7805,31 @@ PDE_analyzer <- function(PDE_parameters_file_path = NA, verbose=TRUE){
   } else {
     search.for <- search.wds
   }
+  search.word.categories <- NULL  
+  ## if categories are in the search word list
+  if (grepl("%:(.)+:%",search.wds)){
+    category <- NULL
+    for (sf in 1:length(search.for)){
+      if (grepl("%:(.)+:%",search.for[sf])){
+        category <- gsub("%:(.+):%.*", "\\1", search.for[sf])
+        search.for[sf] <- sub(paste0("%:",category,":%"),"",search.for[sf])
+        search.word.categories <- c(search.word.categories,category)
+      } else {
+        if (is.null(category)){
+          tcltk::tkmessageBox(title = "Warning",
+                              type = "ok", icon = "warning",
+                              message = paste0("Choose the correct formating",
+                                               " for categories ",
+                                               "(e.g. %:category:%first search word)"))
+          stop(paste0("Choose the correct formating",
+                      " for categories ",
+                      "(e.g. %:category:%first search word)"))
+        }
+        search.word.categories <- c(search.word.categories,category)
+      }
+    }
+  }
+  
   ## reg.sw
   regex.sw <- as.logical(values_table[(grep("regex.sw",
                                             values_table[, "variable"])), "value"])
@@ -7495,6 +8036,7 @@ PDE_analyzer <- function(PDE_parameters_file_path = NA, verbose=TRUE){
                                           ignore.case.fw = ic.fw, filter.word.times = filter.word.times,
                                           table.heading.words = table.heading.for,
                                           ignore.case.th = ic.th, search.words = search.for,
+                                          search.word.categories = search.word.categories,
                                           regex.sw = regex.sw,
                                           ignore.case.sw = ic.sw, eval.abbrevs = eval.abbrevs,
                                           write.table.locations = wtl,
@@ -8522,9 +9064,7 @@ PDE_reader_i <- function(verbose=TRUE) {
                                           multi = FALSE)
         if (length(tsvfile) > 0) {
           tcltk::tclvalue(tsvfile.var) <- tsvfile
-        } else {
-          tcltk::tclvalue(tsvfile.var) <- ""
-        }
+        } 
       }
       
       ## enable extract table if TSV file is chosen
@@ -8814,6 +9354,7 @@ PDE_reader_i <- function(verbose=TRUE) {
           table.heading.for <- ""
           ic.th <- TRUE
           search.for <- ""
+          search.word.categories <- ""
           ic.sw <- TRUE
           eval.abbrevs <- FALSE
           wtl <- FALSE
@@ -8831,6 +9372,7 @@ PDE_reader_i <- function(verbose=TRUE) {
                                                 ignore.case.fw = ic.fw, filter.word.times = filter.word.times,
                                                 table.heading.words = table.heading.for,
                                                 ignore.case.th = ic.th, search.words = search.for,
+                                                search.word.categories = search.word.categories,
                                                 ignore.case.sw = ic.sw, eval.abbrevs = eval.abbrevs,
                                                 write.table.locations = wtl,
                                                 write.tab.doc.file = write.tab.doc.file,

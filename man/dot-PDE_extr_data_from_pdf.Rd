@@ -11,10 +11,11 @@
   filter.words = "",
   regex.fw = TRUE,
   ignore.case.fw = FALSE,
-  filter.word.times = 20,
+  filter.word.times = "0.2\%",
   table.heading.words = "",
   ignore.case.th = FALSE,
   search.words,
+  search.word.categories = NULL,
   regex.sw = TRUE,
   ignore.case.sw = FALSE,
   eval.abbrevs = TRUE,
@@ -49,19 +50,20 @@ is detected in the article.
  Default: \code{""}.}
 
 \item{regex.fw}{Logical. If TRUE filter words will follow the regex rules
-(see \url{https://github.com/erikstricker/PDE/blob/master/inst/examples/cheetsheets/regex.pdf}).
+(see \url{https://github.com/erikstricker/PDE/blob/master/inst/examples/cheatsheets/regex.pdf}).
  Default = \code{TRUE}.}
 
 \item{ignore.case.fw}{Logical. Are the filter words case-sensitive (does
 capitalization matter)? Default: \code{FALSE}.}
 
-\item{filter.word.times}{Numeric. The minimum number of hits described for
-\code{filter.words} for a paper to be further analyzed. Default: \code{20}.}
+\item{filter.word.times}{Numeric or string. Can either be expressed as absolute number or percentage 
+of the total number of words (by adding the "%" sign). The minimum number of hits described for
+\code{filter.words} for a paper to be further analyzed. Default: \code{0.2\%}.}
 
 \item{table.heading.words}{List of strings. Different than standard (TABLE,
 TAB or table plus number) headings to be detected. Regex rules apply (see
 also
-\url{https://github.com/erikstricker/PDE/blob/master/inst/examples/cheetsheets/regex.pdf}).
+\url{https://github.com/erikstricker/PDE/blob/master/inst/examples/cheatsheets/regex.pdf}).
  Default = \code{""}.}
 
 \item{ignore.case.th}{Logical. Are the additional table headings (see
@@ -71,8 +73,15 @@ Default = \code{FALSE}.}
 \item{search.words}{List of strings. List of search words. To extract all
 tables from the PDF file leave \code{search.words = ""}.}
 
+\item{search.word.categories}{List of strings. List of categories with the 
+same length as the list of search words. Accordingly, each search word can be 
+assigned to a category, of which the word counts will be summarized in the
+\code{PDE_analyzer_word_stats.csv} file. If search.word.categories is a
+different length than search.words the parameter will be ignored.
+Default: \code{NULL}.}
+
 \item{regex.sw}{Logical. If TRUE search words will follow the regex rules
-(see \url{https://github.com/erikstricker/PDE/blob/master/inst/examples/cheetsheets/regex.pdf}).
+(see \url{https://github.com/erikstricker/PDE/blob/master/inst/examples/cheatsheets/regex.pdf}).
  Default = \code{TRUE}.}
 
 \item{ignore.case.sw}{Logical. Are the search words case-sensitive (does
@@ -176,7 +185,7 @@ if(PDE_check_Xpdf_install() == TRUE){
  filter.words = strsplit("cohort;case-control;group;study population;study participants", ";")[[1]],
  ignore.case.fw = TRUE,
  regex.fw = FALSE,
- filter.word.times = 20,
+ filter.word.times = "0.2\%",
  table.heading.words = "",
  ignore.case.th = FALSE,
  search.words = strsplit("(M|m)ethotrexate;(T|t)rexal;(R|r)heumatrex;(O|o)trexup", ";")[[1]],

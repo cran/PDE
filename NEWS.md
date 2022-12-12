@@ -1,3 +1,15 @@
+# PDE 1.4.2
+*Fixed problem with outputting to locations with spaces
+
+# PDE 1.4.1
+* Added message box that opens when using PDE_analyzer_i() and xpdf command line tools are not installed
+* Fixed issue with correct numbering in PDE_analyzer_word_stat table
+* Fixed issue when having special characters in PDF file names
+* Fixed PDE_check_Xpdf_install() error when config fall was copied from another PC
+* Fixed error when extracting small tables
+* Fixed clearing of pdf field when cancel was selected
+* Fixed issue with pdfs containing empty pages
+
 # PDE 1.4.0
 * Fixed bug with PDE_analyzer_i() trying to display .png files
 * Fixed bug with greyed out searchwords entry box
