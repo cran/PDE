@@ -30,7 +30,9 @@
 NULL
 #> NULL
 
-## 1.4.2
+## 1.4.3
+
+## TODO save progress with tsv file
 
 ## declare global variables
 PDE.globals <- new.env()
@@ -1503,7 +1505,6 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE, perm
   update_progress_info(print_message)
   ## 2.1) Check txt and html file integrity ----------------------------------
   integrity.indicator <- TRUE
-  
   ## check if html was created (if pdf is secured)
   if (!dir.exists(htmlpath) || !file.exists(paste0(htmlpath, "/index.html"))) {
     ## export error and do not remove file change
@@ -1970,7 +1971,6 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE, perm
   
   ## 3) Evaluate for filter words ---------------------------------------
   list_of_abbrevs <- NULL
-  
   ## 3.1) Filter Search ---------------------------------------
   if (integrity.indicator == TRUE && !filter.word.table[1, "words"] == "") {
     word.txtline.fw <- NULL
@@ -1983,7 +1983,6 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE, perm
                            detected_line)
       
       ## 3.2) Replace abbreviations -----------------------------------------------------
-      
       if (eval.abbrevs == TRUE && length(word.txtline.fw) > 0){
         ## Check if any occurences (heading + text) of the
         ## filter word are defining and abbreviation
@@ -2095,7 +2094,7 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE, perm
       }
       ## test if percent or number
       pdf_word_count <- sum(sapply(gregexpr("[[:alpha:]]+", txtcontent), function(x) sum(x > 0)))
-      if (grep("%",filter.word.times)){
+      if (grepl("%",filter.word.times)){
         if (length(word.txtpos.fw)/pdf_word_count >= (as.numeric(sub("%","",filter.word.times))/100)) {
           filterwords.go <- TRUE
           print_message <- paste0(round((length(word.txtpos.fw)/pdf_word_count*100),4),
@@ -2123,7 +2122,7 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE, perm
       
       if (filterwords.go == FALSE){
         pdf_word_count <- sum(sapply(gregexpr("[[:alpha:]]+", txtcontent), function(x) sum(x > 0)))
-        if (grep("%",filter.word.times)){
+        if (grepl("%",filter.word.times)){
           print_message <- paste0("\'",id,".pdf\' was filtered out due to a lack of the filter words. ",
                                   round((length(word.txtpos.fw)/pdf_word_count*100),4),
                                   "% of all words were filter word(s) in ", id, ".pdf.")
@@ -2167,7 +2166,7 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE, perm
         if (write.txt.doc.file == TRUE) {
           dir.create(paste0(out,"/excl_by_fw"), showWarnings = FALSE)
           pdf_word_count <- sum(sapply(gregexpr("[[:alpha:]]+", txtcontent), function(x) sum(x > 0)))
-          if (grep("%",filter.word.times)){
+          if (grepl("%",filter.word.times)){
             utils::write.table(paste0("Not enough txt lines with filter word found. ",
                                       round((length(word.txtpos.fw)/pdf_word_count*100),4),
                                       "% of words were filter word(s) in ", id, ".pdf."),
@@ -2245,7 +2244,6 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE, perm
       
       ## 4.2) Continue analysis when search words were found ----------------------------
       if (length(word.txtline) > 0) searchwords.go <- TRUE
-      
       ## 4.3) Replace abbreviations -----------------------------------------------------
       if (eval.abbrevs == TRUE && length(word.txtline) > 0 &&
           !search.word.table[i, "words"] == ""){
@@ -2916,8 +2914,15 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE, perm
         outofbound <- FALSE
       }
       if (outofbound == FALSE) {
-        if (is.null(htmlcontent[[p]][npos, "top"]))
-          notop <- TRUE else notop <- FALSE
+        if (is.null(htmlcontent[[p]][npos, "top"])){
+          notop <- TRUE 
+        } else {
+          if (is.na(htmlcontent[[p]][npos, "top"])){
+            notop <- TRUE 
+          } else {
+            notop <- FALSE
+          }
+        }
       }
       
       if ((outofbound == TRUE) || (notop == TRUE)) {
@@ -2970,7 +2975,6 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE, perm
       }
       
       ## 6.5) Detect how many columns by evaluating how many different left values ---------------
-      
       ## set the current line pos and page for the while loop
       currentline.pos <- htmltablelines[i, "tableend.pos"]
       currentline.page <- htmltablelines[i, "page"]
@@ -3228,7 +3232,6 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE, perm
   }
   
   ## 6.8) Transfer information gained from html file to txt and keeplayouttxt tables-----------
-  
   if (searchwords.go == TRUE && filterwords.go == TRUE &&
       integrity.indicator == TRUE && !length(tablestart.pos) == 0 &&
       nrow(as.data.frame((htmltablelines))) > 0 && ncol(as.data.frame((htmltablelines))) > 0) {
@@ -3301,8 +3304,8 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE, perm
           ## shorten the txtfirstline till hit is found
           while (leg.pos == Inf && txt.pos == Inf &&
                  txttablelines[i, "txtfirstline"] != "") {
-            txttablelines[i, "txtfirstline"] <- strtrim(txttablelines[i, "txtfirstline"],
-                                                        nchar(txttablelines[i, "txtfirstline"]) - 1)
+            txttablelines[i, "txtfirstline"] <- substr(txttablelines[i, "txtfirstline"],1,
+                                                        (nchar(txttablelines[i, "txtfirstline"]) - 1))
             txt.pos <- suppressWarnings(min(grep(txttablelines[i, "txtfirstline"],
                                                  txtcontent[start:length(txtcontent)],
                                                  fixed = TRUE))) + start - 1
@@ -3354,7 +3357,7 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE, perm
       }  ## end
       
       ## adjust keeplayouttxttablelines ##
-      
+
       keeplayouttxttablelines <- htmltablelines[,
                                                 c("page", "tableheading", "tablestart.pos",
                                                   "tablelastline", "tableend.pos",
@@ -3363,6 +3366,7 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE, perm
       ## convert into dataframe without levels
       keeplayouttxttablelines <- data.frame(lapply(keeplayouttxttablelines,
                                                    as.character), stringsAsFactors = FALSE)
+    
       for (i in 1:nrow(keeplayouttxttablelines)) {
         
         ## adjust tablestart.pos
@@ -3381,14 +3385,14 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE, perm
         trimed <- tabhead
         while (is.na(start)) {
           headinglength <- nchar(as.character(trimed))
-          trimed <- strtrim(as.character(trimed),
-                            headinglength - 1)
+          trimed <- substr(as.character(trimed),1,
+                            (headinglength - 1))
           headinglength <- nchar(as.character(trimed))
           lastchar <- substr(as.character(trimed),
                              headinglength, headinglength)
           while (lastchar == "\\"){
-            trimed <- strtrim(as.character(trimed),
-                              headinglength - 1)
+            trimed <- substr(as.character(trimed),1,
+                              (headinglength - 1))
             headinglength <- nchar(as.character(trimed))
             lastchar <- substr(as.character(trimed),
                                headinglength, headinglength)
@@ -3426,7 +3430,7 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE, perm
           ## found
           while (leg.pos == Inf && keeplayouttxt.pos ==
                  Inf && keeplayouttxttablelines[i,"txtfirstline"] != "") {
-            keeplayouttxttablelines[i, "txtfirstline"] <- strtrim(keeplayouttxttablelines[i, "txtfirstline"],
+            keeplayouttxttablelines[i, "txtfirstline"] <- substr(keeplayouttxttablelines[i, "txtfirstline"],1,
                                                                   nchar(keeplayouttxttablelines[i, "txtfirstline"]) - 1)
             keeplayouttxt.pos <- suppressWarnings(min(grep(keeplayouttxttablelines[i, "txtfirstline"],
                                                            keeplayouttxtcontent[start:length(keeplayouttxtcontent)],
@@ -3491,9 +3495,56 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE, perm
   }
   
   ## 6.9) Assign table, legend or txt to the each html and txtline ----------
+
   if (searchwords.go == TRUE && filterwords.go == TRUE &&
       integrity.indicator == TRUE && !length(tablestart.pos) == 0 &&
       nrow(as.data.frame((htmltablelines))) > 0 && ncol(as.data.frame((htmltablelines))) > 0) {
+    
+    
+    ##take care of overlapping tables HTML 
+    if (nrow(htmltablelines) > 1){
+      for (i in 1:(nrow(htmltablelines)-1)) {
+        ##if the tables are on the same page
+        if (as.numeric(htmltablelines[i, "page"]) == as.numeric(htmltablelines[(i+1), "page"]) &&
+            htmltablelines[i, "detected.in"] == "txtandhtml" && htmltablelines[(i+1), "detected.in"] == "txtandhtml"){
+          ##if the tables overlap
+          if (as.numeric(htmltablelines[i, "legendend.pos"]) >= as.numeric(htmltablelines[(i+1), "tablestart.pos"])){
+            ##adjust legendend and tableend
+            htmltablelines[i, "legendend.pos"] <- (as.numeric(htmltablelines[(i+1), "tablestart.pos"]) - 1)
+            htmltablelines[i, "tableend.pos"] <- (as.numeric(htmltablelines[(i+1), "tablestart.pos"]) - 1)
+            current_page <- htmltablelines[i, "page"]
+            htmltablelines[i, "tablelastline"] <- txthtmlcontent[[current_page]][as.numeric(htmltablelines[i, 
+                                                                                                            "tableend.pos"])]
+            htmltablelines[i, "legendlastline"] <- txthtmlcontent[[current_page]][as.numeric(htmltablelines[i, 
+                                                                                                          "legendend.pos"])]
+            htmltablelines[i, "txtfirstline"] <- htmltablelines[(i+1), "txtfirstline"]
+          }
+        }
+      }
+    }
+    
+    
+    ##take care of overlapping tables HTML
+    if (nrow(txttablelines) > 1){
+      for (i in 1:(nrow(txttablelines)-1)) {
+        ##if the tables are on the same page
+        if (as.numeric(txttablelines[i, "page"]) == as.numeric(txttablelines[(i+1), "page"]) &&
+            txttablelines[i, "detected.in"] == "txtandhtml" && txttablelines[(i+1), "detected.in"] == "txtandhtml"){
+          ##if the tables overlap
+          if (as.numeric(txttablelines[i, "legendend.pos"]) >= as.numeric(txttablelines[(i+1), "tablestart.pos"])){
+            ##adjust legendend and tableend
+            txttablelines[i, "legendend.pos"] <- (as.numeric(txttablelines[(i+1), "tablestart.pos"]) - 1)
+            txttablelines[i, "tableend.pos"] <- (as.numeric(txttablelines[(i+1), "tablestart.pos"]) - 1)
+            current_page <- txttablelines[i, "page"]
+            txttablelines[i, "tablelastline"] <- txtcontent[as.numeric(txttablelines[i, 
+                                                                                 "tableend.pos"])]
+            txttablelines[i, "legendlastline"] <- txtcontent[as.numeric(txttablelines[i, 
+                                                                      "legendend.pos"])]
+            txttablelines[i, "txtfirstline"] <- txttablelines[(i+1), "txtfirstline"]
+          }
+        }
+      }
+    }
     
     ## Assign table, legend or txt to the each htmlline
     ## initialize the output table
@@ -3627,6 +3678,7 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE, perm
   }
   
   ## 7.1) Second search of search words in htmllines -----------------------------------------------
+
   if (filterwords.go == TRUE &&
       integrity.indicator == TRUE &&
       nrow(as.data.frame((htmltablelines))) > 0 && ncol(as.data.frame((htmltablelines))) > 0 &&
@@ -3674,8 +3726,12 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE, perm
             }
             htmltablelines_w_sw <- grep(word, htmltables[[t]][,1], ignore.case = ignore.case.sw)
             for (li in htmltablelines_w_sw){
+              pos_of_words <-  gregexpr(word, htmltables[[t]][li,1], ignore.case = ignore.case.sw)[[1]]
+              if (pos_of_words[1] == -1){
+                pos_of_words <- NULL
+              }
               current_word.tabpos.sw <- c(current_word.tabpos.sw,
-                                          gregexpr(word, htmltables[[t]][li,1], ignore.case = ignore.case.sw)[[1]])
+                                          pos_of_words)
             }
           }
           pdf_searchword_times <- c(pdf_searchword_times, length(current_word.tabpos.sw))
@@ -3746,6 +3802,7 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE, perm
   
   
   ## 7.2) Export TABLE only if tab function was called --------------
+
   if (searchwords.go == TRUE && filterwords.go == TRUE &&
       integrity.indicator == TRUE && !length(tablestart.pos) == 0 &&
       nrow(as.data.frame((htmltablelines))) > 0 && ncol(as.data.frame((htmltablelines))) > 0 &&
@@ -3823,7 +3880,6 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE, perm
           ## only combine for left values and when it is a table with more than 1 column (orient.range > 1)
           if (o == "left" && length(orient.range) > 1) {
             for (i in 2:nrow(change.table)) {
-              
               if (dev_x > 0 &&
                   (strtoi(change.table[i, o]) - dev_x) <= strtoi(change.table[i - 1, o])) {
                 change.table[i, o] <- change.table[i - 1, o]
@@ -4042,7 +4098,6 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE, perm
   if (filterwords.go == TRUE &&
       integrity.indicator == TRUE &&
       (whattoextr == "tabandtxt" || whattoextr == "txt" || whattoextr == "txtandtab")) {
-    
     ## search for txt lines with search word in
     ## txtcontent ##
     txtpositionstable <- NULL
@@ -4051,60 +4106,41 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE, perm
     if (!search.word.table[1, "words"] == "") {
       word_added <- FALSE
       for (i in 1:nrow(search.word.table)) {
-      ## search for lines with searchword ##
-      word <- search.word.table[i, "words"]
-      ignore.case.sw <- search.word.table[i, "ignore.case.sw"]
-      words.found.in.lines <- txtlines[grep(word, txtlines[, "txtcontent"],
-                                            ignore.case = ignore.case.sw),
-                                       "rownumber"]
-      ## count search words in tables
-      if (ignore.case.sw == TRUE){
-        ic <- "ic"
-      } else {
-        ic <- "nic"
-      }
-      if (regex.sw == TRUE){
-        reg <- "regex"
-      } else {
-        reg <- "nregex"
-      }
-      pdf_searchwords <- c(pdf_searchwords, paste0("SW_",ic,"_",reg,":",word))
-      ## search each line for the exact position of the
-      ## word
-      current_word.txtpos.sw <- NULL
-      if (length(words.found.in.lines)==0) {
-        ## if tables were not searched/if search word were found in tables
-        if (sw_in_tab_counted == FALSE && word_added == FALSE){
-          pdf_searchword_times <- c(pdf_searchword_times, 0)
-          pdf_searchword_names <- c(pdf_searchword_names, word)
-          word_added <- TRUE
-          ## if tables were searched (add to existing numbers)
-        } else {
-          pdf_searchword_times[i] <- pdf_searchword_times[i] + 0
-          pdf_searchword_names[i] <- word
-        }
-        pdf_searchword_total <- sum(pdf_searchword_times)
-        search.word.category_total <- NULL
-        if (!is.null(search.word.categories) && length(search.words) == length(search.word.categories)){
-          for (swc in 1:length(unique(search.word.categories))){
-            search.word.category_total[swc] <- sum(pdf_searchword_times[search.word.categories %in% unique(search.word.categories)[swc]], na.rm = TRUE)
-          }
-        }
-      } else {
+        ## search for lines with searchword ##
+        word <- search.word.table[i, "words"]
+        ignore.case.sw <- search.word.table[i, "ignore.case.sw"]
+        words.found.in.lines <- grep(word, txtcontent,
+                                              ignore.case = ignore.case.sw)
         word_added <- FALSE
-        for (line in words.found.in.lines) {
-          ## detect all the positions of the word
-          word.positions <- as.vector(gregexpr(word,
-                                               txtcontent[strtoi(line)],
-                                               ignore.case = ignore.case.sw)[[1]])
-          ## if tables were not searched
+        
+        ##if search words were evaluated in tables
+        if (sw_in_tab_counted == TRUE){
+          pdf_searchword_times[i] <- 0
+        }
+        ## count search words in tables
+        if (ignore.case.sw == TRUE){
+          ic <- "ic"
+        } else {
+          ic <- "nic"
+        }
+        if (regex.sw == TRUE){
+          reg <- "regex"
+        } else {
+          reg <- "nregex"
+        }
+        pdf_searchwords <- c(pdf_searchwords, paste0("SW_",ic,"_",reg,":",word))
+        ## search each line for the exact position of the
+        ## word
+        current_word.txtpos.sw <- NULL
+        if (length(words.found.in.lines)==0) {
+          ## if tables were not searched/if search word were found in tables
           if (sw_in_tab_counted == FALSE && word_added == FALSE){
-            pdf_searchword_times <- c(pdf_searchword_times, length(word.positions))
+            pdf_searchword_times <- c(pdf_searchword_times, 0)
             pdf_searchword_names <- c(pdf_searchword_names, word)
             word_added <- TRUE
             ## if tables were searched (add to existing numbers)
           } else {
-            pdf_searchword_times[i] <- pdf_searchword_times[i] + length(word.positions)
+            pdf_searchword_times[i] <- pdf_searchword_times[i] + 0
             pdf_searchword_names[i] <- word
           }
           pdf_searchword_total <- sum(pdf_searchword_times)
@@ -4114,133 +4150,160 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE, perm
               search.word.category_total[swc] <- sum(pdf_searchword_times[search.word.categories %in% unique(search.word.categories)[swc]], na.rm = TRUE)
             }
           }
-          ## loop through all the positions
-          for (word.pos in word.positions) {
-            ## A) Detect sentences after
-            postword.current.line <- strtoi(line)
-            postword.current.sent.end <- word.pos
-            postword.txtcontent <- ""
-            ## search for the sentence beginning till context-th
-            ## sentence is found
-            for (x in 1:(context + 1)) {
-              ## do till sentence begninning is found or postword
-              ## of document test if sentence postword is in this
-              ## line
-              while (grepl("\\. [0-9A-Z]",
-                           substr(txtcontent[postword.current.line],
-                                  postword.current.sent.end,
-                                  nchar(txtcontent[postword.current.line]))) == FALSE) {
-                ## if there is no postword sentence end, add everthing till end of line
-                # everthing till end of line
+        } else {
+          word_added <- FALSE
+          for (line in words.found.in.lines) {
+            ## detect all the positions of the word
+            word.positions <- as.vector(gregexpr(word,
+                                                 txtcontent[line],
+                                                 ignore.case = ignore.case.sw)[[1]])
+            if (word.positions[1] == -1){
+              word.positions <- NULL
+            }
+            ## if tables were not searched
+            if (sw_in_tab_counted == FALSE && word_added == FALSE){
+              pdf_searchword_times <- c(pdf_searchword_times, length(word.positions))
+              pdf_searchword_names <- c(pdf_searchword_names, word)
+              word_added <- TRUE
+              ## if tables were searched (add to existing numbers)
+            } else {
+              pdf_searchword_times[i] <- pdf_searchword_times[i] + length(word.positions)
+              pdf_searchword_names[i] <- word
+            }
+            pdf_searchword_total <- sum(pdf_searchword_times)
+            search.word.category_total <- NULL
+            if (!is.null(search.word.categories) && length(search.words) == length(search.word.categories)){
+              for (swc in 1:length(unique(search.word.categories))){
+                search.word.category_total[swc] <- sum(pdf_searchword_times[search.word.categories %in% unique(search.word.categories)[swc]], na.rm = TRUE)
+              }
+            }
+            ## loop through all the positions
+            for (word.pos in word.positions) {
+              ## A) Detect sentences after
+              postword.current.line <- strtoi(line)
+              postword.current.sent.end <- word.pos
+              postword.txtcontent <- ""
+              ## search for the sentence beginning till context-th
+              ## sentence is found
+              for (x in 1:(context + 1)) {
+                ## do till sentence begninning is found or postword
+                ## of document test if sentence postword is in this
+                ## line
+                while (grepl("\\. [0-9A-Z]",
+                             substr(txtcontent[postword.current.line],
+                                    postword.current.sent.end,
+                                    nchar(txtcontent[postword.current.line]))) == FALSE) {
+                  ## if there is no postword sentence end, add everthing till end of line
+                  # everthing till end of line
+                  postword.txtcontent <- paste0(postword.txtcontent,
+                                                substr(txtcontent[postword.current.line],
+                                                       postword.current.sent.end,
+                                                       nchar(txtcontent[postword.current.line])),
+                                                " ")
+                  ## if the end of the document is reached, end
+                  if (postword.current.line >= length(txtcontent)) {
+                    postword.current.sent.end <- nchar(txtcontent[postword.current.line])
+                    break
+                  } else {
+                    ## set the beginning of the new line as begnning
+                    postword.current.sent.end <- 1
+                    postword.current.line <- postword.current.line + 1
+                  }
+                }
+                ## new start point is set to the postword of the
+                ## sentence +1
+                new.postword.current.sent.end <- postword.current.sent.end +
+                  as.vector(regexpr("\\. [0-9A-Z]",
+                                    substr(txtcontent[postword.current.line],
+                                           postword.current.sent.end,
+                                           nchar(txtcontent[postword.current.line])))) + 1
                 postword.txtcontent <- paste0(postword.txtcontent,
                                               substr(txtcontent[postword.current.line],
                                                      postword.current.sent.end,
-                                                     nchar(txtcontent[postword.current.line])),
-                                              " ")
-                ## if the end of the document is reached, end
-                if (postword.current.line >= length(txtcontent)) {
-                  postword.current.sent.end <- nchar(txtcontent[postword.current.line])
-                  break
-                } else {
-                  ## set the beginning of the new line as begnning
-                  postword.current.sent.end <- 1
-                  postword.current.line <- postword.current.line + 1
-                }
-              }
-              ## new start point is set to the postword of the
-              ## sentence +1
-              new.postword.current.sent.end <- postword.current.sent.end +
-                as.vector(regexpr("\\. [0-9A-Z]",
-                                  substr(txtcontent[postword.current.line],
-                                         postword.current.sent.end,
-                                         nchar(txtcontent[postword.current.line])))) + 1
-              postword.txtcontent <- paste0(postword.txtcontent,
-                                            substr(txtcontent[postword.current.line],
-                                                   postword.current.sent.end,
-                                                   new.postword.current.sent.end - 1))
-              postword.current.sent.end <- new.postword.current.sent.end
-            }  ## postword context loop
-            numb.sentences.after <- x - 1
-            postword.txtcontent <- substr(postword.txtcontent, 1, nchar(postword.txtcontent) - 1)
-            postword.current.sent.end <- postword.current.sent.end - 1
-            
-            ## A) Detect sentences before
-            preword.current.line <- strtoi(line)
-            preword.current.sent.start <- word.pos - 1
-            preword.txtcontent <- NULL
-            for (y in 1:(context + 1)) {
-              ## do till sentence begninning is found or beginning
-              ## of document test if sentence pre.word is in this
-              ## line
-              while (grepl("\\. [0-9A-Z]",
-                           substr(txtcontent[preword.current.line], 1,
-                                  preword.current.sent.start)) == FALSE) {
-                ## only add if the whole paragraph has sentences in
-                ## it if (grepl('\\.
-                ## [:alnum:]',txtcontent[preword.current.line])) if
-                ## there is no preword sentence start, add everthing
-                ## till current position
-                preword.txtcontent <- paste0(" ",
-                                             substr(txtcontent[preword.current.line],
-                                                    1, preword.current.sent.start),
-                                             preword.txtcontent)
-                ## if the beeginning of the document is reached, end
-                if (preword.current.line == 1) {
-                  preword.current.sent.start <- 1
-                  break
-                } else {
-                  ## set the ends of sentence as of the new line as
-                  ## begnning
-                  preword.current.line <- preword.current.line - 1
-                  preword.current.sent.start <- nchar(txtcontent[preword.current.line])
-                }
-              }
+                                                     new.postword.current.sent.end - 1))
+                postword.current.sent.end <- new.postword.current.sent.end
+              }  ## postword context loop
+              numb.sentences.after <- x - 1
+              postword.txtcontent <- substr(postword.txtcontent, 1, nchar(postword.txtcontent) - 1)
+              postword.current.sent.end <- postword.current.sent.end - 1
               
-              ## new sent.start point is set to the sent.start of
-              ## the sentence +1
-              new.preword.current.sent.start <- max(as.vector(gregexpr("\\. [0-9A-Z]",
-                                                                       substr(txtcontent[preword.current.line],
-                                                                              1, preword.current.sent.start))[[1]]))
-              preword.txtcontent <- paste0(substr(txtcontent[preword.current.line],
-                                                  new.preword.current.sent.start + 1,
-                                                  preword.current.sent.start),
-                                           preword.txtcontent)
-              preword.current.sent.start <- new.preword.current.sent.start
-            }  ## sent.start context loop
-            numb.sentences.before <- y - 1
-            preword.txtcontent <- substr(preword.txtcontent,
-                                         2, nchar(preword.txtcontent))
-            preword.current.sent.start <- preword.current.sent.start + 1
-            
-            ## find the page info
-            currentlinenumb <- 0
-            page_numb <- 0
-            maxlinenumb <- sum(lengths(splittxtcontent))
-            while ((currentlinenumb < preword.current.line) && (currentlinenumb != maxlinenumb)){
-              page_numb <- page_numb + 1
-              currentlinenumb <- currentlinenumb + length(splittxtcontent[[page_numb]])
-            }
-            start.paragraph <- preword.current.line - currentlinenumb + length(splittxtcontent[[page_numb]])
-            end.paragraph <- postword.current.line - currentlinenumb + length(splittxtcontent[[page_numb]])
-            #count sentences number (search word location_total sentences)
-            outputrow <- data.frame(txtcontent = paste0(preword.txtcontent,
-                                                        postword.txtcontent),
-                                    page = page_numb,
-                                    start.line = preword.current.line,
-                                    start.pos = preword.current.sent.start,
-                                    start.paragraph = start.paragraph,
-                                    end.line = postword.current.line,
-                                    end.pos = postword.current.sent.end,
-                                    end.paragraph = end.paragraph,
-                                    search.word.loc_total = paste0(as.character(numb.sentences.before + 1),"_",
-                                                                   as.character(numb.sentences.before + 1 + numb.sentences.after)))
-            txtpositionstable <- rbind(txtpositionstable,
-                                       outputrow)
-            txtpositionstable <- unique(txtpositionstable)
-          }  ## end each search word
-        }  ## end for each line
-      } ## else if length(words.found.in.lines)==0
-    }  ## end for each search word again
+              ## A) Detect sentences before
+              preword.current.line <- strtoi(line)
+              preword.current.sent.start <- word.pos - 1
+              preword.txtcontent <- NULL
+              for (y in 1:(context + 1)) {
+                ## do till sentence begninning is found or beginning
+                ## of document test if sentence pre.word is in this
+                ## line
+                while (grepl("\\. [0-9A-Z]",
+                             substr(txtcontent[preword.current.line], 1,
+                                    preword.current.sent.start)) == FALSE) {
+                  ## only add if the whole paragraph has sentences in
+                  ## it if (grepl('\\.
+                  ## [:alnum:]',txtcontent[preword.current.line])) if
+                  ## there is no preword sentence start, add everthing
+                  ## till current position
+                  preword.txtcontent <- paste0(" ",
+                                               substr(txtcontent[preword.current.line],
+                                                      1, preword.current.sent.start),
+                                               preword.txtcontent)
+                  ## if the beeginning of the document is reached, end
+                  if (preword.current.line == 1) {
+                    preword.current.sent.start <- 1
+                    break
+                  } else {
+                    ## set the ends of sentence as of the new line as
+                    ## begnning
+                    preword.current.line <- preword.current.line - 1
+                    preword.current.sent.start <- nchar(txtcontent[preword.current.line])
+                  }
+                }
+                
+                ## new sent.start point is set to the sent.start of
+                ## the sentence +1
+                new.preword.current.sent.start <- max(as.vector(gregexpr("\\. [0-9A-Z]",
+                                                                         substr(txtcontent[preword.current.line],
+                                                                                1, preword.current.sent.start))[[1]]))
+                preword.txtcontent <- paste0(substr(txtcontent[preword.current.line],
+                                                    new.preword.current.sent.start + 1,
+                                                    preword.current.sent.start),
+                                             preword.txtcontent)
+                preword.current.sent.start <- new.preword.current.sent.start
+              }  ## sent.start context loop
+              numb.sentences.before <- y - 1
+              preword.txtcontent <- substr(preword.txtcontent,
+                                           2, nchar(preword.txtcontent))
+              preword.current.sent.start <- preword.current.sent.start + 1
+              
+              ## find the page info
+              currentlinenumb <- 0
+              page_numb <- 0
+              maxlinenumb <- sum(lengths(splittxtcontent))
+              while ((currentlinenumb < preword.current.line) && (currentlinenumb != maxlinenumb)){
+                page_numb <- page_numb + 1
+                currentlinenumb <- currentlinenumb + length(splittxtcontent[[page_numb]])
+              }
+              start.paragraph <- preword.current.line - currentlinenumb + length(splittxtcontent[[page_numb]])
+              end.paragraph <- postword.current.line - currentlinenumb + length(splittxtcontent[[page_numb]])
+              #count sentences number (search word location_total sentences)
+              outputrow <- data.frame(txtcontent = paste0(preword.txtcontent,
+                                                          postword.txtcontent),
+                                      page = page_numb,
+                                      start.line = preword.current.line,
+                                      start.pos = preword.current.sent.start,
+                                      start.paragraph = start.paragraph,
+                                      end.line = postword.current.line,
+                                      end.pos = postword.current.sent.end,
+                                      end.paragraph = end.paragraph,
+                                      search.word.loc_total = paste0(as.character(numb.sentences.before + 1),"_",
+                                                                     as.character(numb.sentences.before + 1 + numb.sentences.after)))
+              txtpositionstable <- rbind(txtpositionstable,
+                                         outputrow)
+              txtpositionstable <- unique(txtpositionstable)
+            }  ## end each search word
+          }  ## end for each line
+        } ## else if length(words.found.in.lines)==0
+      }  ## end for each search word again
     
     
       ## export txt info
@@ -7146,9 +7209,7 @@ PDE_analyzer_i <- function(verbose=TRUE) {
     load_extracted_table <- function(table.location) {
       # A.1) test if tables folder exists
       if (table.location != ""){
-        ## enable wrap checkboxes
-        tcltk::tkconfigure(l37.wrap.rb, state = "normal")
-        tcltk::tkconfigure(l37.no.wrap.rb, state = "normal")
+        loadfile <- table.location
         
         if (Sys.info()["sysname"] == "Windows") {
           native.encoding <- "WINDOWS-1252"
@@ -7157,83 +7218,96 @@ PDE_analyzer_i <- function(verbose=TRUE) {
         } else {
           native.encoding <- "UTF-8"
         }
-        loadfile <- table.location
-        if (grepl(".csv$",loadfile)){
-          separator <- ","
-        } else {
-          separator <- "\t"
-        }
+        
         all_content <- readLines(loadfile,
                                  encoding = native.encoding)
-        out_table <- utils::read.table(file = loadfile, sep = separator, header = FALSE,
-                                       encoding = native.encoding, stringsAsFactors=FALSE)
-        ## test which lines have title
-        for (i in 1:length(all_content)){
-          ## delete everything before first comma
-          rest_of_line <- sub(paste0(".*?\"",separator),",",all_content[i])
-          if (!grepl(paste0("^",separator,"+$"), rest_of_line)){
-            break
+        if (grepl("The following table was detected but not processable",all_content[1])){
+          ## clear table
+          tcltk::tkdelete(l38.table, 0, "end")
+          tcltk::tkconfigure(l38.table, columns = paste0("1 \"",
+                                                         "\""))
+          tcltk::tkinsert(l38.table, "end",
+                          all_content[1])
+        } else {
+          ## enable wrap checkboxes
+          tcltk::tkconfigure(l37.wrap.rb, state = "normal")
+          tcltk::tkconfigure(l37.no.wrap.rb, state = "normal")
+          
+          if (grepl(".csv$",loadfile)){
+            separator <- ","
+          } else {
+            separator <- "\t"
           }
-        }
-        
-        ## for display convert from macintosh to UTF-8
-        if (native.encoding == "macintosh"){
-          out_table_new <- out_table
-          for (r in 1:nrow(out_table)) {
-            for (c in 1:ncol(out_table)) {
-              out_table_new[r,c] <- iconv(out_table[r,c], from = "macintosh", to = "UTF-8")
+          out_table <- utils::read.table(file = loadfile, sep = separator, header = FALSE,
+                                         encoding = native.encoding, stringsAsFactors=FALSE)
+          ## test which lines have title
+          for (i in 1:length(all_content)){
+            ## delete everything before first comma
+            rest_of_line <- sub(paste0(".*?\"",separator),",",all_content[i])
+            if (!grepl(paste0("^",separator,"+$"), rest_of_line)){
+              break
             }
           }
-          out_table <- out_table_new
-        }
-        
-        ## go one back
-        i = i - 1
-        title <-  all_content[1:i]
-        ##cleanup title
-        title <- gsub("\",.*","",sub("\"","",title))
-        title <- sub("^(,)+","",title)
-        
-        ## remove rows
-        rest_content <- out_table[(i+2):nrow(out_table),]
-        colnames(rest_content) <- out_table[i+1,]
-        ##Replace NAs
-        colnames(rest_content)[is.na(colnames(rest_content))] <- ""
-        table_title <- paste(title, collapse = " ")
-        table_content <- rest_content
-        
-        ## clear table
-        tcltk::tkdelete(l38.table, 0, "end")
-        
-        ## fill the header
-        columnhead <- NULL
-        for (c in 2:(ncol(table_content))) {
-          columnhead <- paste0(columnhead, "\" 0 \"",
-                               colnames(table_content)[c])
-        }
-        tcltk::tclvalue(columnnumber.var) <- as.character(ncol(table_content))
-        tcltk::tkconfigure(l38.table, columns = paste0("1 \"",
-                                                       colnames(table)[1], columnhead, "\""))
-        
-        ## make columns editable and wrap
-        for (c in 0:(ncol(table_content) - 1)) {
-          tcltk::tcl(l38.table, "columnconfigure",
-                     c, editable = 1)
-          tcltk::tcl(l38.table, "columnconfigure",
-                     c, wrap = tcltk::tclvalue(wrap.var))
-        }
-        
-        ## fill table
-        for (r in 1:nrow(table_content)) {
-          rowlist <- NULL
-          for (c in 1:ncol(table_content)) {
-            rowlist <- c(rowlist, as.character(table_content[r,
-                                                             c]))
+          
+          ## for display convert from macintosh to UTF-8
+          if (native.encoding == "macintosh"){
+            out_table_new <- out_table
+            for (r in 1:nrow(out_table)) {
+              for (c in 1:ncol(out_table)) {
+                out_table_new[r,c] <- iconv(out_table[r,c], from = "macintosh", to = "UTF-8")
+              }
+            }
+            out_table <- out_table_new
           }
-          tcltk::tkinsert(l38.table, "end",
-                          rowlist)
+          
+          ## go one back
+          i = i - 1
+          title <-  all_content[1:i]
+          ##cleanup title
+          title <- gsub("\",.*","",sub("\"","",title))
+          title <- sub("^(,)+","",title)
+          
+          ## remove rows
+          rest_content <- out_table[(i+2):nrow(out_table),]
+          colnames(rest_content) <- out_table[i+1,]
+          ##Replace NAs
+          colnames(rest_content)[is.na(colnames(rest_content))] <- ""
+          table_title <- paste(title, collapse = " ")
+          table_content <- rest_content
+          
+          ## clear table
+          tcltk::tkdelete(l38.table, 0, "end")
+          
+          ## fill the header
+          columnhead <- NULL
+          for (c in 2:(ncol(table_content))) {
+            columnhead <- paste0(columnhead, "\" 0 \"",
+                                 colnames(table_content)[c])
+          }
+          tcltk::tclvalue(columnnumber.var) <- as.character(ncol(table_content))
+          tcltk::tkconfigure(l38.table, columns = paste0("1 \"",
+                                                         colnames(table)[1], columnhead, "\""))
+          
+          ## make columns editable and wrap
+          for (c in 0:(ncol(table_content) - 1)) {
+            tcltk::tcl(l38.table, "columnconfigure",
+                       c, editable = 1)
+            tcltk::tcl(l38.table, "columnconfigure",
+                       c, wrap = tcltk::tclvalue(wrap.var))
+          }
+          
+          ## fill table
+          for (r in 1:nrow(table_content)) {
+            rowlist <- NULL
+            for (c in 1:ncol(table_content)) {
+              rowlist <- c(rowlist, as.character(table_content[r,
+                                                               c]))
+            }
+            tcltk::tkinsert(l38.table, "end",
+                            rowlist)
+          }
+          
         }
-        
       }
     } ## end load_extracted_table
     

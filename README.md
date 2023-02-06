@@ -331,7 +331,8 @@ required files
 5.  **Filter word times**: This represents the minimum number of hits
     described above which has to be detected for a paper to be further
     analyzed. If the threshold is not met, a documentation file can be
-    exported if selected in the documentation section.  
+    exported if selected in the documentation section. The filter word
+    threshold can either be an abolute number or a percentage.  
     Argument for `PDE_extr_data_from_pdfs()`: `filter.word.times`
 
 6.  **Copy/move PDF files**: If filter words are used in the analyses,
@@ -706,6 +707,10 @@ or
     [tcl] failed to allocate font due to internal system font engine problem.
 
 #### Solution:
+
+1.  Install the latest version of XQuartz on your Mac.
+
+If that does note work:
 
 1.  Press the Ctrl+Alt+T key to open the terminal.  
 2.  Type the following command:
