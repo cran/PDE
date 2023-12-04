@@ -1,16 +1,16 @@
 variable	value
 whattoextr	txtandtab
 pdfs	examples/Methotrexate
-outputfolder	examples/MTX_output+-0_test
+outputfolder	examples/MTX_output+-0_test_tables_separated
 table.heading.words	
 ignore.case.th	FALSE
-filter.words	cohort;case-control;group;study population;study participants
-regex.fw	FALSE
+filter.words	(M|m)ethotrexate;(T|t)rexal;(R|r)heumatrex;(O|o)trexup
+regex.fw	TRUE
 ignore.case.fw	TRUE
-filter.word.times	20
-search.words	(M|m)ethotrexate;(T|t)rexal;(R|r)heumatrex;(O|o)trexup
-save.tab.by.category	FALSE
-regex.sw	TRUE
+filter.word.times	0.2%
+search.words	%:characteristic:%characteristic;%:outcome:%outcome
+save.tab.by.category	TRUE
+regex.sw	FALSE
 ignore.case.sw	FALSE
 eval.abbrevs	TRUE
 write.table.locations	TRUE

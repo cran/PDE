@@ -1,27 +1,21 @@
--   <a href="#description" id="toc-description">Description</a>
--   <a href="#installation" id="toc-installation">Installation</a>
--   <a href="#execution" id="toc-execution">Execution</a>
--   <a href="#quick-guide-to-get-started"
-    id="toc-quick-guide-to-get-started">Quick guide to get started</a>
-    -   <a href="#pde_analyzer_i" id="toc-pde_analyzer_i">PDE_analyzer_i()</a>
-    -   <a href="#pde_reader_i" id="toc-pde_reader_i">PDE_reader_i()</a>
--   <a href="#parameters" id="toc-parameters">Parameters</a>
-    -   <a href="#pde_analyzer_i-1"
-        id="toc-pde_analyzer_i-1">PDE_analyzer_i()</a>
-    -   <a href="#pde_reader_i-1" id="toc-pde_reader_i-1">PDE_reader_i()</a>
--   <a href="#troubleshoot" id="toc-troubleshoot">Troubleshoot</a>
-    -   <a
-        href="#error-when-starting-interactive-user-interface-on-mac-failed-to-allocate-tcl-font"
-        id="toc-error-when-starting-interactive-user-interface-on-mac-failed-to-allocate-tcl-font">Error
-        when starting interactive user interface on Mac (failed to allocate tcl
-        font)</a>
--   <a href="#example" id="toc-example">Example</a>
-    -   <a href="#process-methotrexate-articles-with-the-pde_analyzer_i"
-        id="toc-process-methotrexate-articles-with-the-pde_analyzer_i">Process
-        Methotrexate articles with the PDE_analyzer_i()</a>
-    -   <a href="#visualize-extracted-methotrexate-data-with-the-pde_reader_i"
-        id="toc-visualize-extracted-methotrexate-data-with-the-pde_reader_i">Visualize
-        extracted Methotrexate data with the PDE_reader_i()</a>
+-   [Description](#description)
+-   [Installation](#installation)
+-   [Execution](#execution)
+-   [Quick guide to get started](#quick-guide-to-get-started)
+    -   [PDE\_analyzer\_i()](#pde_analyzer_i)
+    -   [PDE\_reader\_i()](#pde_reader_i)
+-   [Parameters](#parameters)
+    -   [PDE\_analyzer\_i()](#pde_analyzer_i-1)
+    -   [PDE\_reader\_i()](#pde_reader_i-1)
+-   [Troubleshoot](#troubleshoot)
+    -   [Error when starting interactive user interface on Mac (failed
+        to allocate tcl
+        font)](#error-when-starting-interactive-user-interface-on-mac-failed-to-allocate-tcl-font)
+-   [Example](#example)
+    -   [Process Methotrexate articles with the
+        PDE\_analyzer\_i()](#process-methotrexate-articles-with-the-pde_analyzer_i)
+    -   [Visualize extracted Methotrexate data with the
+        PDE\_reader\_i()](#visualize-extracted-methotrexate-data-with-the-pde_reader_i)
 
 ------------------------------------------------------------------------
 
@@ -102,7 +96,7 @@ font)](#error-when-starting-interactive-user-interface-on-mac-failed-to-allocate
     library("PDE")
     PDE_analyzer_i()
 
-<img src="scrnshots/Screenshot_PDE_analyzer_user_interface_empty_mac.png" width="50%" style="display: block; margin: auto;" />
+<img src="vignettes/scrnshots/Screenshot_PDE_analyzer_user_interface_empty_mac.png" width="50%" style="display: block; margin: auto;" />
 <center>
 `PDE_analyzer_i()` user interface on Mac
 </center>
@@ -123,7 +117,7 @@ font)](#error-when-starting-interactive-user-interface-on-mac-failed-to-allocate
 
 ### PDE\_reader\_i()
 
-<img src="scrnshots/Screenshot_PDE_reader_user_interface_empty_linux.png" width="50%" style="display: block; margin: auto;" />
+<img src="vignettes/scrnshots/Screenshot_PDE_reader_user_interface_empty_linux.png" width="50%" style="display: block; margin: auto;" />
 <center>
 `PDE_reader_i()` user interface on Linux
 </center>
@@ -169,7 +163,7 @@ listed below each description:** `argument`
 
 #### Choose the locations for the required files:
 
-<img src="scrnshots/Screenshot_PDE_analyzer_user_interface.choose_variables_empty.png" width="100%" style="display: block; margin: auto;" />
+<img src="vignettes/scrnshots/Screenshot_PDE_analyzer_user_interface.choose_variables_empty.png" width="100%" style="display: block; margin: auto;" />
 <center>
 `PDE_analyzer_i()` user interface - Choose the locations for the
 required files
@@ -185,7 +179,7 @@ required files
 
 #### Input/Output:
 
-<img src="scrnshots/Screenshot_PDE_analyzer_user_interface_empty_win.png" width="100%" style="display: block; margin: auto;" />
+<img src="vignettes/scrnshots/Screenshot_PDE_analyzer_user_interface_empty_win.png" width="100%" style="display: block; margin: auto;" />
 <center>
 `PDE_analyzer_i()` user interface - Input/Output
 </center>
@@ -240,7 +234,7 @@ required files
 
 #### Search Words:
 
-<img src="scrnshots/Screenshot_PDE_analyzer_user_interface.search_words_empty.png" width="100%" style="display: block; margin: auto;" />
+<img src="vignettes/scrnshots/Screenshot_PDE_analyzer_user_interface.search_words_empty.png" width="100%" style="display: block; margin: auto;" />
 <center>
 `PDE_analyzer_i()` user interface - Search Words
 </center>
@@ -263,7 +257,13 @@ required files
     all tables detected in the paper (choose this option here). In the
     later case, the search words field should remain empty.
 
-3.  **Search words**: Type in the list of search words separated by “;”
+3.  **Save table by category**: If search word categories are added and
+    table extraction is selected, the extracted tables can be saved in
+    different sub-folders according to the category of the detected
+    search word. Arguments for `PDE_extr_data_from_pdfs()`:
+    `save.tab.by.category`
+
+4.  **Search words**: Type in the list of search words separated by “;”
     without spaces in between. Additionally, search word categories can
     be added by including the category name before the first search word
     of each category surrounded by “%:” and “:%”, e.g.,
@@ -272,18 +272,18 @@ required files
     `PDE_extr_data_from_pdfs()`: `search.words` and
     `search.word.categories`
 
-4.  **Search words case sensitive**: E.g., for “Word”, if “no” was
+5.  **Search words case sensitive**: E.g., for “Word”, if “no” was
     chosen then “word”, “WORD”, “Word”, etc., will be detected, if “yes”
     was chosen only “Word” will be detected.  
     Argument for `PDE_extr_data_from_pdfs()`: `ignore.case.sw`
 
-5.  **Regex**: When checked search words will follow the regex rules
+6.  **Regex**: When checked search words will follow the regex rules
     (see
     <https://github.com/erikstricker/PDE/blob/master/inst/examples/cheatsheets/regex.pdf>
     (<https://github.com/erikstricker/PDE/blob/master/inst/examples/cheatsheets/regex.pdf>)).
     Argument for `PDE_extr_data_from_pdfs()`: `regex.sw`
 
-6.  **Number of sentences before and after**: When 0 is chosen, only the
+7.  **Number of sentences before and after**: When 0 is chosen, only the
     sentence with the search word is extracted. If any number n is
     chosen, n number of sentences before and n number of sentences after
     the sentence with the search word will be extracted. A sentence is
@@ -291,7 +291,7 @@ required files
     subsequent space).  
     Argument for `PDE_extr_data_from_pdfs()`: `context`
 
-7.  **Evaluate abbreviations?**: If “yes” was chosen, all abbreviations
+8.  **Evaluate abbreviations?**: If “yes” was chosen, all abbreviations
     that were used in the PDF documents for the search words will be
     saved and then replace by `abbreviation (search word)$*`, e.g.,
     `MTX` will be replaced by `MTX (Methotrexate)$*`. In addition plural
@@ -301,7 +301,7 @@ required files
 
 #### Filter Words:
 
-<img src="scrnshots/Screenshot_PDE_analyzer_user_interface.filter_words_empty.png" width="100%" style="display: block; margin: auto;" />
+<img src="vignettes/scrnshots/Screenshot_PDE_analyzer_user_interface.filter_words_empty.png" width="100%" style="display: block; margin: auto;" />
 <center>
 `PDE_analyzer_i()` user interface - Filter Words
 </center>
@@ -342,7 +342,7 @@ required files
 
 #### Parameters:
 
-<img src="scrnshots/Screenshot_PDE_analyzer_user_interface.parameters_empty.png" width="100%" style="display: block; margin: auto;" />
+<img src="vignettes/scrnshots/Screenshot_PDE_analyzer_user_interface.parameters_empty.png" width="100%" style="display: block; margin: auto;" />
 <center>
 `PDE_analyzer_i()` user interface - Parameters
 </center>
@@ -377,7 +377,7 @@ required files
 
 #### Documentation/Debugging:
 
-<img src="scrnshots/Screenshot_PDE_analyzer_user_interface.docus_empty.png" width="100%" style="display: block; margin: auto;" />
+<img src="vignettes/scrnshots/Screenshot_PDE_analyzer_user_interface.docus_empty.png" width="100%" style="display: block; margin: auto;" />
 <center>
 `PDE_analyzer_i()` user interface - Documentation/Debugging
 </center>
@@ -434,7 +434,7 @@ required files
 
 ### PDE\_reader\_i()
 
-<img src="scrnshots/Screenshot_PDE_reader_user_interface_empty_win.png" width="75%" style="display: block; margin: auto;" />
+<img src="vignettes/scrnshots/Screenshot_PDE_reader_user_interface_empty_win.png" width="75%" style="display: block; margin: auto;" />
 <center>
 `PDE_reader_i()` user interface on Microsoft Windows
 </center>
@@ -451,7 +451,7 @@ required files
 1.  This should open a user interface, e.g., a window with feather icon
     in task bar.
 
-<img src="scrnshots/Screenshot_PDE_reader_user_interface.open_empty.png" width="100%" style="display: block; margin: auto;" />
+<img src="vignettes/scrnshots/Screenshot_PDE_reader_user_interface.open_empty.png" width="100%" style="display: block; margin: auto;" />
 <center>
 `PDE_reader_i()` user interface - Load and open
 </center>
@@ -539,7 +539,7 @@ required files
     files are not already loaded in the memory (see **Open analysis
     file**, **Load analysis folder**).
 
-<img src="scrnshots/Screenshot_PDE_reader_user_interface.display_empty.png" width="100%" style="display: block; margin: auto;" />
+<img src="vignettes/scrnshots/Screenshot_PDE_reader_user_interface.display_empty.png" width="100%" style="display: block; margin: auto;" />
 <center>
 `PDE_reader_i()` user interface - Table display
 </center>
@@ -659,7 +659,7 @@ required files
     will also lead to the disappearance of some search words, as only
     the abbreviations remain.
 
-<img src="scrnshots/Screenshot_PDE_reader_user_interface.browse_and_mark_empty.png" width="100%" style="display: block; margin: auto;" />
+<img src="vignettes/scrnshots/Screenshot_PDE_reader_user_interface.browse_and_mark_empty.png" width="100%" style="display: block; margin: auto;" />
 <center>
 `PDE_reader_i()` user interface - Browse and mark
 </center>
@@ -735,7 +735,7 @@ If that does note work:
 1.  This should open a user interface, e.g., a window with feather icon
     in task bar.
 
-<img src="scrnshots/Screenshot_PDE_analyzer_user_interface_MTX_example.png" width="75%" style="display: block; margin: auto;" />
+<img src="vignettes/scrnshots/Screenshot_PDE_analyzer_user_interface_MTX_example.png" width="75%" style="display: block; margin: auto;" />
 <center>
 `PDE_analyzer_i()` user interface
 </center>
@@ -759,7 +759,7 @@ the R console:
 
 ##### Input/Output:
 
-<img src="scrnshots/Screenshot_PDE_analyzer_user_interface_MTX_example.png" width="100%" style="display: block; margin: auto;" />
+<img src="vignettes/scrnshots/Screenshot_PDE_analyzer_user_interface_MTX_example.png" width="100%" style="display: block; margin: auto;" />
 <center>
 `PDE_analyzer_i()` user interface - Input/Output
 </center>
@@ -811,7 +811,7 @@ Shift to select multiple).
 
 ##### Search words:
 
-<img src="scrnshots/Screenshot_PDE_analyzer_user_interface.search_words_MTX_example.png" width="100%" style="display: block; margin: auto;" />
+<img src="vignettes/scrnshots/Screenshot_PDE_analyzer_user_interface.search_words_MTX_example.png" width="100%" style="display: block; margin: auto;" />
 <center>
 `PDE_analyzer_i()` user interface - Search words tab filled for MTX
 example
@@ -869,7 +869,7 @@ example
 
 ##### Filter words:
 
-<img src="scrnshots/Screenshot_PDE_analyzer_user_interface.filter_words_MTX_example.png" width="100%" style="display: block; margin: auto;" />
+<img src="vignettes/scrnshots/Screenshot_PDE_analyzer_user_interface.filter_words_MTX_example.png" width="100%" style="display: block; margin: auto;" />
 <center>
 `PDE_analyzer_i()` user interface - Filter words tab filled for MTX
 example
@@ -925,7 +925,7 @@ example
 
 ##### Parameters:
 
-<img src="scrnshots/Screenshot_PDE_analyzer_user_interface.parameters_MTX_example.png" width="100%" style="display: block; margin: auto;" />
+<img src="vignettes/scrnshots/Screenshot_PDE_analyzer_user_interface.parameters_MTX_example.png" width="100%" style="display: block; margin: auto;" />
 <center>
 `PDE_analyzer_i()` user interface - Parameters tab filled for MTX
 example
@@ -963,7 +963,7 @@ example
 
 ##### Documentation:
 
-<img src="scrnshots/Screenshot_PDE_analyzer_user_interface.docus_MTX_example.png" width="100%" style="display: block; margin: auto;" />
+<img src="vignettes/scrnshots/Screenshot_PDE_analyzer_user_interface.docus_MTX_example.png" width="100%" style="display: block; margin: auto;" />
 <center>
 `PDE_analyzer_i()` user interface - Documentation tab filled for MTX
 example
@@ -1017,7 +1017,7 @@ example
 
     no
 
-<img src="scrnshots/Screenshot_PDE_analyzer_user_interface.start_MTX_example.png" width="100%" style="display: block; margin: auto;" />
+<img src="vignettes/scrnshots/Screenshot_PDE_analyzer_user_interface.start_MTX_example.png" width="100%" style="display: block; margin: auto;" />
 <center>
 `PDE_analyzer_i()` user interface - Start analysis
 </center>
@@ -1054,7 +1054,7 @@ contains search word and filter word statistics.
 
 ### Visualize extracted Methotrexate data with the PDE\_reader\_i()
 
-<img src="scrnshots/Screenshot_PDE_reader_user_interface_MTX.png" width="75%" style="display: block; margin: auto;" />
+<img src="vignettes/scrnshots/Screenshot_PDE_reader_user_interface_MTX.png" width="75%" style="display: block; margin: auto;" />
 <center>
 `PDE_reader_i()` user interface
 </center>
@@ -1068,7 +1068,7 @@ contains search word and filter word statistics.
     library("PDE")
     PDE_reader_i()
 
-<img src="scrnshots/Screenshot_PDE_reader_user_interface_empty_win.png" width="100%" style="display: block; margin: auto;" />
+<img src="vignettes/scrnshots/Screenshot_PDE_reader_user_interface_empty_win.png" width="100%" style="display: block; margin: auto;" />
 <center>
 `PDE_reader_i()` user interface in Windows
 </center>
@@ -1076,7 +1076,7 @@ contains search word and filter word statistics.
 </br> 2. This should open a user interface, e.g., a window with feather
 icon in task bar.
 
-<img src="scrnshots/Screenshot_PDE_reader_user_interface_MTX_Open_analysis_file.png" width="100%" style="display: block; margin: auto;" />
+<img src="vignettes/scrnshots/Screenshot_PDE_reader_user_interface_MTX_Open_analysis_file.png" width="100%" style="display: block; margin: auto;" />
 <center>
 `PDE_reader_i()` user interface - Load and open
 </center>
@@ -1095,7 +1095,7 @@ folder folder with such files, e.g., `examples/MTX_output`.
     be accessed again. All files will be shown under Jump to file and
     are quickly accessible, since they are in the memory.
 
-<img src="scrnshots/Screenshot_PDE_reader_user_interface_MTX_load_tsv.png" width="100%" style="display: block; margin: auto;" />
+<img src="vignettes/scrnshots/Screenshot_PDE_reader_user_interface_MTX_load_tsv.png" width="100%" style="display: block; margin: auto;" />
 <center>
 `PDE_reader_i()` user interface - Load TSV for highlighting
 </center>
@@ -1114,7 +1114,7 @@ folder folder with such files, e.g., `examples/MTX_output`.
 3.  **Load all**: To speed up browsing, press this button. It might take
     a second to load all analysis files.
 
-<img src="scrnshots/Screenshot_PDE_reader_user_interface_MTX_load_pdfs.png" width="100%" style="display: block; margin: auto;" />
+<img src="vignettes/scrnshots/Screenshot_PDE_reader_user_interface_MTX_load_pdfs.png" width="100%" style="display: block; margin: auto;" />
 <center>
 `PDE_reader_i()` user interface - Load PDF folder
 </center>
@@ -1125,7 +1125,7 @@ folder folder with such files, e.g., `examples/MTX_output`.
     **Extract tables** button load the PDF folder into the reader,
     i.e. `examples/Methotrexate`.
 
-<img src="scrnshots/Screenshot_PDE_reader_user_interface_MTX_open_pdf.png" width="100%" style="display: block; margin: auto;" />
+<img src="vignettes/scrnshots/Screenshot_PDE_reader_user_interface_MTX_open_pdf.png" width="100%" style="display: block; margin: auto;" />
 <center>
 `PDE_reader_i()` user interface - Open PDF or extract table
 </center>
@@ -1146,7 +1146,7 @@ folder folder with such files, e.g., `examples/MTX_output`.
     table extraction only works when PDF file and TSV files are
     available.**
 
-<img src="scrnshots/Screenshot_PDE_reader_user_interface_MTX_jump_to.png" width="100%" style="display: block; margin: auto;" />
+<img src="vignettes/scrnshots/Screenshot_PDE_reader_user_interface_MTX_jump_to.png" width="100%" style="display: block; margin: auto;" />
 <center>
 `PDE_reader_i()` user interface - Jump to files
 </center>
@@ -1156,7 +1156,7 @@ folder folder with such files, e.g., `examples/MTX_output`.
 1.  **Jump to file**: Instead of going from one file to the next you can
     also quickly jump to a file through the drop down menu.
 
-<img src="scrnshots/Screenshot_PDE_reader_user_interface_MTX_table-sentence.png" width="75%" style="display: block; margin: auto;" />
+<img src="vignettes/scrnshots/Screenshot_PDE_reader_user_interface_MTX_table-sentence.png" width="75%" style="display: block; margin: auto;" />
 <center>
 `PDE_reader_i()` user interface - Table display with one sentence before
 and after less
@@ -1169,7 +1169,7 @@ and after less
     increased (**+**), or reset (**o**). When changing this setting, the
     sentences with the search word will always be displayed.
 
-<img src="scrnshots/Screenshot_PDE_reader_user_interface_MTX_show_txtcontent_only.png" width="75%" style="display: block; margin: auto;" />
+<img src="vignettes/scrnshots/Screenshot_PDE_reader_user_interface_MTX_show_txtcontent_only.png" width="75%" style="display: block; margin: auto;" />
 <center>
 `PDE_reader_i()` user interface - Table display with text content only
 </center>
@@ -1180,7 +1180,7 @@ and after less
     only the sentences/text without the positional information is
     displayed.
 
-<img src="scrnshots/Screenshot_PDE_reader_user_interface_MTX_show_original_text.png" width="75%" style="display: block; margin: auto;" />
+<img src="vignettes/scrnshots/Screenshot_PDE_reader_user_interface_MTX_show_original_text.png" width="75%" style="display: block; margin: auto;" />
 <center>
 `PDE_reader_i()` user interface - Table display without abbreviations
 replaced
@@ -1193,7 +1193,7 @@ replaced
     `ABBREVIATION (search word)$*` with `ABBREVIATION`, e.g.,
     `MTX (Methotrexate)$*` with `MTX`.
 
-<img src="scrnshots/Screenshot_PDE_reader_user_interface_MTX_browse.png" width="100%" style="display: block; margin: auto;" />
+<img src="vignettes/scrnshots/Screenshot_PDE_reader_user_interface_MTX_browse.png" width="100%" style="display: block; margin: auto;" />
 <center>
 `PDE_reader_i()` user interface - Browse and mark
 </center>
@@ -1226,7 +1226,7 @@ replaced
 You are at the end of this small example tutorial and should be a pro in
 literature search now!
 
-<img src="scrnshots/Screenshot_PDE_reader_user_interface_MTX.png" width="100%" style="display: block; margin: auto;" />
+<img src="vignettes/scrnshots/Screenshot_PDE_reader_user_interface_MTX.png" width="100%" style="display: block; margin: auto;" />
 <center>
 `PDE_reader_i()` user interface
 </center>
