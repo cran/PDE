@@ -1219,8 +1219,27 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE, perm
     output.without.html <- gsub("&divide;",intToUtf8(0x00F7),output.without.html)
     output.without.html <- gsub("&circ;",intToUtf8(0x00FE),output.without.html)
     output.without.html <- gsub("&tilde;",intToUtf8(0x007E),output.without.html)
-    output.without.html <- gsub(intToUtf8(0xFB01),"fi",output.without.html, fixed = TRUE)
     return(output.without.html)
+  }
+  
+  replace.letter.merge <- function(input.with.symbol, test = TRUE) {
+    output.without.symbol <- input.with.symbol
+    if (test == TRUE){
+      if (!any(grepl(paste0(intToUtf8(0xFB01),"|",intToUtf8(0xFB02),"|",
+                           intToUtf8(0xFB03),"|",intToUtf8(0xFB04),"|",
+                           intToUtf8(0xFB05),"|",intToUtf8(0xFB06)), input.with.symbol))){
+        test <- FALSE
+      } 
+    }
+    if (test == TRUE){
+      output.without.symbol <- gsub(intToUtf8(0xFB01),"fi",output.without.symbol, fixed = TRUE)
+      output.without.symbol <- gsub(intToUtf8(0xFB02),"fl",output.without.symbol, fixed = TRUE)
+      output.without.symbol <- gsub(intToUtf8(0xFB03),"ffi",output.without.symbol, fixed = TRUE)
+      output.without.symbol <- gsub(intToUtf8(0xFB04),"ffl",output.without.symbol, fixed = TRUE)
+      output.without.symbol <- gsub(intToUtf8(0xFB05),"ft",output.without.symbol, fixed = TRUE)
+      output.without.symbol <- gsub(intToUtf8(0xFB06),"st",output.without.symbol, fixed = TRUE)
+    }
+    return(output.without.symbol)
   }
 
   insert.html.entity <- function(input.without.html) {
@@ -2037,7 +2056,7 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE, perm
         if (grepl("&",line.txthtmlcontent)){
           txthtmlcontent[[j]][z] <- replace.html.entity(line.txthtmlcontent)
         } else {
-          txthtmlcontent[[j]][z] <- line.txthtmlcontent
+          txthtmlcontent[[j]][z] <- replace.letter.merge(line.txthtmlcontent, test = TRUE)
         }
       }  ## end go through each line z
       content[[(j+2)]] <- txthtmlcontent[[j]]
@@ -3772,6 +3791,7 @@ PDE_install_Xpdftools4.02 <- function(sysname=NULL, bin=NULL, verbose=TRUE, perm
     word.table <- NULL
     ## start search only when search words are in the
     ## list
+    processed.tab.category <- NULL
     if (!is.na(search.word.table[1, "words"])) {
       if (search.word.table[1, "words"] != "") {
         pdf_searchwords <- NULL
